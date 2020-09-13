@@ -34,29 +34,46 @@ struct StoryView: View {
     
     var body: some View {
         List {
-            if let newest = from_newest {
-                StoryCell(story: newest)
-            }
-            Text(story.story?.title ?? from_newest?.title ?? short_id).font(.headline)
-            if let my_story = story.story {
-                if my_story.description.count > 0 {
-                    Text(my_story.description)
+            if let generic: GenericStory = story.story ?? from_newest {
+                VStack(alignment: .leading) {
+                    Text(generic.title).font(.title2).foregroundColor(.accentColor)
+                    if let url = URL(string: generic.url), let host = url.host, !(host.isEmpty) {
+                        Text(host).foregroundColor(Color.secondary).font(.callout)
+                    }
+                    HStack(alignment: .center, spacing: 16.0) {
+                        Text("\(generic.score)")
+                        VStack(alignment: .leading) {
+                            TagList(tags: generic.tags)
+                            SGNavigationLink(destination: UserView(user: generic.submitter_user), withChevron: false) {
+                                Text("via ").font(.callout).foregroundColor(Color.secondary) +
+                                Text(generic.submitter_user.username).font(.callout).foregroundColor(generic.submitter_user.is_admin ? Color.red : (generic.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                                    Text(" " + generic.time_ago).font(.callout).foregroundColor(Color.secondary)
+                            }
+                        }
+                    }
+                    if generic.description.count > 0 {
+                        VStack(alignment: .leading) {
+                            HTMLView(html: generic.description)
+                            ForEach(HTMLView(html: generic.description).links, id: \.self) { link in
+                                URLView(link: link)
+                            }
+                        }
+                    }
                 }
+            }
+            if let my_story = story.story {
                 ForEach(my_story.comments) { comment in
                     VStack(alignment: .leading, spacing: 8.0) {
                         HStack(alignment: .center) {
-                            Text(comment.commenting_user.username).foregroundColor(.gray)
+                            NavigationLink(destination: UserView(user: comment.commenting_user)) {
+                                Text(comment.commenting_user.username).foregroundColor(.gray)
+                            }
                             Spacer()
                             Text("\(Image(systemName: "arrow.up")) \(comment.score)").foregroundColor(.gray)
                         }
                         HTMLView(html: comment.comment)
                         ForEach(HTMLView(html: comment.comment).links, id: \.self) { link in
-                            Text("\(link)").padding().font(.footnote).foregroundColor(Color.primary).background(Color.secondary).overlay(
-                                RoundedRectangle(cornerRadius: 8.0)
-                                    .stroke(Color.primary, lineWidth: 2.0)
-                            ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
-                                UIApplication.shared.open(URL(string: link)!)
-                            }
+                            URLView(link: link)
                         }
                         
                     }.padding(EdgeInsets(top: 0.0, leading: CGFloat(comment.indent_level-1)*16.0, bottom: 0.0, trailing: 0.0))

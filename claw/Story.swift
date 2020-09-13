@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct Story: Codable {
+struct Story: GenericStory, Codable, Identifiable {
     var id: String {
         return short_id
     }

@@ -37,7 +37,7 @@ struct HottestView: View {
         NavigationView {
             List {
                 ForEach(hottest.stories) { story in
-                    NavigationLink(destination: StoryView(story)) {
+                    SGNavigationLink(destination: StoryView(story)) {
                         StoryCell(story: story)
                     }
                 }
