@@ -35,33 +35,33 @@ struct UserView: View {
     var user: NewestUser
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading) {
+        List {
+            HStack {
+                Text("Karma").bold()
+                Text("\(user.karma)")
+            }
+            if let username = user.github_username {
                 HStack {
-                    Text("Karma").bold()
-                    Text("\(user.karma)")
+                    Text("GitHub").bold()
+                    Link(destination: URL(string: "https://github.com/" + username)!, label: {
+                        Text(username).foregroundColor(.accentColor)
+                    })
                 }
-                if let username = user.github_username {
-                    HStack {
-                        Text("GitHub").bold()
-                        Link(destination: URL(string: "https://github.com/" + username)!, label: {
-                            Text(username)
-                        })
-                    }
+            }
+            if let username = user.twitter_username {
+                HStack {
+                    Text("Twitter").bold()
+                    Link(destination: URL(string: "https://twitter.com/" + username)!, label: {
+                        Text("@" + username).foregroundColor(.accentColor)
+                    })
                 }
-                if let username = user.twitter_username {
-                    HStack {
-                        Text("Twitter").bold()
-                        Link(destination: URL(string: "https://twitter.com/" + username)!, label: {
-                            Text("@" + username)
-                        })
-                    }
-                }
-                if !user.about.isEmpty {
+            }
+            if !user.about.isEmpty {
+                VStack(alignment: .leading) {
                     Text("About").bold()
                     MDText(markdown: user.about).padding()
                 }
-            }.padding()
+            }
         }.navigationBarTitle(user.username)
     }
 }
