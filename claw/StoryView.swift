@@ -1,4 +1,6 @@
 import SwiftUI
+import WebView
+import WebKit
 
 struct StoryView: View {
     var short_id: String
@@ -32,13 +34,19 @@ struct StoryView: View {
         return short_id
     }
     
+    @ObservedObject var webViewStore = WebViewStore(webView: WKWebView())
+    
     var body: some View {
         List {
             if let generic: GenericStory = story.story ?? from_newest {
                 VStack(alignment: .leading) {
                     Text(generic.title).font(.title2).foregroundColor(.accentColor)
                     if let url = URL(string: generic.url), let host = url.host, !(host.isEmpty) {
-                        Text(host).foregroundColor(Color.secondary).font(.callout)
+                        SGNavigationLink(destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? generic.title)) {
+                            Text(host).foregroundColor(Color.secondary).font(.callout)
+                        }.onAppear {
+                            webViewStore.webView.load(URLRequest(url: url))
+                        }
                     }
                     HStack(alignment: .center, spacing: 16.0) {
                         Text("\(generic.score)")

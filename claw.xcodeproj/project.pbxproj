@@ -27,6 +27,7 @@
 		F669C974250EA28700B1FF42 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C973250EA28700B1FF42 /* User.swift */; };
 		F669C976250EA56400B1FF42 /* URLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C975250EA56400B1FF42 /* URLView.swift */; };
 		F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */; };
+		F669C99B250ED07800B1FF42 /* WebView in Frameworks */ = {isa = PBXBuildFile; productRef = F669C99A250ED07800B1FF42 /* WebView */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F669C99B250ED07800B1FF42 /* WebView in Frameworks */,
 				F669C967250C80DF00B1FF42 /* MDText in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
@@ -189,6 +191,7 @@
 			packageProductDependencies = (
 				F669C966250C80DF00B1FF42 /* MDText */,
 				F669C969250C846200B1FF42 /* SwiftSoup */,
+				F669C99A250ED07800B1FF42 /* WebView */,
 			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
@@ -264,6 +267,7 @@
 			packageReferences = (
 				F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */,
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */,
 			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
@@ -658,6 +662,14 @@
 				minimumVersion = 2.3.2;
 			};
 		};
+		F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/phatblat/WebView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -670,6 +682,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		F669C99A250ED07800B1FF42 /* WebView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */;
+			productName = WebView;
 		};
 /* End XCSwiftPackageProductDependency section */
 
