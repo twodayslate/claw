@@ -7,17 +7,6 @@
 
 import SwiftUI
 
-struct TagView: View {
-    var tag: String
-    
-    var body:some View {
-        Text(tag).font(.footnote).foregroundColor(.black).padding(EdgeInsets(top: 4.0, leading: 8.0, bottom: 4.0, trailing: 8.0)).background(Color.yellow).overlay(
-            RoundedRectangle(cornerRadius: 8.0)
-                .stroke(Color.secondary, lineWidth: 2.0)
-        ).clipShape(RoundedRectangle(cornerRadius: 8.0))
-    }
-}
-
 struct StoryCell: View {
     var story: NewestStory
     
@@ -47,11 +36,7 @@ struct StoryCell: View {
                     Text(story.title).font(.headline).foregroundColor(Color.accentColor)
                     Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
                 }
-                HStack {
-                    ForEach(story.tags, id: \.self) { tag in
-                        TagView(tag: tag)
-                    }
-                }
+                TagList(tags: story.tags)
                 HStack {
                     HStack {
                 
