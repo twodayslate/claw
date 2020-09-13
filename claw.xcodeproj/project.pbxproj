@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -15,6 +15,12 @@
 		F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F669C93A250C5DDE00B1FF42 /* claw.xcdatamodeld */; };
 		F669C947250C5DDE00B1FF42 /* clawTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C946250C5DDE00B1FF42 /* clawTests.swift */; };
 		F669C952250C5DDE00B1FF42 /* clawUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C951250C5DDE00B1FF42 /* clawUITests.swift */; };
+		F669C960250C5DF000B1FF42 /* newest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* newest.swift */; };
+		F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C961250C61F000B1FF42 /* StoryCell.swift */; };
+		F669C964250C711E00B1FF42 /* Story.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C963250C711E00B1FF42 /* Story.swift */; };
+		F669C967250C80DF00B1FF42 /* MDText in Frameworks */ = {isa = PBXBuildFile; productRef = F669C966250C80DF00B1FF42 /* MDText */; };
+		F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = F669C969250C846200B1FF42 /* SwiftSoup */; };
+		F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C96B250C847000B1FF42 /* HTMLView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +55,10 @@
 		F669C94D250C5DDE00B1FF42 /* clawUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clawUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C951250C5DDE00B1FF42 /* clawUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawUITests.swift; sourceTree = "<group>"; };
 		F669C953250C5DDE00B1FF42 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F669C95F250C5DF000B1FF42 /* newest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = newest.swift; sourceTree = "<group>"; };
+		F669C961250C61F000B1FF42 /* StoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCell.swift; sourceTree = "<group>"; };
+		F669C963250C711E00B1FF42 /* Story.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Story.swift; sourceTree = "<group>"; };
+		F669C96B250C847000B1FF42 /* HTMLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +66,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F669C967250C80DF00B1FF42 /* MDText in Frameworks */,
+				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,6 +113,10 @@
 			children = (
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
 				F669C931250C5DD400B1FF42 /* ContentView.swift */,
+				F669C96B250C847000B1FF42 /* HTMLView.swift */,
+				F669C961250C61F000B1FF42 /* StoryCell.swift */,
+				F669C95F250C5DF000B1FF42 /* newest.swift */,
+				F669C963250C711E00B1FF42 /* Story.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
 				F669C938250C5DDE00B1FF42 /* Persistence.swift */,
 				F669C93D250C5DDE00B1FF42 /* Info.plist */,
@@ -152,6 +168,10 @@
 			dependencies = (
 			);
 			name = claw;
+			packageProductDependencies = (
+				F669C966250C80DF00B1FF42 /* MDText */,
+				F669C969250C846200B1FF42 /* SwiftSoup */,
+			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
 			productType = "com.apple.product-type.application";
@@ -223,6 +243,10 @@
 				Base,
 			);
 			mainGroup = F669C923250C5DD400B1FF42;
+			packageReferences = (
+				F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */,
+				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -265,10 +289,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F669C964250C711E00B1FF42 /* Story.swift in Sources */,
+				F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */,
 				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
+				F669C960250C5DF000B1FF42 /* newest.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
+				F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -588,6 +616,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Lambdo-Labs/MDText";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.0.10;
+			};
+		};
+		F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F669C966250C80DF00B1FF42 /* MDText */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */;
+			productName = MDText;
+		};
+		F669C969250C846200B1FF42 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		F669C93A250C5DDE00B1FF42 /* claw.xcdatamodeld */ = {
