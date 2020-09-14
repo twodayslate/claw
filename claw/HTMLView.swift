@@ -9,6 +9,10 @@ import SwiftUI
 import SwiftSoup
 
 
+// inspired by
+// * https://github.com/lukasmoellerch/SwiftUIFormattedText
+// * https://github.com/Lambdo-Labs/MDText
+
 struct NodesView: View {
     var nodes: [Node]
     var bullet = "•"

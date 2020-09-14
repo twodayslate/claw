@@ -18,7 +18,6 @@
 		F669C960250C5DF000B1FF42 /* Newest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* Newest.swift */; };
 		F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C961250C61F000B1FF42 /* StoryCell.swift */; };
 		F669C964250C711E00B1FF42 /* Story.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C963250C711E00B1FF42 /* Story.swift */; };
-		F669C967250C80DF00B1FF42 /* MDText in Frameworks */ = {isa = PBXBuildFile; productRef = F669C966250C80DF00B1FF42 /* MDText */; };
 		F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = F669C969250C846200B1FF42 /* SwiftSoup */; };
 		F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C96B250C847000B1FF42 /* HTMLView.swift */; };
 		F669C96E250E746D00B1FF42 /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C96D250E746D00B1FF42 /* TagView.swift */; };
@@ -85,7 +84,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F669C99B250ED07800B1FF42 /* WebView in Frameworks */,
-				F669C967250C80DF00B1FF42 /* MDText in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -197,7 +195,6 @@
 			);
 			name = claw;
 			packageProductDependencies = (
-				F669C966250C80DF00B1FF42 /* MDText */,
 				F669C969250C846200B1FF42 /* SwiftSoup */,
 				F669C99A250ED07800B1FF42 /* WebView */,
 			);
@@ -273,7 +270,6 @@
 			);
 			mainGroup = F669C923250C5DD400B1FF42;
 			packageReferences = (
-				F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */,
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */,
 			);
@@ -662,14 +658,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Lambdo-Labs/MDText";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.0.10;
-			};
-		};
 		F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
@@ -689,11 +677,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F669C966250C80DF00B1FF42 /* MDText */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F669C965250C80DF00B1FF42 /* XCRemoteSwiftPackageReference "MDText" */;
-			productName = MDText;
-		};
 		F669C969250C846200B1FF42 /* SwiftSoup */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
