@@ -64,22 +64,6 @@ struct NewestStory: GenericStory, Codable, Identifiable {
     var tags: [String]
 }
 
-struct NewestUser: Codable, Identifiable {
-    var id: String {
-        return username
-    }
-    var username: String
-    var created_at: String
-    var is_admin: Bool
-    var about: String
-    var is_moderator: Bool
-    var karma: Int
-    var avatar_url: String
-    var invited_by_user: String
-    var github_username: String?
-    var twitter_username: String?
-}
-
 class NewestFetcher: ObservableObject {
     @Published var stories = [NewestStory]()
     init() {

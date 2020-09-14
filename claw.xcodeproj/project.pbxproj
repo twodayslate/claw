@@ -28,6 +28,8 @@
 		F669C976250EA56400B1FF42 /* URLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C975250EA56400B1FF42 /* URLView.swift */; };
 		F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */; };
 		F669C99B250ED07800B1FF42 /* WebView in Frameworks */ = {isa = PBXBuildFile; productRef = F669C99A250ED07800B1FF42 /* WebView */; };
+		F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C99C250EE5AA00B1FF42 /* UIColor.swift */; };
+		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,9 @@
 		F669C973250EA28700B1FF42 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		F669C975250EA56400B1FF42 /* URLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLView.swift; sourceTree = "<group>"; };
 		F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SGNavigationLink.swift; sourceTree = "<group>"; };
+		F669C99C250EE5AA00B1FF42 /* UIColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColor.swift; sourceTree = "<group>"; };
+		F669C99E250EE89900B1FF42 /* claw.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = claw.entitlements; sourceTree = "<group>"; };
+		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,9 +130,12 @@
 		F669C92E250C5DD400B1FF42 /* claw */ = {
 			isa = PBXGroup;
 			children = (
+				F669C99E250EE89900B1FF42 /* claw.entitlements */,
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
+				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F669C931250C5DD400B1FF42 /* ContentView.swift */,
 				F669C96B250C847000B1FF42 /* HTMLView.swift */,
+				F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */,
 				F669C971250E750200B1FF42 /* StoryView.swift */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
@@ -285,6 +293,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
 			);
@@ -315,6 +324,7 @@
 				F669C964250C711E00B1FF42 /* Story.swift in Sources */,
 				F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */,
 				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
+				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
 				F669C960250C5DF000B1FF42 /* Newest.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
@@ -481,6 +491,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
@@ -493,6 +504,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -503,6 +516,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
@@ -515,6 +529,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

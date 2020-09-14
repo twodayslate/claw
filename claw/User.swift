@@ -2,6 +2,31 @@ import Foundation
 import SwiftUI
 import MDText
 
+struct KeybaseSignatures: Codable, Identifiable {
+    var id: String {
+        return kb_username
+    }
+    var kb_username: String
+    var sig_hash: String
+}
+
+struct NewestUser: Codable, Identifiable {
+    var id: String {
+        return username
+    }
+    var username: String
+    var created_at: String
+    var is_admin: Bool
+    var about: String
+    var is_moderator: Bool
+    var karma: Int
+    var avatar_url: String
+    var invited_by_user: String
+    var github_username: String?
+    var twitter_username: String?
+    var keybase_signatures: [KeybaseSignatures]?
+}
+
 class UserFetcher: ObservableObject {
     @Published var user: NewestUser? = nil
     var username: String
@@ -56,6 +81,24 @@ struct UserView: View {
                     })
                 }
             }
+            if let keybase = user.keybase_signatures {
+                HStack {
+                    Text("Keybase").bold()
+                    VStack {
+                        ForEach(keybase) { auth in
+                            HStack {
+                                Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+                                    UIApplication.shared.open(URL(string: "https://keybase.io/" + auth.kb_username)!)
+                                })
+                                Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+                                    UIApplication.shared.open(URL(string: "https://keybase.io/" + auth.kb_username  + "/sigchain#" + auth.sig_hash)!)
+                                })
+                                
+                            }
+                        }
+                    }
+                }
+            }
             if !user.about.isEmpty {
                 VStack(alignment: .leading) {
                     Text("About").bold()
@@ -65,3 +108,6 @@ struct UserView: View {
         }.navigationBarTitle(user.username)
     }
 }
+
+// todo: generate submitted stories
+// /newest/twodayslate.json
