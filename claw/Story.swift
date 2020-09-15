@@ -25,6 +25,37 @@ struct Story: GenericStory, Codable, Identifiable {
     var submitter_user: NewestUser
     var tags: [String]
     var comments: [Comment]
+    
+    var sorted_comments: [CommentStructure] {
+        func add_children(indentLevel: Int, comments: [Comment], stopWhenLess: Bool = true) -> [CommentStructure] {
+            var ans = [CommentStructure]()
+            for (i, comment) in comments.enumerated() {
+                if comment.indent_level == indentLevel {
+                    let slice = Array(comments.suffix(from: i+1))
+                    let children = add_children(indentLevel: indentLevel+1, comments: slice)
+                    if children.count > 0 {
+                        ans.append(CommentStructure(comment: comment, children: children))
+                    } else {
+                        ans.append(CommentStructure(comment: comment, children: nil))
+                    }
+                } else if stopWhenLess {
+                    break
+                }
+            }
+            return ans
+        }
+        
+        let children =  add_children(indentLevel: 1, comments: self.comments, stopWhenLess: false)
+        return children
+    }
+}
+
+struct CommentStructure: Codable, Identifiable {
+    var id: String {
+        return comment.short_id
+    }
+    var comment: Comment
+    var children: [CommentStructure]?
 }
 
 struct Comment: Codable, Identifiable {

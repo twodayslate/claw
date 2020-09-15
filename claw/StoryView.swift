@@ -70,22 +70,22 @@ struct StoryView: View {
                 }
             }
             if let my_story = story.story {
-                ForEach(my_story.comments) { comment in
+                HierarchyList(data: my_story.sorted_comments, children: \.children, header: { comment in
+                    AnyView(HStack(alignment: .center) {
+                        SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                            Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                    })
+                }, rowContent: { comment in
                     VStack(alignment: .leading, spacing: 8.0) {
-                        HStack(alignment: .center) {
-                            NavigationLink(destination: UserView(user: comment.commenting_user)) {
-                                Text(comment.commenting_user.username).foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Text("\(Image(systemName: "arrow.up")) \(comment.score)").foregroundColor(.gray)
+                        HTMLView(html: comment.comment.comment)
+                        ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
+                                URLView(link: link)
                         }
-                        HTMLView(html: comment.comment)
-                        ForEach(HTMLView(html: comment.comment).links, id: \.self) { link in
-                            URLView(link: link)
-                        }
-                        
-                    }.padding(EdgeInsets(top: 0.0, leading: CGFloat(comment.indent_level-1)*16.0, bottom: 0.0, trailing: 0.0))
-                }
+                    }
+                })
             }
         }.navigationBarTitle(self.title, displayMode: .inline)
     }
