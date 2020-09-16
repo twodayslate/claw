@@ -1,21 +1,14 @@
-//
-//  newest.swift
-//  claw
-//
-//  Created by Zachary Gorak on 9/11/20.
-//
-
 import Foundation
 import SwiftUI
 
-class NewestFetcher: ObservableObject {
+class HottestFetcher: ObservableObject {
     @Published var stories = [NewestStory]()
     init() {
         load()
     }
     
     func load() {
-        let url = URL(string: "https://lobste.rs/newest.json")!
+        let url = URL(string: "https://lobste.rs/hottest.json")!
             
                 URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
@@ -31,21 +24,5 @@ class NewestFetcher: ObservableObject {
                         print ("Error \(error)")
                     }
                 }.resume()
-    }
-}
-
-struct NewestView: View {
-    @ObservedObject var newest = NewestFetcher()
-    
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(newest.stories) { story in
-                    SGNavigationLink(destination: StoryView(story)) {
-                        StoryCell(story: story)
-                    }
-                }
-            }.navigationBarTitle("Newest")
-        }
     }
 }

@@ -8,6 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291163251038810065C3E9 /* CommentHierarchy.swift */; };
+		F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116B251057E70065C3E9 /* WidgetKit.framework */; };
+		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
+		F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291170251057E70065C3E9 /* hottest_widget.swift */; };
+		F6291174251057E80065C3E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6291173251057E80065C3E9 /* Assets.xcassets */; };
+		F6291176251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */; };
+		F6291177251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */; };
+		F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F62911822510599A0065C3E9 /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
+		F6291183251059CA0065C3E9 /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
+		F6291185251059E60065C3E9 /* GenericUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericUser.swift */; };
+		F629118725105A0F0065C3E9 /* NewestStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118625105A0F0065C3E9 /* NewestStory.swift */; };
+		F629118825105A1C0065C3E9 /* NewestStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118625105A0F0065C3E9 /* NewestStory.swift */; };
+		F629118925105A230065C3E9 /* GenericUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericUser.swift */; };
+		F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
+		F629118C25105A440065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
 		F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C92F250C5DD400B1FF42 /* clawApp.swift */; };
 		F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C931250C5DD400B1FF42 /* ContentView.swift */; };
 		F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F669C933250C5DDE00B1FF42 /* Assets.xcassets */; };
@@ -33,6 +48,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F6291178251057E80065C3E9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F669C924250C5DD400B1FF42 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6291168251057E70065C3E9;
+			remoteInfo = hottest.widgetExtension;
+		};
 		F669C943250C5DDE00B1FF42 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F669C924250C5DD400B1FF42 /* Project object */;
@@ -49,8 +71,33 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F629117E251057E80065C3E9 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		F6291163251038810065C3E9 /* CommentHierarchy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentHierarchy.swift; sourceTree = "<group>"; };
+		F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = hottest.widgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F629116D251057E70065C3E9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		F6291170251057E70065C3E9 /* hottest_widget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hottest_widget.swift; sourceTree = "<group>"; };
+		F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; path = hottest_widget.intentdefinition; sourceTree = "<group>"; };
+		F6291173251057E80065C3E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F6291175251057E80065C3E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F62911812510599A0065C3E9 /* HottestFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HottestFetcher.swift; sourceTree = "<group>"; };
+		F6291184251059E60065C3E9 /* GenericUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericUser.swift; sourceTree = "<group>"; };
+		F629118625105A0F0065C3E9 /* NewestStory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewestStory.swift; sourceTree = "<group>"; };
+		F629118A25105A3E0065C3E9 /* NewestUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewestUser.swift; sourceTree = "<group>"; };
 		F669C92C250C5DD400B1FF42 /* claw.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = claw.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C92F250C5DD400B1FF42 /* clawApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawApp.swift; sourceTree = "<group>"; };
 		F669C931250C5DD400B1FF42 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -81,6 +128,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F6291166251057E70065C3E9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */,
+				F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F669C929250C5DD400B1FF42 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -107,12 +163,34 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F629116A251057E70065C3E9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F629116B251057E70065C3E9 /* WidgetKit.framework */,
+				F629116D251057E70065C3E9 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F629116F251057E70065C3E9 /* hottest.widget */ = {
+			isa = PBXGroup;
+			children = (
+				F6291170251057E70065C3E9 /* hottest_widget.swift */,
+				F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */,
+				F6291173251057E80065C3E9 /* Assets.xcassets */,
+				F6291175251057E80065C3E9 /* Info.plist */,
+			);
+			path = hottest.widget;
+			sourceTree = "<group>";
+		};
 		F669C923250C5DD400B1FF42 = {
 			isa = PBXGroup;
 			children = (
 				F669C92E250C5DD400B1FF42 /* claw */,
 				F669C945250C5DDE00B1FF42 /* clawTests */,
 				F669C950250C5DDE00B1FF42 /* clawUITests */,
+				F629116F251057E70065C3E9 /* hottest.widget */,
+				F629116A251057E70065C3E9 /* Frameworks */,
 				F669C92D250C5DD400B1FF42 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -123,6 +201,7 @@
 				F669C92C250C5DD400B1FF42 /* claw.app */,
 				F669C942250C5DDE00B1FF42 /* clawTests.xctest */,
 				F669C94D250C5DDE00B1FF42 /* clawUITests.xctest */,
+				F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,8 +221,12 @@
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
 				F669C96D250E746D00B1FF42 /* TagView.swift */,
 				F669C95F250C5DF000B1FF42 /* Newest.swift */,
+				F629118625105A0F0065C3E9 /* NewestStory.swift */,
+				F6291184251059E60065C3E9 /* GenericUser.swift */,
 				F669C973250EA28700B1FF42 /* User.swift */,
+				F629118A25105A3E0065C3E9 /* NewestUser.swift */,
 				F669C96F250E74CB00B1FF42 /* Hottest.swift */,
+				F62911812510599A0065C3E9 /* HottestFetcher.swift */,
 				F669C963250C711E00B1FF42 /* Story.swift */,
 				F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
@@ -184,6 +267,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		F6291168251057E70065C3E9 /* hottest.widgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F629117B251057E80065C3E9 /* Build configuration list for PBXNativeTarget "hottest.widgetExtension" */;
+			buildPhases = (
+				F6291165251057E70065C3E9 /* Sources */,
+				F6291166251057E70065C3E9 /* Frameworks */,
+				F6291167251057E70065C3E9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = hottest.widgetExtension;
+			productName = hottest.widgetExtension;
+			productReference = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F669C92B250C5DD400B1FF42 /* claw */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F669C956250C5DDE00B1FF42 /* Build configuration list for PBXNativeTarget "claw" */;
@@ -191,10 +291,12 @@
 				F669C928250C5DD400B1FF42 /* Sources */,
 				F669C929250C5DD400B1FF42 /* Frameworks */,
 				F669C92A250C5DD400B1FF42 /* Resources */,
+				F629117E251057E80065C3E9 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F6291179251057E80065C3E9 /* PBXTargetDependency */,
 			);
 			name = claw;
 			packageProductDependencies = (
@@ -250,6 +352,9 @@
 				LastSwiftUpdateCheck = 1200;
 				LastUpgradeCheck = 1200;
 				TargetAttributes = {
+					F6291168251057E70065C3E9 = {
+						CreatedOnToolsVersion = 12.0;
+					};
 					F669C92B250C5DD400B1FF42 = {
 						CreatedOnToolsVersion = 12.0;
 					};
@@ -283,11 +388,20 @@
 				F669C92B250C5DD400B1FF42 /* claw */,
 				F669C941250C5DDE00B1FF42 /* clawTests */,
 				F669C94C250C5DDE00B1FF42 /* clawUITests */,
+				F6291168251057E70065C3E9 /* hottest.widgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F6291167251057E70065C3E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6291174251057E80065C3E9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F669C92A250C5DD400B1FF42 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -315,19 +429,37 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		F6291165251057E70065C3E9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6291176251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */,
+				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
+				F6291183251059CA0065C3E9 /* HottestFetcher.swift in Sources */,
+				F629118925105A230065C3E9 /* GenericUser.swift in Sources */,
+				F629118C25105A440065C3E9 /* NewestUser.swift in Sources */,
+				F629118825105A1C0065C3E9 /* NewestStory.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F669C928250C5DD400B1FF42 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
+				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
 				F669C964250C711E00B1FF42 /* Story.swift in Sources */,
 				F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */,
 				F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */,
+				F6291185251059E60065C3E9 /* GenericUser.swift in Sources */,
 				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
 				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
+				F629118725105A0F0065C3E9 /* NewestStory.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
+				F62911822510599A0065C3E9 /* HottestFetcher.swift in Sources */,
 				F669C960250C5DF000B1FF42 /* Newest.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
+				F6291177251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* User.swift in Sources */,
@@ -357,6 +489,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F6291179251057E80065C3E9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6291168251057E70065C3E9 /* hottest.widgetExtension */;
+			targetProxy = F6291178251057E80065C3E9 /* PBXContainerItemProxy */;
+		};
 		F669C944250C5DDE00B1FF42 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F669C92B250C5DD400B1FF42 /* claw */;
@@ -370,6 +507,48 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		F629117C251057E80065C3E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = C6L3992RFB;
+				INFOPLIST_FILE = hottest.widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F629117D251057E80065C3E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = C6L3992RFB;
+				INFOPLIST_FILE = hottest.widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		F669C954250C5DDE00B1FF42 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -489,10 +668,12 @@
 		F669C957250C5DDE00B1FF42 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -514,10 +695,12 @@
 		F669C958250C5DDE00B1FF42 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -623,6 +806,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		F629117B251057E80065C3E9 /* Build configuration list for PBXNativeTarget "hottest.widgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F629117C251057E80065C3E9 /* Debug */,
+				F629117D251057E80065C3E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F669C927250C5DD400B1FF42 /* Build configuration list for PBXProject "claw" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

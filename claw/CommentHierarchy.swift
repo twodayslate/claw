@@ -10,7 +10,7 @@ public struct HierarchyList<Data, RowContent>: View where Data: RandomAccessColl
   }
 
   public var body: some View {
-    Section {
+    VStack(alignment: .leading) {
       recursiveView
     }
   }
@@ -46,10 +46,10 @@ private struct RecursiveView<Data, RowContent>: View where Data: RandomAccessCol
     
   var body: some View {
     ForEach(data) { child in
-        Section {
+        VStack(alignment: .leading) {
             FSDisclosureGroup {
                 VStack(alignment: .leading) {
-                    rowContent(child).padding([.leading], indentLevel == 0 ? -16 : 0)
+                    rowContent(child)
                     if let subChildren = child[keyPath: children] {
                         VStack(alignment: .leading) {
                             RecursiveView(data: subChildren, children: children, header: header, rowContent: rowContent, indentLevel: indentLevel+1)

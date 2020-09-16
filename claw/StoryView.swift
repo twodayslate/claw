@@ -40,7 +40,7 @@ struct StoryView: View {
         List {
             if let generic: GenericStory = story.story ?? from_newest {
                 VStack(alignment: .leading) {
-                    Text(generic.title).font(.title2).foregroundColor(.accentColor)
+                    Text(generic.title).lineLimit(3).font(.title2).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
                     if let url = URL(string: generic.url), let host = url.host, !(host.isEmpty) {
                         SGNavigationLink(destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? generic.title)) {
                             Text(host).foregroundColor(Color.secondary).font(.callout)
