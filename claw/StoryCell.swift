@@ -22,17 +22,17 @@ struct StoryCell: View {
                 TagList(tags: story.tags)
                 HStack {
                     SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
-                        Text("via ").font(.callout).foregroundColor(Color.secondary) +
-                        Text(story.submitter_user.username).font(.callout).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                        Text("via ").font(.subheadline).foregroundColor(Color.secondary) +
+                        Text(story.submitter_user.username).font(.subheadline).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                             Text(" " +
-                                    story.time_ago).font(.callout).foregroundColor(Color.secondary)
+                                    story.time_ago).font(.subheadline).foregroundColor(Color.secondary)
                     }
                     Spacer()
                     SGNavigationLink(destination: StoryView(story), withChevron: false) {
                         if story.comment_count == 1 {
-                            Text("1 comment").font(.callout).foregroundColor(Color.secondary)
+                            Text("1 comment").font(.subheadline).foregroundColor(Color.secondary)
                         } else {
-                            Text("\(story.comment_count) comments").font(.callout).foregroundColor(Color.secondary)
+                            Text("\(story.comment_count) comments").font(.subheadline).foregroundColor(Color.secondary)
                         }
                     }.fixedSize()
                 }
