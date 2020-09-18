@@ -46,6 +46,8 @@ struct NodesView: View {
                         text = text + getText(from:childElement).strikethrough()
                     } else if childElement.tagName() == "a" {
                         text = text + getText(from:childElement).foregroundColor(.accentColor).underline()
+                    } else if childElement.tagName() == "code" {
+                        text = text + getText(from:childElement).font(.system(.body, design: .monospaced))
                     }
                 }
             }
@@ -223,6 +225,11 @@ struct HTMLView_Previews: PreviewProvider {
             ScrollView {
                 HTMLView(html: """
 <p>I’ve seen a few around, but haven’t found the time to test any of them to see how well they work.</p>\n<ul>\n<li><a href=\"https://github.com/stsquad/emacs_chrome\" rel=\"nofollow\">https://github.com/stsquad/emacs_chrome</a></li>\n<li><a href=\"https://github.com/GhostText/GhostText\" rel=\"nofollow\">https://github.com/GhostText/GhostText</a></li>\n<li><a href=\"https://github.com/asamuzaK/withExEditor\" rel=\"nofollow\">https://github.com/asamuzaK/withExEditor</a></li>\n</ul>\n
+""")
+            }
+            ScrollView {
+                HTMLView(html: """
+  <p>Here’s a <a href="https://github.com/cli/cli/blob/trunk/docs/gh-vs-hub.md" rel="ugc">comparison</a> of the new GitHub CLI (<code>gh</code>) against the existing unofficial CLI <a href="https://github.com/github/hub" rel="ugc"><code>hub</code></a>.</p>
 """)
             }
             ScrollView {

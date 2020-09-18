@@ -12,8 +12,6 @@
 		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
 		F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291170251057E70065C3E9 /* hottest_widget.swift */; };
 		F6291174251057E80065C3E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6291173251057E80065C3E9 /* Assets.xcassets */; };
-		F6291176251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */; };
-		F6291177251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */; };
 		F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F62911822510599A0065C3E9 /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
 		F6291183251059CA0065C3E9 /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
@@ -45,6 +43,8 @@
 		F669C99B250ED07800B1FF42 /* WebView in Frameworks */ = {isa = PBXBuildFile; productRef = F669C99A250ED07800B1FF42 /* WebView */; };
 		F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C99C250EE5AA00B1FF42 /* UIColor.swift */; };
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
+		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
+		F687667325141A27003090D2 /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687667225141A27003090D2 /* MailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,7 +91,6 @@
 		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F629116D251057E70065C3E9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F6291170251057E70065C3E9 /* hottest_widget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hottest_widget.swift; sourceTree = "<group>"; };
-		F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; path = hottest_widget.intentdefinition; sourceTree = "<group>"; };
 		F6291173251057E80065C3E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F6291175251057E80065C3E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F62911812510599A0065C3E9 /* HottestFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HottestFetcher.swift; sourceTree = "<group>"; };
@@ -125,6 +124,8 @@
 		F669C99C250EE5AA00B1FF42 /* UIColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColor.swift; sourceTree = "<group>"; };
 		F669C99E250EE89900B1FF42 /* claw.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = claw.entitlements; sourceTree = "<group>"; };
 		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
+		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F687667225141A27003090D2 /* MailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,7 +177,6 @@
 			isa = PBXGroup;
 			children = (
 				F6291170251057E70065C3E9 /* hottest_widget.swift */,
-				F6291172251057E70065C3E9 /* hottest_widget.intentdefinition */,
 				F6291173251057E80065C3E9 /* Assets.xcassets */,
 				F6291175251057E80065C3E9 /* Info.plist */,
 			);
@@ -213,6 +213,8 @@
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
 				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F669C931250C5DD400B1FF42 /* ContentView.swift */,
+				F687666C2513FAAC003090D2 /* SettingsView.swift */,
+				F687667225141A27003090D2 /* MailView.swift */,
 				F669C96B250C847000B1FF42 /* HTMLView.swift */,
 				F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */,
 				F669C971250E750200B1FF42 /* StoryView.swift */,
@@ -433,7 +435,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F6291176251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */,
 				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
 				F6291183251059CA0065C3E9 /* HottestFetcher.swift in Sources */,
 				F629118925105A230065C3E9 /* GenericUser.swift in Sources */,
@@ -446,7 +447,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */,
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
+				F687667325141A27003090D2 /* MailView.swift in Sources */,
 				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
 				F669C964250C711E00B1FF42 /* Story.swift in Sources */,
 				F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */,
@@ -459,7 +462,6 @@
 				F62911822510599A0065C3E9 /* HottestFetcher.swift in Sources */,
 				F669C960250C5DF000B1FF42 /* Newest.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
-				F6291177251057E80065C3E9 /* hottest_widget.intentdefinition in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* User.swift in Sources */,
@@ -513,6 +515,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -520,6 +523,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -534,6 +538,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -541,6 +546,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -683,6 +689,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
@@ -710,6 +717,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;

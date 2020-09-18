@@ -61,7 +61,7 @@ struct StoryView: View {
                     }
                     if generic.description.count > 0 {
                         VStack(alignment: .leading) {
-                            HTMLView(html: generic.description)
+                            HTMLView(html: generic.description).fixedSize(horizontal: false, vertical: true)
                             ForEach(HTMLView(html: generic.description).links, id: \.self) { link in
                                 URLView(link: link)
                             }
@@ -70,22 +70,30 @@ struct StoryView: View {
                 }
             }
             if let my_story = story.story {
-                HierarchyList(data: my_story.sorted_comments, children: \.children, header: { comment in
-                    AnyView(HStack(alignment: .center) {
-                        SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
-                            Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                if  my_story.comments.count > 0 {
+                    HierarchyList(data: my_story.sorted_comments, children: \.children, header: { comment in
+                        AnyView(HStack(alignment: .center) {
+                            SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                                Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                        })
+                    }, rowContent: { comment in
+                        VStack(alignment: .leading, spacing: 8.0) {
+                            HTMLView(html: comment.comment.comment)
+                            ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
+                                    URLView(link: link)
+                            }
                         }
-                        Spacer()
-                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
                     })
-                }, rowContent: { comment in
-                    VStack(alignment: .leading, spacing: 8.0) {
-                        HTMLView(html: comment.comment.comment)
-                        ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
-                                URLView(link: link)
-                        }
+                } else {
+                    HStack {
+                        Spacer()
+                        Text("No comments").foregroundColor(.gray)
+                        Spacer()
                     }
-                })
+                }
             }
         }.navigationBarTitle(self.title, displayMode: .inline)
     }

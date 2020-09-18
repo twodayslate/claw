@@ -26,6 +26,9 @@ struct ContentView: View {
                 selection == 1 ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
             }.tag(1)
+            SettingsView().tabItem { Image(systemName: "gear")
+                Text("Settings")
+            }.tag(2)
         }
     }
 }
