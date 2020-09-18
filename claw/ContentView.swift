@@ -8,13 +8,15 @@
 import SwiftUI
 import CoreData
 import WebKit
-
+import SwiftDB
 
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @State private var selection = 0
+    
+    @StateObject var container = PersistentContainer(SettingsSchema())
     
     var body: some View {
         TabView(selection: $selection) {
@@ -26,7 +28,7 @@ struct ContentView: View {
                 selection == 1 ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
             }.tag(1)
-            SettingsView().tabItem { Image(systemName: "gear")
+            SettingsView().persistentContainer(container).tabItem { Image(systemName: "gear")
                 Text("Settings")
             }.tag(2)
         }
@@ -35,6 +37,6 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        ContentView()
     }
 }

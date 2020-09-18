@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MessageUI
+import SwiftDB
 
 struct CustomLabelStyle: LabelStyle {
     ///https://www.hackingwithswift.com/forums/swiftui/vertical-align-icon-of-label/3346
@@ -66,9 +67,34 @@ struct SettingsView: View {
              "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
     }
     
+    @State var layoutValue: Double = 2.0
+    
+    @EnvironmentObject var container: PersistentContainer
+    
+    @FetchModels<SettingsEntity>() var settings
+    
+    var settingsEntity: SettingsEntity {
+        return settings.first ?? container.create(SettingsEntity.self)
+    }
+    
     var body: some View {
         NavigationView {
             List {
+                
+                Section(header: Text("Layout")) {
+                    VStack {
+                        StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "Story title", url: "https://zac.gorak.us", score: 69, flags: 0, comment_count: 420, description: "Description", comments_url: "", submitter_user: NewestUser(username: "twodayslate", created_at: "", is_admin: false, about: "", is_moderator: false, karma: 0, avatar_url: "", invited_by_user: "", github_username: nil, twitter_username: nil, keybase_signatures: nil), tags: ["programming", "apple"])).allowsHitTesting(false)
+                        Slider(value: settingsEntity.$layoutChoice, in: 0...2, step: 1, minimumValueLabel: Label(
+                            title: { Text("Minimal") },
+                            icon: { Image(systemName: "doc.plaintext") }
+                        ), maximumValueLabel: Label(
+                            title: { Text("Full") },
+                            icon: { Image(systemName: "doc.richtext") }
+    )) {
+                            Text("Layout")
+                        }
+                    }
+                }
                 Section {
                     SettingsLinkView(icon: Image("github"), text: "GitHub", url: "https://github.com/twodayslate/claw")
                     SettingsLinkView(icon: Image("twitter"), text: "Twitter", url: twitterURL.absoluteString)
@@ -108,6 +134,8 @@ struct SettingsView: View {
 }
 
 struct SettingsView_Previews: PreviewProvider {
+    @StateObject var container = PersistentContainer(SettingsSchema())
+    
     static var previews: some View {
         Group {
             SettingsView()

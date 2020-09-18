@@ -25,8 +25,6 @@
 		F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C931250C5DD400B1FF42 /* ContentView.swift */; };
 		F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F669C933250C5DDE00B1FF42 /* Assets.xcassets */; };
 		F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F669C936250C5DDE00B1FF42 /* Preview Assets.xcassets */; };
-		F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C938250C5DDE00B1FF42 /* Persistence.swift */; };
-		F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F669C93A250C5DDE00B1FF42 /* claw.xcdatamodeld */; };
 		F669C947250C5DDE00B1FF42 /* clawTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C946250C5DDE00B1FF42 /* clawTests.swift */; };
 		F669C952250C5DDE00B1FF42 /* clawUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C951250C5DDE00B1FF42 /* clawUITests.swift */; };
 		F669C960250C5DF000B1FF42 /* Newest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* Newest.swift */; };
@@ -45,6 +43,9 @@
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
 		F687667325141A27003090D2 /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687667225141A27003090D2 /* MailView.swift */; };
+		F687669A25153DE5003090D2 /* SwiftDB in Frameworks */ = {isa = PBXBuildFile; productRef = F687669925153DE5003090D2 /* SwiftDB */; };
+		F68766A025154300003090D2 /* CloudKitSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687669F251542FF003090D2 /* CloudKitSchema.swift */; };
+		F68766A6251543D2003090D2 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F68766A5251543D2003090D2 /* CloudKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,8 +103,6 @@
 		F669C931250C5DD400B1FF42 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F669C933250C5DDE00B1FF42 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F669C936250C5DDE00B1FF42 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		F669C938250C5DDE00B1FF42 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
-		F669C93B250C5DDE00B1FF42 /* claw.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = claw.xcdatamodel; sourceTree = "<group>"; };
 		F669C93D250C5DDE00B1FF42 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F669C942250C5DDE00B1FF42 /* clawTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clawTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C946250C5DDE00B1FF42 /* clawTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawTests.swift; sourceTree = "<group>"; };
@@ -126,6 +125,8 @@
 		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F687667225141A27003090D2 /* MailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailView.swift; sourceTree = "<group>"; };
+		F687669F251542FF003090D2 /* CloudKitSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSchema.swift; sourceTree = "<group>"; };
+		F68766A5251543D2003090D2 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +143,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F687669A25153DE5003090D2 /* SwiftDB in Frameworks */,
+				F68766A6251543D2003090D2 /* CloudKit.framework in Frameworks */,
 				F669C99B250ED07800B1FF42 /* WebView in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
@@ -167,6 +170,7 @@
 		F629116A251057E70065C3E9 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F68766A5251543D2003090D2 /* CloudKit.framework */,
 				F629116B251057E70065C3E9 /* WidgetKit.framework */,
 				F629116D251057E70065C3E9 /* SwiftUI.framework */,
 			);
@@ -211,6 +215,7 @@
 			children = (
 				F669C99E250EE89900B1FF42 /* claw.entitlements */,
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
+				F687669F251542FF003090D2 /* CloudKitSchema.swift */,
 				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F669C931250C5DD400B1FF42 /* ContentView.swift */,
 				F687666C2513FAAC003090D2 /* SettingsView.swift */,
@@ -232,9 +237,7 @@
 				F669C963250C711E00B1FF42 /* Story.swift */,
 				F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
-				F669C938250C5DDE00B1FF42 /* Persistence.swift */,
 				F669C93D250C5DDE00B1FF42 /* Info.plist */,
-				F669C93A250C5DDE00B1FF42 /* claw.xcdatamodeld */,
 				F669C935250C5DDE00B1FF42 /* Preview Content */,
 			);
 			path = claw;
@@ -304,6 +307,7 @@
 			packageProductDependencies = (
 				F669C969250C846200B1FF42 /* SwiftSoup */,
 				F669C99A250ED07800B1FF42 /* WebView */,
+				F687669925153DE5003090D2 /* SwiftDB */,
 			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
@@ -382,6 +386,7 @@
 			packageReferences = (
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */,
+				F687669825153DE5003090D2 /* XCRemoteSwiftPackageReference "SwiftDB" */,
 			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
@@ -455,17 +460,16 @@
 				F669C96C250C847000B1FF42 /* HTMLView.swift in Sources */,
 				F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */,
 				F6291185251059E60065C3E9 /* GenericUser.swift in Sources */,
-				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
 				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
 				F629118725105A0F0065C3E9 /* NewestStory.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
 				F62911822510599A0065C3E9 /* HottestFetcher.swift in Sources */,
 				F669C960250C5DF000B1FF42 /* Newest.swift in Sources */,
-				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* User.swift in Sources */,
 				F669C970250E74CB00B1FF42 /* Hottest.swift in Sources */,
+				F68766A025154300003090D2 /* CloudKitSchema.swift in Sources */,
 				F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */,
 				F669C96E250E746D00B1FF42 /* TagView.swift in Sources */,
 				F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */,
@@ -878,6 +882,14 @@
 				minimumVersion = 0.1.1;
 			};
 		};
+		F687669825153DE5003090D2 /* XCRemoteSwiftPackageReference "SwiftDB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vmanot/SwiftDB";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -891,20 +903,12 @@
 			package = F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */;
 			productName = WebView;
 		};
-/* End XCSwiftPackageProductDependency section */
-
-/* Begin XCVersionGroup section */
-		F669C93A250C5DDE00B1FF42 /* claw.xcdatamodeld */ = {
-			isa = XCVersionGroup;
-			children = (
-				F669C93B250C5DDE00B1FF42 /* claw.xcdatamodel */,
-			);
-			currentVersion = F669C93B250C5DDE00B1FF42 /* claw.xcdatamodel */;
-			path = claw.xcdatamodeld;
-			sourceTree = "<group>";
-			versionGroupType = wrapper.xcdatamodel;
+		F687669925153DE5003090D2 /* SwiftDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F687669825153DE5003090D2 /* XCRemoteSwiftPackageReference "SwiftDB" */;
+			productName = SwiftDB;
 		};
-/* End XCVersionGroup section */
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F669C924250C5DD400B1FF42 /* Project object */;
 }
