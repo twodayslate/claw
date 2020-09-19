@@ -2,7 +2,10 @@ import Foundation
 import SwiftUI
 
 class HottestFetcher: ObservableObject {
-    @Published var stories = [NewestStory]()
+    @Published var stories = HottestFetcher.cachedStories
+    
+    static var cachedStories = [NewestStory]()
+    
     init() {
         load()
     }
@@ -21,6 +24,7 @@ class HottestFetcher: ObservableObject {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
                             DispatchQueue.main.async {
+                                HottestFetcher.cachedStories = decodedLists
                                 self.stories = decodedLists
                             }
                         }else {

@@ -9,7 +9,9 @@ import Foundation
 import SwiftUI
 
 class NewestFetcher: ObservableObject {
-    @Published var stories = [NewestStory]()
+    @Published var stories = NewestFetcher.cachedStories
+    static var cachedStories = [NewestStory]()
+    
     init() {
         load()
     }
@@ -27,6 +29,7 @@ class NewestFetcher: ObservableObject {
                     if let d = data {
                         let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
                         DispatchQueue.main.async {
+                            NewestFetcher.cachedStories = decodedLists
                             self.stories = decodedLists
                         }
                     }else {
