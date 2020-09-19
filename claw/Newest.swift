@@ -14,35 +14,41 @@ class NewestFetcher: ObservableObject {
         load()
     }
     
+    deinit {
+        self.session?.cancel()
+    }
+    
+    private var session: URLSessionTask? = nil
+    
     func load() {
         let url = URL(string: "https://lobste.rs/newest.json")!
-            
-                URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                            DispatchQueue.main.async {
-                                self.stories = decodedLists
-                            }
-                        }else {
-                            print("No Data")
+    self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
+                do {
+                    if let d = data {
+                        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
+                        DispatchQueue.main.async {
+                            self.stories = decodedLists
                         }
-                    } catch {
-                        print ("Error \(error)")
+                    }else {
+                        print("No Data")
                     }
-                }.resume()
+                } catch {
+                    print ("Error \(error)")
+                }
+            }
+        self.session?.resume()
     }
 }
 
 struct NewestView: View {
     @ObservedObject var newest = NewestFetcher()
-    
+    @EnvironmentObject var settings: Settings
     var body: some View {
         NavigationView {
             List {
                 ForEach(newest.stories) { story in
                     SGNavigationLink(destination: StoryView(story)) {
-                        StoryCell(story: story)
+                        StoryCell(story: story).environmentObject(settings)
                     }
                 }
             }.navigationBarTitle("Newest")

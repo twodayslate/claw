@@ -37,10 +37,23 @@ extension GenericStory {
         if let date = dateFormatter.date(from:isoDate) {
             let minutes = abs(date.timeIntervalSinceNow/60)
             if minutes < 60 {
+                if minutes == 1 {
+                    return "1 minute ago"
+                }
                 return "\(Int(minutes)) minutes ago"
             }
             let hours = Int(minutes/60)
-            return "\(hours) hours ago"
+            if hours < 24 {
+                if hours == 1 {
+                    return "1 hour ago"
+                }
+                return "\(hours) hours ago"
+            }
+            let days = Int(hours/24)
+            if days == 1 {
+                return "1 day ago"
+            }
+            return "\(days) days ago"
         }
         
         return "unknown time ago"

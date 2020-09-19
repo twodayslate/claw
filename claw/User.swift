@@ -13,10 +13,16 @@ class UserFetcher: ObservableObject {
         load()
     }
     
+    deinit {
+        self.session?.cancel()
+    }
+    
+    private var session: URLSessionTask? = nil
+    
     func load() {
         let url = URL(string: "https://lobste.rs/u/" + self.username + ".json")!
             
-                URLSession.shared.dataTask(with: url) {(data,response,error) in
+        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode(NewestUser.self, from: d)
@@ -29,7 +35,8 @@ class UserFetcher: ObservableObject {
                     } catch {
                         print ("Error \(error)")
                     }
-                }.resume()
+                }
+        self.session?.resume()
     }
 }
 
@@ -45,9 +52,11 @@ struct UserView: View {
                 ).clipShape(Circle()).shadow(radius: 5.0)
                 Spacer()
             }
-            HStack {
-                Text("Karma").bold()
-                Text("\(user.karma)")
+            if let karma = user.karma {
+                HStack {
+                    Text("Karma").bold()
+                    Text("\(karma)")
+                }
             }
             if let username = user.github_username {
                 HStack {

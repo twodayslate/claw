@@ -17,9 +17,9 @@ struct NewestUser: Codable, Identifiable {
     var is_admin: Bool
     var about: String
     var is_moderator: Bool
-    var karma: Int
+    var karma: Int? // pushcx doesn't have any karma
     var avatar_url: String
-    var invited_by_user: String
+    var invited_by_user: String? // jcs wasn't invited by anyone
     var github_username: String?
     var twitter_username: String?
     var keybase_signatures: [KeybaseSignatures]?

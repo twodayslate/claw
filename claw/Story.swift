@@ -86,10 +86,16 @@ class StoryFetcher: ObservableObject {
         load()
     }
     
+    deinit {
+        self.session?.cancel()
+    }
+    
+    private var session: URLSessionTask? = nil
+    
     func load() {
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
             
-                URLSession.shared.dataTask(with: url) {(data,response,error) in
+        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode(Story.self, from: d)
@@ -102,6 +108,7 @@ class StoryFetcher: ObservableObject {
                     } catch {
                         print ("Error \(error)")
                     }
-                }.resume()
+                }
+        self.session?.resume()
     }
 }

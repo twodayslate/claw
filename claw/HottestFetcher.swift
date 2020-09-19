@@ -7,10 +7,16 @@ class HottestFetcher: ObservableObject {
         load()
     }
     
+    deinit {
+        self.session?.cancel()
+    }
+    
+    private var session: URLSessionTask? = nil
+    
     func load() {
         let url = URL(string: "https://lobste.rs/hottest.json")!
             
-                URLSession.shared.dataTask(with: url) {(data,response,error) in
+        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
@@ -22,7 +28,11 @@ class HottestFetcher: ObservableObject {
                         }
                     } catch {
                         print ("Error \(error)")
+                        if let data = data {
+                            print(String(data: data, encoding: .utf8))
+                        }
                     }
-                }.resume()
+                }
+        self.session?.resume()
     }
 }

@@ -13,6 +13,15 @@ import WebKit
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
+        
+    @FetchRequest(fetchRequest: Settings.fetchAllRequest()) var all_settings: FetchedResults<Settings>
+            
+    var settings: Settings {
+        if let first = self.all_settings.first {
+            return first
+        }
+        return Settings(context: viewContext)
+    }
 
     @State private var selection = 0
     
@@ -21,14 +30,14 @@ struct ContentView: View {
             HottestView().tabItem {
                 selection == 0 ? Image(systemName: "flame.fill") : Image(systemName: "flame")
                 Text("Hottest")
-            }.tag(0)
+            }.tag(0).environmentObject(settings)
             NewestView().tabItem {
                 selection == 1 ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
-            }.tag(1)
+            }.tag(1).environmentObject(settings)
             SettingsView().tabItem { Image(systemName: "gear")
                 Text("Settings")
-            }.tag(2)
+            }.tag(2).environment(\.managedObjectContext, viewContext).environmentObject(settings)
         }
     }
 }

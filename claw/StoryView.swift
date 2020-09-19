@@ -34,7 +34,11 @@ struct StoryView: View {
         return short_id
     }
     
-    @ObservedObject var webViewStore = WebViewStore(webView: WKWebView())
+    // https://stackoverflow.com/questions/58093295/swiftui-avoid-recreating-rerendering-view-in-tabview-with-mkmapviewuiviewrepre
+    // this webview is recreated everytime a settings changes and is slow af
+    static var webView = WKWebView()
+    
+    @ObservedObject var webViewStore = WebViewStore(webView: StoryView.webView)
     
     var body: some View {
         List {

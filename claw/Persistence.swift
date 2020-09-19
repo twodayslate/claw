@@ -1,11 +1,31 @@
-//
-//  Persistence.swift
-//  claw
-//
-//  Created by Zachary Gorak on 9/11/20.
-//
-
+import Foundation
 import CoreData
+
+public class Settings: NSManagedObject, Identifiable {
+    @NSManaged public var layoutValue: Double
+    @NSManaged public var timestamp: Date
+    
+    convenience init(context: NSManagedObjectContext) {
+        guard let entity = NSEntityDescription.entity(forEntityName: "Settings", in: context) else {
+            fatalError("No entity named Settings")
+        }
+        self.init(entity: entity, insertInto: context)
+        self.layoutValue = 2.0
+        self.timestamp = Date()
+    }
+}
+
+extension Settings {
+    // ❇️ The @FetchRequest property wrapper in the ContentView will call this function
+    static func fetchAllRequest() -> NSFetchRequest<Settings> {
+        let request: NSFetchRequest<Settings> = Settings.fetchRequest() as! NSFetchRequest<Settings>
+        
+        // ❇️ The @FetchRequest property wrapper in the ContentView requires a sort descriptor
+        request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: true)]
+        
+        return request
+    }
+}
 
 struct PersistenceController {
     static let shared = PersistenceController()
@@ -14,7 +34,7 @@ struct PersistenceController {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
         for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
+            let newItem = Settings(context: viewContext)
             newItem.timestamp = Date()
         }
         do {

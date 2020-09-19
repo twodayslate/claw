@@ -8,18 +8,26 @@
 import SwiftUI
 
 struct StoryCell: View {
+    @EnvironmentObject var settings: Settings
+    
     var story: NewestStory
     
     var body: some View {
         HStack(alignment: .center, spacing: 16.0) {
-            VStack {
-                Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                Text("\(story.score)").foregroundColor(.gray)
+            if settings.layoutValue > 1.0 {
+                VStack {
+                    Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
+                    Text("\(story.score)").foregroundColor(.gray)
+                }
             }
             VStack(alignment: .leading) {
                 Text(story.title).font(.headline).foregroundColor(Color.accentColor)
-                Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
-                TagList(tags: story.tags)
+                if settings.layoutValue > 0 {
+                    Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
+                }
+                if settings.layoutValue > 0 {
+                    TagList(tags: story.tags)
+                }
                 HStack {
                     SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
                         Text("via ").font(.subheadline).foregroundColor(Color.secondary) +

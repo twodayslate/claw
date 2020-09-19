@@ -46,6 +46,26 @@ struct SettingsLinkView: View {
     }
 }
 
+struct SettingsLayoutSlider: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject var settings: Settings
+    
+    var body: some View {
+        VStack {
+            StoryCell(story: NewestStory(short_id: "bmqi6l", short_id_url: "https://lobste.rs/s/bmqi6l", created_at: "2020-09-17T08:35:19.000-05:00", title: "Story title", url: "https://lobste.rs", score: 6, flags: 0, comment_count: 9, description: "Description", comments_url: "", submitter_user: NewestUser(username: "username", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "", is_moderator: false, karma: 1, avatar_url: "/avatars/username-100.png", invited_by_user: "twodayslate", github_username: nil, twitter_username: nil, keybase_signatures: nil), tags: ["programming", "apple"])).environmentObject(settings).allowsHitTesting(false)
+            HStack {
+                Image(systemName: "doc.plaintext")
+                Slider(value: $settings.layoutValue, in: 0...2, step: 1, onEditingChanged: { _ in
+                    try? settings.managedObjectContext?.save()
+                }) {
+                        Text("Layout")
+                }
+                Image(systemName: "doc.richtext")
+            }
+        }
+    }
+}
+
 struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
@@ -66,9 +86,14 @@ struct SettingsView: View {
              "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
     }
     
+    @EnvironmentObject var settings: Settings
+    
     var body: some View {
         NavigationView {
             List {
+                Section(header: Text("Layout")) {
+                    SettingsLayoutSlider().environmentObject(settings)
+                }
                 Section {
                     SettingsLinkView(icon: Image("github"), text: "GitHub", url: "https://github.com/twodayslate/claw")
                     SettingsLinkView(icon: Image("twitter"), text: "Twitter", url: twitterURL.absoluteString)
@@ -110,7 +135,7 @@ struct SettingsView: View {
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            SettingsView()
+            SettingsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
         }.previewLayout(.sizeThatFits)
         
     }
