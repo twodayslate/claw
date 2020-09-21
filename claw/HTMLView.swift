@@ -24,7 +24,7 @@ struct NodesView: View {
         
         func clearText() {
             if hasAddedText {
-                ans.append(AnyView(combined))
+                ans.append(AnyView(combined.fixedSize(horizontal: false, vertical: true)))
             }
             combined = Text("")
             hasAddedText = false
@@ -138,15 +138,21 @@ struct NodesView: View {
     }
 }
 
+struct HTMLLink: Codable, Hashable {
+    var text: String
+    var url: String
+}
+
 struct HTMLView: View {
     var html: String
     
-    func getLinks(_ from_nodes: [Node]) -> [String] {
-        var ans = [String]()
+    func getLinks(_ from_nodes: [Node]) -> [HTMLLink] {
+        var ans = [HTMLLink]()
         for node in from_nodes {
             if let element = node as? Element {
                 if element.tagName() == "a" && element.hasAttr("href") {
-                    ans.append(try! element.attr("href"))
+                    let link = HTMLLink(text: (try? element.text()) ?? "", url: try! element.attr("href"))
+                    ans.append(link)
                 }
             }
             ans = ans + getLinks(node.getChildNodes())
@@ -154,7 +160,7 @@ struct HTMLView: View {
         return ans
     }
     
-    var links: [String] {
+    var links: [HTMLLink] {
         return getLinks(nodes)
     }
     

@@ -8,13 +8,18 @@
 import SwiftUI
 
 struct URLView: View {
-    var link: String
+    var link: HTMLLink
     var body: some View {
-        Text("\(link)").padding().font(.footnote).foregroundColor(Color.primary).background(Color.secondary).overlay(
+        VStack(alignment: .leading){
+            if link.text != link.url {
+                Text("\(link.text)").font(.footnote).bold().foregroundColor(Color.primary)
+            }
+            Text("\(link.url)").font(.caption).foregroundColor(Color.primary)
+        }.padding().background(Color.secondary).overlay(
             RoundedRectangle(cornerRadius: 8.0)
                 .stroke(Color.primary, lineWidth: 2.0)
         ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
-            UIApplication.shared.open(URL(string: link)!)
+            UIApplication.shared.open(URL(string: link.url)!)
         }
     }
 }
@@ -22,7 +27,7 @@ struct URLView: View {
 struct URLView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            URLView(link: "https://zac.gorak.us")
+            URLView(link: HTMLLink(text: "zac.gorak.us", url: "https://zac.gorak.us"))
         }.previewLayout(.sizeThatFits)
         
     }
