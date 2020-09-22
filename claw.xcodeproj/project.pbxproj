@@ -45,6 +45,10 @@
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
 		F687667325141A27003090D2 /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687667225141A27003090D2 /* MailView.swift */; };
+		F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DA25196C9B003090D2 /* Classic@3x.png */; };
+		F68766DF25196C9B003090D2 /* claw@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DB25196C9B003090D2 /* claw@2x.png */; };
+		F68766E025196C9B003090D2 /* claw@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DC25196C9B003090D2 /* claw@3x.png */; };
+		F68766E125196C9B003090D2 /* Classic@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DD25196C9B003090D2 /* Classic@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,6 +130,10 @@
 		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F687667225141A27003090D2 /* MailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailView.swift; sourceTree = "<group>"; };
+		F68766DA25196C9B003090D2 /* Classic@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@3x.png"; sourceTree = "<group>"; };
+		F68766DB25196C9B003090D2 /* claw@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@2x.png"; sourceTree = "<group>"; };
+		F68766DC25196C9B003090D2 /* claw@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@3x.png"; sourceTree = "<group>"; };
+		F68766DD25196C9B003090D2 /* Classic@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,6 +217,7 @@
 		F669C92E250C5DD400B1FF42 /* claw */ = {
 			isa = PBXGroup;
 			children = (
+				F68766D925196BD4003090D2 /* icons */,
 				F669C99E250EE89900B1FF42 /* claw.entitlements */,
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
 				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
@@ -264,6 +273,17 @@
 				F669C953250C5DDE00B1FF42 /* Info.plist */,
 			);
 			path = clawUITests;
+			sourceTree = "<group>";
+		};
+		F68766D925196BD4003090D2 /* icons */ = {
+			isa = PBXGroup;
+			children = (
+				F68766DD25196C9B003090D2 /* Classic@2x.png */,
+				F68766DA25196C9B003090D2 /* Classic@3x.png */,
+				F68766DB25196C9B003090D2 /* claw@2x.png */,
+				F68766DC25196C9B003090D2 /* claw@3x.png */,
+			);
+			path = icons;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -410,6 +430,10 @@
 			files = (
 				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
+				F68766E125196C9B003090D2 /* Classic@2x.png in Resources */,
+				F68766E025196C9B003090D2 /* claw@3x.png in Resources */,
+				F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */,
+				F68766DF25196C9B003090D2 /* claw@2x.png in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -523,7 +547,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -546,7 +570,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -689,7 +713,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
@@ -717,7 +741,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;

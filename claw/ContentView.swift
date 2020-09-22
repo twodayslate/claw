@@ -18,8 +18,18 @@ struct ContentView: View {
             
     var settings: Settings {
         if let first = self.all_settings.first {
+            if UIApplication.shared.alternateIconName != first.alternateIconName {
+                UIApplication.shared.setAlternateIconName(first.alternateIconName, completionHandler: {error in
+                    if let _ = error {
+                        first.alternateIconName = nil
+                        try? first.managedObjectContext?.save()
+                        return
+                    }
+                })
+            }
             return first
         }
+
         return Settings(context: viewContext)
     }
 
@@ -38,7 +48,7 @@ struct ContentView: View {
             SettingsView().tabItem { Image(systemName: "gear")
                 Text("Settings")
             }.tag(2).environment(\.managedObjectContext, viewContext).environmentObject(settings)
-        }
+        }.accentColor(settings.accentColor)
     }
 }
 

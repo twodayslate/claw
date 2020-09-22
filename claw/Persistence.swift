@@ -1,9 +1,12 @@
 import Foundation
 import CoreData
+import SwiftUI
 
 public class Settings: NSManagedObject, Identifiable {
     @NSManaged public var layoutValue: Double
     @NSManaged public var timestamp: Date
+    @NSManaged public var alternateIconName: String?
+    @NSManaged public var accentColorData: Data?
     
     convenience init(context: NSManagedObjectContext) {
         guard let entity = NSEntityDescription.entity(forEntityName: "Settings", in: context) else {
@@ -12,6 +15,26 @@ public class Settings: NSManagedObject, Identifiable {
         self.init(entity: entity, insertInto: context)
         self.layoutValue = 2.0
         self.timestamp = Date()
+        self.alternateIconName = nil
+        self.accentColorData = UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0).data
+    }
+    
+    var defaultAccentColor: UIColor {
+        return UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0)
+    }
+    
+    var accentUIColor: UIColor {
+        guard let data = self.accentColorData  else {
+            return defaultAccentColor
+        }
+        guard let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) else {
+            return defaultAccentColor
+        }
+        return color
+    }
+    
+    var accentColor: Color {
+        return Color(accentUIColor)
     }
 }
 

@@ -76,6 +76,97 @@ struct SettingsLayoutSlider: View {
     }
 }
 
+struct AppIcon: Codable {
+    var alternateIconName: String?
+    var name: String
+    var assetName: String
+}
+
+struct AppIconView: View {
+    var icon: AppIcon
+    
+    @EnvironmentObject var settings: Settings
+    
+    var body: some View {
+        let path = Bundle.main.resourcePath! + "/" + icon.assetName
+        HStack {
+            Image(uiImage: UIImage(contentsOfFile: path)!).clipShape(RoundedRectangle(cornerRadius: 18.0, style: .circular))
+            Text("\(icon.name)")
+            if settings.alternateIconName == icon.alternateIconName {
+                Spacer()
+                Image(systemName: "checkmark").foregroundColor(.accentColor)
+            }
+        }
+    }
+}
+
+struct ColorIconView: View {
+    var color: UIColor
+    
+    @EnvironmentObject var settings: Settings
+    
+    var body: some View {
+        Button(action: {
+            settings.accentColorData = color.data
+        }, label: {
+            HStack {
+                Image(systemName: "app.fill").foregroundColor(Color(color))
+                Text("\(color.name ?? "Unkown")")
+                if settings.accentColor == Color(color) {
+                    Spacer()
+                    Image(systemName: "checkmark").foregroundColor(.accentColor)
+                }
+            }
+        })
+        
+    }
+}
+
+struct AccentColorChooserView: View {
+    @EnvironmentObject var settings: Settings
+    
+    var body: some View {
+        List {
+            ForEach([settings.defaultAccentColor, UIColor.black, UIColor.white, UIColor.systemRed, UIColor.systemBlue, UIColor.systemGreen, UIColor.systemGray, UIColor.systemYellow, UIColor.systemTeal, UIColor.systemOrange, UIColor.systemPurple, UIColor.systemIndigo], id: \.self) { color in
+                ColorIconView(color: color)
+            }
+        }.navigationTitle("Accent Color")
+    }
+}
+
+struct AppIconChooserView: View {
+    @EnvironmentObject var settings: Settings
+    
+    var body: some View {
+        List {
+            Button(action: {
+                UIApplication.shared.setAlternateIconName(nil, completionHandler: {error in
+                    guard error == nil else {
+                        // show error
+                        return
+                    }
+                    settings.alternateIconName = nil
+                    try? settings.managedObjectContext?.save()
+                })
+            }, label: {
+                AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png")).environmentObject(settings)
+            })
+            Button(action: {
+                UIApplication.shared.setAlternateIconName("Classic", completionHandler: { error in
+                    guard error == nil else {
+                        // show error
+                        return
+                    }
+                    settings.alternateIconName = "Classic"
+                    try? settings.managedObjectContext?.save()
+                })
+            }, label: {
+                AppIconView(icon: AppIcon(alternateIconName: "Classic", name: "Classic", assetName: "Classic@2x.png")).environmentObject(settings)
+            })
+        }.navigationTitle("App Icon")
+    }
+}
+
 struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
@@ -101,6 +192,28 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
+                Section(header: Text("Appearance")) {
+                    NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
+                        Label(title: {
+                            HStack {
+                                Text("App Icon")
+                                Spacer()
+                                Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
+                            }
+                            
+                        }, icon: {Image(systemName: "app.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
+                    })
+                    NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
+                        Label(title: {
+                            HStack {
+                                Text("Accent Color")
+                                Spacer()
+                                Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                            }
+                            
+                        }, icon: {Image(systemName: "paintbrush.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
+                    })
+                }
                 Section(header: Text("Layout")) {
                     SettingsLayoutSlider().environmentObject(settings)
                 }

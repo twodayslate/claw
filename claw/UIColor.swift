@@ -36,3 +36,50 @@ extension UIColor {
     func lighter(by amount: CGFloat = 0.2) -> Self { mix(with: .white, amount: amount) }
     func darker(by amount: CGFloat = 0.2) -> Self { mix(with: .black, amount: amount) }
 }
+
+extension UIColor {
+    var data: Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false)
+    }
+}
+
+extension UIColor {
+    var name: String? {
+        if #available(iOS 13.0, *) {
+            switch self {
+                case .systemIndigo:
+                    return "System Indigo"
+            default:
+                break
+            }
+        }
+        switch self {
+        case UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0):
+            return "Lobsters Red"
+        case .systemPurple:
+            return "System Purple"
+        case .systemOrange:
+            return "System Orange"
+        case .systemTeal:
+            return "System Teal"
+        case .systemPink:
+            return "System Pink"
+        case .systemBlue:
+            return "System Blue"
+        case .systemRed:
+            return "System Red"
+        case .systemGray:
+            return "System Gray"
+        case .systemGreen:
+            return "System Green"
+        case .systemYellow:
+            return "System Yellow"
+        case .white:
+            return "White"
+        case .black:
+            return "Black"
+        default:
+            return nil
+        }
+    }
+}
