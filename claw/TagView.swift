@@ -8,11 +8,14 @@ struct TagView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var color: Color {
-        if tag == "ask" || tag == "show" {
+        if tag == "ask" || tag == "show" || tag == "announce" || tag == "interview" {
             return Color(UIColor.systemRed.lighter(by: 0.5))
         }
         if tag == "video" || tag == "audio" || tag == "pdf" || tag == "slides" || tag == "transcript" {
             return Color(UIColor.systemBlue.lighter(by: 0.5))
+        }
+        if tag == "meta" {
+            return Color(UIColor.systemGray.lighter(by: 0.5))
         }
         return Color(UIColor.systemYellow.lighter(by: 0.5))
     }
@@ -48,9 +51,9 @@ struct TagView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             TagView(tag: "apple")
-            TagList(tags: ["programming", "philosophy", "video", "ask"])
+            TagList(tags: ["programming", "philosophy", "video", "ask", "meta"])
             ZStack {
-                TagList(tags: ["show", "apple", "video", "ask"])
+                TagList(tags: ["show", "apple", "video", "ask", "meta"])
             }.background(Color(UIColor.systemBackground)).environment(\.colorScheme, .dark)
         }.previewLayout(.sizeThatFits)
     }
