@@ -137,6 +137,7 @@ struct AccentColorChooserView: View {
 struct AppIconChooserView: View {
     @EnvironmentObject var settings: Settings
     
+    @State var showAlert = false
     var body: some View {
         List {
             Button(action: {
@@ -154,7 +155,7 @@ struct AppIconChooserView: View {
             Button(action: {
                 UIApplication.shared.setAlternateIconName("Classic", completionHandler: { error in
                     guard error == nil else {
-                        // show error
+                        showAlert = true
                         return
                     }
                     settings.alternateIconName = "Classic"
@@ -163,7 +164,9 @@ struct AppIconChooserView: View {
             }, label: {
                 AppIconView(icon: AppIcon(alternateIconName: "Classic", name: "Classic", assetName: "Classic@2x.png")).environmentObject(settings)
             })
-        }.navigationTitle("App Icon")
+        }.navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
+            Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
+        })
     }
 }
 
@@ -193,16 +196,18 @@ struct SettingsView: View {
         NavigationView {
             List {
                 Section(header: Text("Appearance")) {
-                    NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
-                        Label(title: {
-                            HStack {
-                                Text("App Icon")
-                                Spacer()
-                                Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
-                            }
-                            
-                        }, icon: {Image(systemName: "app.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
-                    })
+                    if UIApplication.shared.supportsAlternateIcons {
+                        NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
+                            Label(title: {
+                                HStack {
+                                    Text("App Icon")
+                                    Spacer()
+                                    Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
+                                }
+                                
+                            }, icon: {Image(systemName: "app.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
+                        })
+                    }
                     NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
                         Label(title: {
                             HStack {
