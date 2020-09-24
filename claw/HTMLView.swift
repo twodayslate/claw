@@ -89,12 +89,12 @@ struct NodesView: View {
                 } else if element.tagName() == "ul" {
                     clearText()
                     let stack = VStack(alignment: .leading, spacing: 4.0) {
-                        AnyView(NodesView(nodes: try! element.getChildNodes()))
+                        AnyView(NodesView(nodes: element.getChildNodes()))
                     }
                     ans.append(AnyView(stack))
                 } else if element.tagName() == "ol" {
                     clearText()
-                    var nv = NodesView(nodes: try! element.getChildNodes())
+                    var nv = NodesView(nodes: element.getChildNodes())
                     nv.bullet = "#"
                     let stack = VStack(alignment: .leading, spacing: 4.0) {
                         AnyView(nv)
@@ -110,13 +110,15 @@ struct NodesView: View {
                         }
                         
                         
-                        AnyView(NodesView(nodes: try! element.getChildNodes()))
+                        AnyView(NodesView(nodes: element.getChildNodes()))
                     }.padding(EdgeInsets(top: 0, leading: 8.0, bottom: 0, trailing: 0))
                     ans.append(AnyView(stack))
                 }
                 else {
                     clearText()
-                    ans.append(AnyView(NodesView(nodes: try! element.getChildNodes())))
+                    ans.append(AnyView(NodesView(nodes: element.getChildNodes())))
+
+                    
                 }
             }
         }
@@ -167,21 +169,25 @@ struct HTMLView: View {
     var views: Elements {
         do {
             let doc = try SwiftSoup.parseBodyFragment(html)
-            print(doc)
-            return try doc.body()?.children() ?? Elements()
+            if let _elements = doc.body()?.children() {
+                return _elements
+            }
         } catch {
-            return Elements()
+            //
         }
+        return Elements()
     }
-    
+
     var nodes: [Node] {
         do {
             let doc = try SwiftSoup.parseBodyFragment(html)
-            print(doc)
-            return try doc.body()?.getChildNodes() as! [Node]
+            if let _nodes = doc.body()?.getChildNodes() {
+                return _nodes
+            }
         } catch {
-            return [Node]()
+            //
         }
+        return [Node]()
     }
     
     var body: some View {

@@ -32,9 +32,6 @@ class HottestFetcher: ObservableObject {
                         }
                     } catch {
                         print ("Error \(error)")
-                        if let data = data {
-                            print(String(data: data, encoding: .utf8))
-                        }
                     }
                 }
         self.session?.resume()

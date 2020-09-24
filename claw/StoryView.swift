@@ -176,11 +176,12 @@ struct StoryView: View {
                             }
                         }, rowContent: { comment in
                             VStack(alignment: .leading, spacing: 8.0) {
+                                let html = HTMLView(html: comment.comment.comment)
                                 HStack {
-                                    HTMLView(html: comment.comment.comment)
-                                    Spacer(minLength: 0)
+                                    html
+                                    Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                                 }
-                                ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
+                                ForEach(html.links, id: \.self) { link in
                                         URLView(link: link)
                                 }
                             }

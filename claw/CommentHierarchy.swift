@@ -10,8 +10,8 @@ public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: V
   }
 
   public var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      recursiveView
+    LazyVStack(alignment: .leading, spacing: 0) {
+        recursiveView
     }
   }
 }
