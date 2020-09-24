@@ -2,6 +2,104 @@ import SwiftUI
 import WebView
 import WebKit
 
+
+struct StoryHeaderView<T: GenericStory>: View {
+    var story: T
+    
+    @ObservedObject var webViewStore: WebViewStore
+    
+    @State var activeSheet: ActiveSheet?
+    
+    @EnvironmentObject var settings: Settings
+    
+    @State var navigationLinkActive = false
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(story.title).font(.title2).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
+                    if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
+                        NavigationLink(
+                            destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? story.title),
+                            isActive: $navigationLinkActive,
+                            label: {
+                                Text(host).foregroundColor(Color.secondary).font(.callout)
+                            }).padding([.bottom], 4.0).onAppear {
+                            webViewStore.webView.load(URLRequest(url: url))
+                        }
+                    }
+                    HStack(alignment: .center, spacing: 16.0) {
+                        VStack {
+                            Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
+                            Text("\(story.score)").foregroundColor(.gray)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            TagList(tags: story.tags)
+                            SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
+                                Text("via ").font(.callout).foregroundColor(Color.secondary) +
+                                Text(story.submitter_user.username).font(.callout).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                                    Text(" " + story.time_ago).font(.callout).foregroundColor(Color.secondary)
+                            }
+                        }
+                    }
+                }
+                Spacer(minLength: 0)// ensure full width
+            }.padding().background(Color(UIColor.systemBackground).ignoresSafeArea()).contextMenu(menuItems: {
+                if story.url.isEmpty {
+                    Button(action: {
+                        activeSheet = .second
+                    }, label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    })
+                } else {
+                    Menu(content: {
+                        Button(action: {
+                            activeSheet = .second
+                        }, label: {
+                            Label("Lobsters URL", systemImage: "book")
+                        })
+                        if !story.url.isEmpty {
+                            Button(action: {
+                                activeSheet = .first
+                            }, label: {
+                                Label("Story URL", systemImage: "link")
+                            })
+                        }
+                    }, label: {
+                        Label("Share", systemImage: "square.and.arrow.up.on.square")
+                    })
+                }
+            }).sheet(item: self.$activeSheet) {
+                item in
+                if item == .first {
+                    ShareSheet(activityItems: [URL(string: story.url)!])
+                } else if item == .second {
+                    ShareSheet(activityItems: [URL(string: story.short_id_url)!])
+                } else {
+                    Text("\(activeSheet.debugDescription)")
+                }
+            }
+
+            if story.description.count > 0 {
+                Divider().padding([.leading, .trailing])
+                VStack(alignment: .leading) {
+                    let html = HTMLView(html: story.description)
+                    html.fixedSize(horizontal: false, vertical: true)
+                    ForEach(html.links, id: \.self) { link in
+                        URLView(link: link)
+                    }
+                }.padding()
+            }
+            Divider()
+        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+            navigationLinkActive = true
+        })
+    }
+}
+
+
 struct StoryView: View {
     var short_id: String
     var from_newest: NewestStory?
@@ -40,62 +138,45 @@ struct StoryView: View {
     
     @ObservedObject var webViewStore = WebViewStore(webView: StoryView.webView)
     
+    @State var activeSheet: ActiveSheet?
+    
+    @EnvironmentObject var settings: Settings
+    
     var body: some View {
-        List {
-            if let generic: GenericStory = story.story ?? from_newest {
-                VStack(alignment: .leading) {
-                    Text(generic.title).lineLimit(3).font(.title2).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
-                    if let url = URL(string: generic.url), let host = url.host, !(host.isEmpty) {
-                        SGNavigationLink(destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? generic.title)) {
-                            Text(host).foregroundColor(Color.secondary).font(.callout)
-                        }.onAppear {
-                            webViewStore.webView.load(URLRequest(url: url))
-                        }
-                    }
-                    HStack(alignment: .center, spacing: 16.0) {
-                        Text("\(generic.score)")
-                        VStack(alignment: .leading) {
-                            TagList(tags: generic.tags)
-                            SGNavigationLink(destination: UserView(user: generic.submitter_user), withChevron: false) {
-                                Text("via ").font(.callout).foregroundColor(Color.secondary) +
-                                Text(generic.submitter_user.username).font(.callout).foregroundColor(generic.submitter_user.is_admin ? Color.red : (generic.submitter_user.is_moderator ? Color.green : Color.gray)) +
-                                    Text(" " + generic.time_ago).font(.callout).foregroundColor(Color.secondary)
-                            }
-                        }
-                    }
-                    if generic.description.count > 0 {
-                        VStack(alignment: .leading) {
-                            HTMLView(html: generic.description).fixedSize(horizontal: false, vertical: true)
-                            ForEach(HTMLView(html: generic.description).links, id: \.self) { link in
-                                URLView(link: link)
-                            }
-                        }
-                    }
+        ScrollView {
+            VStack(alignment: .leading) {
+                if let story = story.story {
+                    StoryHeaderView<Story>(story: story, webViewStore: webViewStore).environmentObject(settings)
                 }
-            }
-            if let my_story = story.story {
-                if  my_story.comments.count > 0 {
-                    HierarchyList(data: my_story.sorted_comments, children: \.children, header: { comment in
-                        AnyView(HStack(alignment: .center) {
-                            SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
-                                Text(comment.comment.commenting_user.username).foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
-                        })
-                    }, rowContent: { comment in
-                        VStack(alignment: .leading, spacing: 8.0) {
-                            HTMLView(html: comment.comment.comment)
-                            ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
-                                    URLView(link: link)
-                            }
+                else if let story = from_newest  {
+                    StoryHeaderView<NewestStory>(story: story, webViewStore: webViewStore).environmentObject(settings)
+                }
+                if let my_story = story.story {
+                    if  my_story.comments.count > 0 {
+                        HStack {
+                            HierarchyList(data: my_story.sorted_comments, header: { comment in
+                                HStack(alignment: .center) {
+                                    SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                                        Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                                    }
+                                    Spacer()
+                                    Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                                }
+                            }, rowContent: { comment in
+                                VStack(alignment: .leading, spacing: 8.0) {
+                                    HTMLView(html: comment.comment.comment)
+                                    ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
+                                            URLView(link: link)
+                                    }
+                                }
+                            })
                         }
-                    })
-                } else {
-                    HStack {
-                        Spacer()
-                        Text("No comments").foregroundColor(.gray)
-                        Spacer()
+                    } else {
+                        HStack {
+                            Spacer()
+                            Text("No comments").foregroundColor(.gray)
+                            Spacer()
+                        }.padding()
                     }
                 }
             }

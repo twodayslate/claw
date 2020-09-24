@@ -50,9 +50,7 @@ struct NewestView: View {
         NavigationView {
             List {
                 ForEach(newest.stories) { story in
-                    SGNavigationLink(destination: StoryView(story)) {
-                        StoryCell(story: story).environmentObject(settings)
-                    }
+                    StoryListCellView(story: story).environmentObject(settings)
                 }
             }.navigationBarTitle("Newest")
         }

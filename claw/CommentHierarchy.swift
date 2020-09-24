@@ -2,11 +2,11 @@ import SwiftUI
 
 // From https://fivestars.blog/code/swiftui-hierarchy-list.html
 
-public struct HierarchyList<Data, RowContent>: View where Data: RandomAccessCollection, Data.Element: Identifiable, RowContent: View {
-  private let recursiveView: RecursiveView<Data, RowContent>
+public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
+  private let recursiveView: RecursiveView<RowContent, HeaderContent>
 
-    public init(data: Data, children: KeyPath<Data.Element, Data?>, header: @escaping (Data.Element) -> AnyView, rowContent: @escaping (Data.Element) -> RowContent) {
-        self.recursiveView = RecursiveView(data: data, children: children, header: header, rowContent: rowContent, indentLevel: 0)
+    init(data: [CommentStructure], header: @escaping (CommentStructure) -> HeaderContent, rowContent: @escaping (CommentStructure) -> RowContent) {
+        self.recursiveView = RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0)
   }
 
   public var body: some View {
@@ -16,52 +16,80 @@ public struct HierarchyList<Data, RowContent>: View where Data: RandomAccessColl
   }
 }
 
-private struct RecursiveView<Data, RowContent>: View where Data: RandomAccessCollection, Data.Element: Identifiable, RowContent: View {
-    let data: Data
-    let children: KeyPath<Data.Element, Data?>
-    let header: (Data.Element) -> AnyView
-    let rowContent: (Data.Element) -> RowContent
+private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
+    let data: [CommentStructure]
+    let header: (CommentStructure) -> HeaderContent
+    let rowContent: (CommentStructure) -> RowContent
     let indentLevel: Int
-
-    var commentColor: Color {
-        switch(indentLevel) {
-        case 1:
-            return Color.blue.opacity(0.5)
-        case 2:
-            return Color.green.opacity(0.5)
-        case 3:
-            return Color.orange.opacity(0.5)
-        case 4:
-            return Color.pink.opacity(0.5)
-        case 5:
-            return Color.red.opacity(0.5)
-        case 6:
-            return Color.yellow.opacity(0.5)
-        case 7:
-            return Color.purple.opacity(0.5)
-        default:
-            return Color.accentColor.opacity(0.5)
-        }
-    }
+    
     
   var body: some View {
     ForEach(data) { child in
-        VStack(alignment: .leading) {
-            FSDisclosureGroup {
-                VStack(alignment: .leading) {
-                    rowContent(child)
-                    if let subChildren = child[keyPath: children] {
-                        VStack(alignment: .leading) {
-                            RecursiveView(data: subChildren, children: children, header: header, rowContent: rowContent, indentLevel: indentLevel+1)
-                        }.padding([.leading], 16.0).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading), alignment: .leading)
-                    }
-                }
-            } label: {
-                header(child)
-            }
-        }
+        HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child)
     }
   }
+}
+
+struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
+    
+    let header: (CommentStructure) -> HeaderContent
+    let rowContent: (CommentStructure) -> RowContent
+    let indentLevel: Int
+    
+    var child: CommentStructure
+    
+    @State var showShareSheet = false
+    
+    var commentColor: Color {
+        switch(indentLevel % 7) {
+            case 0:
+                return Color.blue.opacity(0.5)
+            case 1:
+                return Color.green.opacity(0.5)
+            case 2:
+                return Color.orange.opacity(0.5)
+            case 3:
+                return Color.pink.opacity(0.5)
+            case 4:
+                return Color.red.opacity(0.5)
+            case 5:
+                return Color.yellow.opacity(0.5)
+            default:
+                return Color.purple.opacity(0.5)
+        }
+    }
+    
+    @State var isExpanded: Bool = true
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            DisclosureGroup(
+                isExpanded: $isExpanded,
+                content: {
+                    VStack(alignment: .leading) {
+                        rowContent(child).padding([.horizontal])
+                        Divider().padding([.horizontal])
+                        if let subChildren = child.children {
+                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading), alignment: .leading).padding([.leading], 16)
+                        }
+                    }
+                },
+                label: {
+                    header(child).padding([.horizontal])
+                }).offset(x: -4) // fix visual bug
+        }.padding(indentLevel == 0 ? [.trailing] : []).background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all)).contextMenu(menuItems: {
+                Button(action: {
+                    showShareSheet = true
+                }, label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                })
+                Button(action: {
+                    isExpanded.toggle()
+                }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: "rectangle.expand.vertical")})
+            }).sheet(isPresented: $showShareSheet) {
+                ShareSheet(activityItems: [URL(string: child.comment.short_id_url)!])
+            }
+    }
 }
 
 struct FSDisclosureGroup<Label, Content>: View where Label: View, Content: View {
