@@ -10,7 +10,7 @@ public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: V
   }
 
   public var body: some View {
-    VStack(alignment: .leading) {
+    VStack(alignment: .leading, spacing: 0) {
       recursiveView
     }
   }
@@ -25,7 +25,7 @@ private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: 
     
   var body: some View {
     ForEach(data) { child in
-        HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child)
+        HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child, last: child == data.last)
     }
   }
 }
@@ -39,6 +39,8 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     var child: CommentStructure
     
     @State var showShareSheet = false
+    
+    var last = false
     
     var commentColor: Color {
         switch(indentLevel % 7) {
@@ -61,34 +63,49 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     
     @State var isExpanded: Bool = true
     
+    @State var backgroundColorState = Color(UIColor.systemBackground)
+    
     var body: some View {
         VStack(alignment: .leading) {
             DisclosureGroup(
                 isExpanded: $isExpanded,
                 content: {
-                    VStack(alignment: .leading) {
-                        rowContent(child).padding([.horizontal])
-                        Divider().padding([.horizontal])
+                    VStack(alignment: .leading, spacing: 0) {
+                        rowContent(child).padding([.leading])
                         if let subChildren = child.children {
-                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading), alignment: .leading).padding([.leading], 16)
+                            Divider().padding([.top, .leading])
+                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
                         }
                     }
                 },
                 label: {
-                    header(child).padding([.horizontal])
-                }).offset(x: -4) // fix visual bug
-        }.padding(indentLevel == 0 ? [.trailing] : []).background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all)).contextMenu(menuItems: {
+                    header(child).padding([.leading])
+                }).padding([.top], 6.0).padding(indentLevel > 0 ? [.trailing] : [], 4.0)
+            if !last {
+                Divider().padding([.horizontal])
+            }
+        }.padding(indentLevel == 0 ? [.trailing] : []).background(backgroundColorState.edgesIgnoringSafeArea(.all)).contextMenu(menuItems: {
                 Button(action: {
                     showShareSheet = true
                 }, label: {
                     Label("Share", systemImage: "square.and.arrow.up")
                 })
                 Button(action: {
-                    isExpanded.toggle()
+                    withAnimation(.easeIn) {
+                        isExpanded.toggle()
+                    }
                 }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: "rectangle.expand.vertical")})
             }).sheet(isPresented: $showShareSheet) {
                 ShareSheet(activityItems: [URL(string: child.comment.short_id_url)!])
-            }
+            }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+                withAnimation(.easeIn) {
+                    backgroundColorState = Color(UIColor.systemGray4)
+                    withAnimation(.easeOut) {
+                        backgroundColorState = Color(UIColor.systemBackground)
+                    }
+                    isExpanded.toggle()
+                }
+            })
     }
 }
 

@@ -15,7 +15,7 @@ struct StoryCell: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16.0) {
             if settings.layoutValue > 1.0 {
-                VStack {
+                VStack(alignment: .leading) {
                     Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
                     Text("\(story.score)").foregroundColor(.gray)
                 }

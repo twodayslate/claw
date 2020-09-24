@@ -74,7 +74,7 @@ struct SmallestHottestWidgetView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             Text("\(Image(systemName: "flame"))").font(Font.system(size: 125)).foregroundColor(.red).opacity(0.4).padding([.top, .leading], -25)
-            VStack {
+            VStack(alignment: .leading) {
                 Spacer(minLength: 0)
                 if let stories = entry.stories, let story = stories.first {
                     Text(story.title).font(.subheadline)

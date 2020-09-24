@@ -77,7 +77,7 @@ struct UserView: View {
             if let keybase = user.keybase_signatures {
                 HStack {
                     Text("Keybase").bold()
-                    VStack {
+                    VStack(alignment: .leading) {
                         ForEach(keybase) { auth in
                             HStack {
                                 Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {

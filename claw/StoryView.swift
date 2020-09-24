@@ -14,6 +14,8 @@ struct StoryHeaderView<T: GenericStory>: View {
     
     @State var navigationLinkActive = false
     
+    @State var backgroundColorState = Color(UIColor.systemBackground)
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -30,7 +32,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         }
                     }
                     HStack(alignment: .center, spacing: 16.0) {
-                        VStack {
+                        VStack(alignment: .leading) {
                             Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
                             Text("\(story.score)").foregroundColor(.gray)
                         }
@@ -46,7 +48,10 @@ struct StoryHeaderView<T: GenericStory>: View {
                     }
                 }
                 Spacer(minLength: 0)// ensure full width
-            }.padding().background(Color(UIColor.systemBackground).ignoresSafeArea()).contextMenu(menuItems: {
+                if !story.url.isEmpty {
+                    Image(systemName: "chevron.right").foregroundColor(Color.gray)
+                }
+            }.padding().background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems: {
                 if story.url.isEmpty {
                     Button(action: {
                         activeSheet = .second
@@ -92,9 +97,14 @@ struct StoryHeaderView<T: GenericStory>: View {
                     }
                 }.padding()
             }
-            Divider()
         }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
-            navigationLinkActive = true
+            withAnimation(.easeIn) {
+                backgroundColorState = Color(UIColor.systemGray4)
+                withAnimation(.easeOut) {
+                    backgroundColorState = Color(UIColor.systemBackground)
+                }
+                navigationLinkActive = true
+            }
         })
     }
 }
@@ -144,33 +154,37 @@ struct StoryView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
                 if let story = story.story {
                     StoryHeaderView<Story>(story: story, webViewStore: webViewStore).environmentObject(settings)
                 }
                 else if let story = from_newest  {
                     StoryHeaderView<NewestStory>(story: story, webViewStore: webViewStore).environmentObject(settings)
+                } else {
+                    StoryHeaderView<NewestStory>(story: NewestStory.placeholder, webViewStore: webViewStore).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
                 }
+                Divider()
                 if let my_story = story.story {
                     if  my_story.comments.count > 0 {
-                        HStack {
-                            HierarchyList(data: my_story.sorted_comments, header: { comment in
-                                HStack(alignment: .center) {
-                                    SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
-                                        Text(comment.comment.commenting_user.username).foregroundColor(.gray)
-                                    }
-                                    Spacer()
-                                    Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                        HierarchyList(data: my_story.sorted_comments, header: { comment in
+                            HStack(alignment: .center) {
+                                SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                                    Text(comment.comment.commenting_user.username).foregroundColor(.gray)
                                 }
-                            }, rowContent: { comment in
-                                VStack(alignment: .leading, spacing: 8.0) {
+                                Spacer()
+                                Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                            }
+                        }, rowContent: { comment in
+                            VStack(alignment: .leading, spacing: 8.0) {
+                                HStack {
                                     HTMLView(html: comment.comment.comment)
-                                    ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
-                                            URLView(link: link)
-                                    }
+                                    Spacer(minLength: 0)
                                 }
-                            })
-                        }
+                                ForEach(HTMLView(html: comment.comment.comment).links, id: \.self) { link in
+                                        URLView(link: link)
+                                }
+                            }
+                        }).padding([.bottom])
                     } else {
                         HStack {
                             Spacer()

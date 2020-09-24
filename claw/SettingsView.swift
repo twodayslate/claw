@@ -59,7 +59,7 @@ struct SettingsLayoutSlider: View {
                     }
                 } else {
                     ForEach(1..<5) { _ in
-                        StoryCell(story: NewestStory(short_id: "bmqi6l", short_id_url: "https://lobste.rs/s/bmqi6l", created_at: "2020-09-17T08:35:19.000-05:00", title: "Story title", url: "https://lobste.rs", score: 6, flags: 0, comment_count: 9, description: "Description", comments_url: "", submitter_user: NewestUser(username: "username", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "", is_moderator: false, karma: 1, avatar_url: "/avatars/username-100.png", invited_by_user: "twodayslate", github_username: nil, twitter_username: nil, keybase_signatures: nil), tags: ["programming", "apple"])).environmentObject(settings).allowsHitTesting(false)
+                        StoryCell(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
                     }
                 }
             }.listStyle(PlainListStyle()).frame(height: 175).padding(0).allowsHitTesting(false).overlay(Rectangle().foregroundColor(.clear).opacity(0.0).background(LinearGradient(gradient: Gradient(colors: [Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground)]), startPoint: .top, endPoint: .bottom)))
