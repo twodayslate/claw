@@ -3,17 +3,21 @@ import SwiftUI
 // From https://fivestars.blog/code/swiftui-hierarchy-list.html
 
 public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
-  private let recursiveView: RecursiveView<RowContent, HeaderContent>
 
-    init(data: [CommentStructure], header: @escaping (CommentStructure) -> HeaderContent, rowContent: @escaping (CommentStructure) -> RowContent) {
-        self.recursiveView = RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0)
-  }
+    let data: [CommentStructure]
+    let header: (CommentStructure) -> HeaderContent
+    let rowContent: (CommentStructure) -> RowContent
+    @State var sharedComment: Comment?
 
-  public var body: some View {
-    LazyVStack(alignment: .leading, spacing: 0) {
-        recursiveView
+    public var body: some View {
+    // this should be a LazyVStack but there is a bug
+    // https://developer.apple.com/forums/thread/658199
+        VStack(alignment: .leading, spacing: 0) {
+            RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0, sharedComment: $sharedComment)
+        }.sheet(item: $sharedComment, content: { item in
+            ShareSheet(activityItems: [URL(string: item.short_id_url)!])
+        })
     }
-  }
 }
 
 private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
@@ -22,10 +26,11 @@ private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: 
     let rowContent: (CommentStructure) -> RowContent
     let indentLevel: Int
     
-    
+    @Binding var sharedComment: Comment?
+        
   var body: some View {
     ForEach(data) { child in
-        HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child, last: child == data.last)
+        HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child, sharedComment: $sharedComment, last: child == data.last!)
     }
   }
 }
@@ -37,6 +42,8 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     let indentLevel: Int
     
     var child: CommentStructure
+    
+    @Binding var sharedComment: Comment?
     
     @State var showShareSheet = false
     
@@ -74,7 +81,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                         rowContent(child).padding([.leading])
                         if let subChildren = child.children {
                             Divider().padding([.top, .leading])
-                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
+                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
                         }
                     }
                 },
@@ -85,19 +92,20 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                 Divider().padding([.horizontal])
             }
         }.padding(indentLevel == 0 ? [.trailing] : []).background(backgroundColorState.edgesIgnoringSafeArea(.all)).contextMenu(menuItems: {
-                Button(action: {
-                    showShareSheet = true
-                }, label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                })
+                // for some reason the share sheet won't display if the comment isn't
+                //if indentLevel == 0  {
+                    Button(action: {
+                        sharedComment = child.comment
+                    }, label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    })
+                //}
                 Button(action: {
                     withAnimation(.easeIn) {
                         isExpanded.toggle()
                     }
                 }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: "rectangle.expand.vertical")})
-            }).sheet(isPresented: $showShareSheet) {
-                ShareSheet(activityItems: [URL(string: child.comment.short_id_url)!])
-            }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+            }).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
                 withAnimation(.easeIn) {
                     backgroundColorState = Color(UIColor.systemGray4)
                     withAnimation(.easeOut) {

@@ -90,7 +90,7 @@ struct AppIconView: View {
     var body: some View {
         let path = Bundle.main.resourcePath! + "/" + icon.assetName
         HStack {
-            Image(uiImage: UIImage(contentsOfFile: path)!).clipShape(RoundedRectangle(cornerRadius: 18.0, style: .circular))
+            Image(uiImage: UIImage(contentsOfFile: path)!).clipShape(RoundedRectangle(cornerRadius: 16.5, style: .continuous))
             Text("\(icon.name)")
             if settings.alternateIconName == icon.alternateIconName {
                 Spacer()

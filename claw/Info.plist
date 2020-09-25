@@ -16,6 +16,34 @@
 				<array>
 					<string>Classic</string>
 				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+		</dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>claw</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>claw</string>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
+	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>Classic</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>Classic</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
 			</dict>
 		</dict>
 		<key>CFBundlePrimaryIcon</key>
@@ -79,5 +107,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>supportsAlternateIcon</key>
+	<true/>
 </dict>
 </plist>

@@ -52,6 +52,10 @@
 		F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876706251A82FE003090D2 /* ShareSheet.swift */; };
 		F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687670C251A9501003090D2 /* StoryListCellView.swift */; };
 		F6876713251AF800003090D2 /* SafariActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876712251AF800003090D2 /* SafariActivity.swift */; };
+		F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876750251E853F003090D2 /* Classic@2x~ipad.png */; };
+		F6876753251E8540003090D2 /* Classic~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876751251E853F003090D2 /* Classic~ipad.png */; };
+		F687676A251E8677003090D2 /* claw@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876768251E8677003090D2 /* claw@2x~ipad.png */; };
+		F687676B251E8677003090D2 /* claw~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876769251E8677003090D2 /* claw~ipad.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +144,10 @@
 		F6876706251A82FE003090D2 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		F687670C251A9501003090D2 /* StoryListCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryListCellView.swift; sourceTree = "<group>"; };
 		F6876712251AF800003090D2 /* SafariActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariActivity.swift; sourceTree = "<group>"; };
+		F6876750251E853F003090D2 /* Classic@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x~ipad.png"; sourceTree = "<group>"; };
+		F6876751251E853F003090D2 /* Classic~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic~ipad.png"; sourceTree = "<group>"; };
+		F6876768251E8677003090D2 /* claw@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@2x~ipad.png"; sourceTree = "<group>"; };
+		F6876769251E8677003090D2 /* claw~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw~ipad.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -288,7 +296,11 @@
 			isa = PBXGroup;
 			children = (
 				F68766DD25196C9B003090D2 /* Classic@2x.png */,
+				F6876750251E853F003090D2 /* Classic@2x~ipad.png */,
+				F6876751251E853F003090D2 /* Classic~ipad.png */,
 				F68766DA25196C9B003090D2 /* Classic@3x.png */,
+				F6876768251E8677003090D2 /* claw@2x~ipad.png */,
+				F6876769251E8677003090D2 /* claw~ipad.png */,
 				F68766DB25196C9B003090D2 /* claw@2x.png */,
 				F68766DC25196C9B003090D2 /* claw@3x.png */,
 			);
@@ -437,13 +449,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F687676A251E8677003090D2 /* claw@2x~ipad.png in Resources */,
 				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
 				F68766E125196C9B003090D2 /* Classic@2x.png in Resources */,
 				F68766E025196C9B003090D2 /* claw@3x.png in Resources */,
 				F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */,
 				F68766DF25196C9B003090D2 /* claw@2x.png in Resources */,
+				F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */,
+				F687676B251E8677003090D2 /* claw~ipad.png in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
+				F6876753251E8540003090D2 /* Classic~ipad.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -551,7 +567,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -574,7 +590,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -715,7 +731,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -743,7 +759,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
