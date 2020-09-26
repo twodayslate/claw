@@ -72,6 +72,11 @@ struct StoryHeaderView<T: GenericStory>: View {
                             }, label: {
                                 Label("Story URL", systemImage: "link")
                             })
+                            Button(action: {
+                                activeSheet = .third
+                            }, label: {
+                                Label("Story Cache URL", systemImage: "archivebox")
+                            })
                         }
                     }, label: {
                         Label("Share", systemImage: "square.and.arrow.up.on.square")
@@ -83,6 +88,8 @@ struct StoryHeaderView<T: GenericStory>: View {
                     ShareSheet(activityItems: [URL(string: story.url)!])
                 } else if item == .second {
                     ShareSheet(activityItems: [URL(string: story.short_id_url)!])
+                } else if item == .third {
+                    ShareSheet(activityItems: [URL(string: "https://archive.md/\(story.url)")!])
                 } else {
                     Text("\(activeSheet.debugDescription)")
                 }

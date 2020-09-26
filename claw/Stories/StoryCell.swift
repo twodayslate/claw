@@ -52,7 +52,7 @@ struct StoryCell: View {
 struct StoryCell_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["apple", "programming"])).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["apple", "programming"])).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
         }.previewLayout(.sizeThatFits)
     }
 }

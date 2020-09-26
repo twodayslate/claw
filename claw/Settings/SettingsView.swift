@@ -8,63 +8,6 @@
 import SwiftUI
 import MessageUI
 
-struct CustomLabelStyle: LabelStyle {
-    ///https://www.hackingwithswift.com/forums/swiftui/vertical-align-icon-of-label/3346
-    @Environment(\.sizeCategory) var size
-    
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(alignment: .center) {
-            if size >= .accessibilityMedium {
-                configuration.icon
-                    .frame(width: 80)
-            } else {
-                configuration.icon
-                    .frame(width: 30)
-            }
-            configuration.title
-        }
-    }
-}
-
-struct ZZLabel: View {
-    var iconBackgroundColor: Color = Color.accentColor
-    var iconColor: Color = Color.white
-    var systemImage: String? = nil
-    var image: String? = nil
-    var text: String
-    var iconScale = 0.6
-    
-    var body: some View {
-        Label(
-            title: { Text(text).foregroundColor(Color(UIColor.label)) },
-            icon: { ZStack {
-                Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(self.iconBackgroundColor)
-                if let name = image {
-                    Image(name).resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: 0.6, height: 0.6)).foregroundColor(self.iconColor)
-                } else {
-                    Image(systemName: systemImage ?? "xm ark.square").resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
-                }
-            } }
-).labelStyle(CustomLabelStyle())
-    }
-}
-
-struct SettingsLinkView: View {
-    var systemImage: String? = nil
-    var image: String? = nil
-    var text: String
-    var url: String
-    var iconColor: Color = Color.accentColor
-    
-    var body: some View {
-            Button(action: {
-                UIApplication.shared.open(URL(string: url)!)
-            }, label: {
-                ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
-        })
-    }
-}
-
 struct SettingsLayoutSlider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var settings: Settings
@@ -109,7 +52,7 @@ struct AppIconView: View {
     var body: some View {
         let path = Bundle.main.resourcePath! + "/" + icon.assetName
         HStack {
-            Image(uiImage: UIImage(contentsOfFile: path)!).clipShape(RoundedRectangle(cornerRadius: 16.5, style: .continuous))
+            Image(uiImage: UIImage(contentsOfFile: path)!).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
             Text("\(icon.name)")
             if settings.alternateIconName == icon.alternateIconName {
                 Spacer()
@@ -268,9 +211,10 @@ struct SettingsView: View {
 }
 
 struct SettingsView_Previews: PreviewProvider {
+    
     static var previews: some View {
         Group {
-            SettingsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+            SettingsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
         }.previewLayout(.sizeThatFits)
         
     }

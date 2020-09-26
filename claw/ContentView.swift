@@ -33,8 +33,8 @@ struct ContentView: View {
         return Settings(context: viewContext)
     }
 
-    @State private var selection = 0
-    
+    @AppStorage("contentViewSelection") private var selection = 0
+
     var body: some View {
         TabView(selection: $selection) {
             HottestView().tabItem {

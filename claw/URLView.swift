@@ -28,6 +28,10 @@ struct URLView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             URLView(link: HTMLLink(text: "zac.gorak.us", url: "https://zac.gorak.us"))
+            URLView(link: HTMLLink(text: "https://zac.gorak.us", url: "https://zac.gorak.us"))
+            ZStack {
+                URLView(link: HTMLLink(text: "zac.gorak.us", url: "https://zac.gorak.us"))
+            }.background(Color(UIColor.systemBackground)).environment(\.colorScheme, .dark)
         }.previewLayout(.sizeThatFits)
         
     }

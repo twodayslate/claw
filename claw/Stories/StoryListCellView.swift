@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 enum ActiveSheet: Identifiable {
-    case first, second
+    case first, second, third
     
     var id: Int {
         hashValue
@@ -38,6 +38,11 @@ struct StoryListCellView: View {
                         }, label: {
                             Label("Story URL", systemImage: "link")
                         })
+                        Button(action: {
+                            activeSheet = .third
+                        }, label: {
+                            Label("Story Cache URL", systemImage: "archivebox")
+                        })
                     }
                 }, label: {
                     Label("Share", systemImage: "square.and.arrow.up.on.square")
@@ -49,6 +54,8 @@ struct StoryListCellView: View {
                 ShareSheet(activityItems: [URL(string: story.url)!])
             } else if item == .second {
                 ShareSheet(activityItems: [URL(string: story.short_id_url)!])
+            } else if item == .third {
+                ShareSheet(activityItems: [URL(string: "https://archive.md/\(story.url)")!])
             } else {
                 Text("\(activeSheet.debugDescription)")
             }

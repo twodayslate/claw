@@ -8,6 +8,9 @@
 import Foundation
 import UIKit
 
+/**
+ An Open in Safari action for URLs
+ */
 class SafariActivity: UIActivity {
     override var activityImage: UIImage? {
         let largeConfig = UIImage.SymbolConfiguration(scale: .large)
