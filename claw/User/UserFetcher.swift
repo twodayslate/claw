@@ -1,12 +1,12 @@
-import Foundation
 import SwiftUI
+import Combine
 
-class HottestFetcher: ObservableObject {
-    @Published var stories = HottestFetcher.cachedStories
+class UserFetcher: ObservableObject {
+    @Published var user: NewestUser? = nil
+    var username: String
     
-    static var cachedStories = [NewestStory]()
-    
-    init() {
+    init(_ username: String) {
+        self.username = username
         load()
     }
     
@@ -17,15 +17,14 @@ class HottestFetcher: ObservableObject {
     private var session: URLSessionTask? = nil
     
     func load() {
-        let url = URL(string: "https://lobste.rs/hottest.json")!
+        let url = URL(string: "https://lobste.rs/u/" + self.username + ".json")!
             
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
-                            let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
+                            let decodedLists = try JSONDecoder().decode(NewestUser.self, from: d)
                             DispatchQueue.main.async {
-                                HottestFetcher.cachedStories = decodedLists
-                                self.stories = decodedLists
+                                self.user = decodedLists
                             }
                         }else {
                             print("No Data")

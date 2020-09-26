@@ -1,44 +1,4 @@
-import Foundation
 import SwiftUI
-import Combine
-
-
-
-class UserFetcher: ObservableObject {
-    @Published var user: NewestUser? = nil
-    var username: String
-    
-    init(_ username: String) {
-        self.username = username
-        load()
-    }
-    
-    deinit {
-        self.session?.cancel()
-    }
-    
-    private var session: URLSessionTask? = nil
-    
-    func load() {
-        let url = URL(string: "https://lobste.rs/u/" + self.username + ".json")!
-            
-        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode(NewestUser.self, from: d)
-                            DispatchQueue.main.async {
-                                self.user = decodedLists
-                            }
-                        }else {
-                            print("No Data")
-                        }
-                    } catch {
-                        print ("Error \(error)")
-                    }
-                }
-        self.session?.resume()
-    }
-}
 
 struct UserView: View {
     var user: NewestUser
@@ -100,59 +60,6 @@ struct UserView: View {
         }.navigationBarTitle(user.username)
     }
 }
-
-struct UserAvatarLoader: View {
-    var user: NewestUser
-    @ObservedObject private var loader: ImageLoader
-    
-    init(user: NewestUser) {
-        self.user = user
-        if let url = URL(string: "https://lobste.rs/"+user.avatar_url) {
-            self.loader = ImageLoader(url: url)
-        } else {
-            self.loader = ImageLoader(url: URL(string: user.avatar_url)!)
-        }
-    }
-    
-    var body: some View {
-        if let image = loader.image {
-            Image(uiImage: image).resizable().frame(width: 100, height: 100, alignment: .center)
-        } else {
-            Image(systemName: "person.circle.fill").resizable().imageScale(.large).frame(width: 100, height: 100, alignment: .center).redacted(reason: .placeholder)
-        }
-    }
-}
-
-class ImageLoader: ObservableObject {
-    @Published var image: UIImage?
-    private let url: URL
-
-    init(url: URL) {
-        self.url = url
-        load()
-    }
-    
-    private var cancellable: AnyCancellable?
-        
-    deinit {
-        cancellable?.cancel()
-    }
-
-    func load() {
-        cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { UIImage(data: $0.data) }
-            .replaceError(with: nil)
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.image, on: self)
-    }
-    
-    func cancel() {
-        cancellable?.cancel()
-    }
-}
-
-// todo: generate submitted stories
-// /newest/twodayslate.json
 
 struct UserView_Previews: PreviewProvider {
     static var previews: some View {

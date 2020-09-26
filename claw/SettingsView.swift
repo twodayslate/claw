@@ -26,22 +26,41 @@ struct CustomLabelStyle: LabelStyle {
     }
 }
 
+struct ZZLabel: View {
+    var iconBackgroundColor: Color = Color.accentColor
+    var iconColor: Color = Color.white
+    var systemImage: String? = nil
+    var image: String? = nil
+    var text: String
+    var iconScale = 0.6
+    
+    var body: some View {
+        Label(
+            title: { Text(text).foregroundColor(Color(UIColor.label)) },
+            icon: { ZStack {
+                Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(self.iconBackgroundColor)
+                if let name = image {
+                    Image(name).resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: 0.6, height: 0.6)).foregroundColor(self.iconColor)
+                } else {
+                    Image(systemName: systemImage ?? "xm ark.square").resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
+                }
+            } }
+).labelStyle(CustomLabelStyle())
+    }
+}
+
 struct SettingsLinkView: View {
-    var icon: Image
+    var systemImage: String? = nil
+    var image: String? = nil
     var text: String
     var url: String
+    var iconColor: Color = Color.accentColor
     
     var body: some View {
             Button(action: {
                 UIApplication.shared.open(URL(string: url)!)
             }, label: {
-                Label(
-                    title: { Text(text) },
-                    icon: { icon.resizable().aspectRatio(contentMode: .fit) }
-                ).labelStyle(CustomLabelStyle())
-            
-//            icon.resizable().frame(width: 28, height: 28, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-//            Link(text, destination: URL(string: url)!).icon
+                ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
         })
     }
 }
@@ -198,59 +217,47 @@ struct SettingsView: View {
                 Section(header: Text("Appearance")) {
                     if UIApplication.shared.supportsAlternateIcons {
                         NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
-                            Label(title: {
-                                HStack {
-                                    Text("App Icon")
-                                    Spacer()
-                                    Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
-                                }
-                                
-                            }, icon: {Image(systemName: "app.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
+                            HStack {
+                                ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, systemImage: "app", text: "App Icon")
+                                Spacer()
+                                Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
+                            }
                         })
                     }
                     NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
-                        Label(title: {
-                            HStack {
-                                Text("Accent Color")
-                                Spacer()
-                                Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
-                            }
-                            
-                        }, icon: {Image(systemName: "paintbrush.fill").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).foregroundColor(.accentColor) }).labelStyle(CustomLabelStyle())
+                        HStack {
+                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                            Spacer()
+                            Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                        }
                     })
                 }
                 Section(header: Text("Layout")) {
                     SettingsLayoutSlider().environmentObject(settings)
                 }
                 Section {
-                    SettingsLinkView(icon: Image("github"), text: "GitHub", url: "https://github.com/twodayslate/claw")
-                    SettingsLinkView(icon: Image("twitter"), text: "Twitter", url: twitterURL.absoluteString)
+                    SettingsLinkView(image: "github", text: "GitHub", url: "https://github.com/twodayslate/claw", iconColor: .black)
+                    SettingsLinkView(image: "twitter", text: "Twitter", url: twitterURL.absoluteString, iconColor: .blue)
                     if MFMailComposeViewController.canSendMail() {
                         Button(action: {
                             self.isShowingMailView.toggle()
                         }, label: {
-                            Label(
-                                title: { Text("Contact") },
-                                icon: { Image(systemName: "at").resizable().aspectRatio(contentMode: .fit) }
-                            ).labelStyle(CustomLabelStyle())
+                            ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                         })
                     } else {
                         Button(action: {
                             self.isShowingMailViewAlert.toggle()
                         }, label: {
-                            Label(
-                                title: { Text("Contact") },
-                                icon: { Image(systemName: "at").resizable().aspectRatio(contentMode: .fit) }
-                            ).labelStyle(CustomLabelStyle())
+                            ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                         }).alert(isPresented: $isShowingMailViewAlert, content: {
                             Alert(title: Text("Email"), message: Text("zac+claw@gorak.us"), dismissButton: .default(Text("Okay")))
                         })
                     }
-                    SettingsLinkView(icon:  Image(systemName: "star.fill"), text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8")
+                    SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
                 }
                 Section(header: Text("Legal")) {
-                    SettingsLinkView(icon: Image(systemName: "doc.text.magnifyingglass"), text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy")
-                    SettingsLinkView(icon: Image(systemName: "doc.text"), text: "Terms of Use", url: "https://zac.gorak.us/ios/terms")
+                    SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
+                    SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
                 }
             }.sheet(isPresented: $isShowingMailView) {
                 MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
