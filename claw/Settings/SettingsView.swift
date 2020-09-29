@@ -12,6 +12,7 @@ struct AppIcon: Codable {
     var alternateIconName: String?
     var name: String
     var assetName: String
+    var subtitle: String?
 }
 
 struct AppIconView: View {
@@ -23,7 +24,13 @@ struct AppIconView: View {
         let path = Bundle.main.resourcePath! + "/" + icon.assetName
         HStack {
             Image(uiImage: UIImage(contentsOfFile: path)!).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
-            Text("\(icon.name)")
+            VStack(alignment: .leading) {
+                Text("\(icon.name)")
+                if let subtitle = icon.subtitle {
+                    Text("\(subtitle)").font(.subheadline).foregroundColor(.gray)
+                }
+            }
+            
             if settings.alternateIconName == icon.alternateIconName {
                 Spacer()
                 Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
@@ -85,7 +92,7 @@ struct AppIconChooserView: View {
                     self.presentationMode.wrappedValue.dismiss()
                 })
             }, label: {
-                AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png")).environmentObject(settings)
+                AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
             })
             Button(action: {
                 UIApplication.shared.setAlternateIconName("Classic", completionHandler: { error in

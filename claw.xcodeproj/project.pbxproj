@@ -66,6 +66,7 @@
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
 		F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */; };
 		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
+		F6E9EE382522D04D005E2B1C /* StoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE372522D04D005E2B1C /* StoryListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -167,6 +168,7 @@
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
 		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
 		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
+		F6E9EE372522D04D005E2B1C /* StoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListView.swift; path = claw/Stories/StoryListView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -216,6 +218,7 @@
 		F617B551251EDDDF0060B21A /* Stories */ = {
 			isa = PBXGroup;
 			children = (
+				F6E9EE372522D04D005E2B1C /* StoryListView.swift */,
 				F669C971250E750200B1FF42 /* StoryView.swift */,
 				F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */,
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
@@ -575,6 +578,7 @@
 			files = (
 				F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */,
 				F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */,
+				F6E9EE382522D04D005E2B1C /* StoryListView.swift in Sources */,
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
 				F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */,
 				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,

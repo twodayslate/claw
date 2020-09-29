@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct NewestStory: GenericStory, Codable, Identifiable {
+struct NewestStory: GenericStory, Codable, Identifiable, Hashable {
     var short_id: String
     var short_id_url: String
     var created_at: String

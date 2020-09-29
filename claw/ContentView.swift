@@ -101,10 +101,10 @@ struct ContentView: View {
                                             }
                                             self._selection = $0
                                         })
-        
+
         TabView(selection: selection) {
             NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
-                    HottestView()
+                HottestView()
             }, tabItem: {
                 _selection == .Hottest ? Image(systemName: "flame.fill") : Image(systemName: "flame")
                 Text("Hottest")
@@ -116,7 +116,7 @@ struct ContentView: View {
                 _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
             }).environmentObject(settings)
-            
+
             NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
                     SettingsView()
             }, tabItem: {

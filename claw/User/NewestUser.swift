@@ -1,6 +1,6 @@
 import Foundation
 
-struct KeybaseSignatures: Codable, Identifiable {
+struct KeybaseSignatures: Codable, Identifiable, Hashable {
     var id: String {
         return kb_username
     }
@@ -8,7 +8,7 @@ struct KeybaseSignatures: Codable, Identifiable {
     var sig_hash: String
 }
 
-struct NewestUser: Codable, Identifiable {
+struct NewestUser: Codable, Identifiable, Hashable {
     var id: String {
         return username
     }
