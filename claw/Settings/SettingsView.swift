@@ -8,36 +8,6 @@
 import SwiftUI
 import MessageUI
 
-struct SettingsLayoutSlider: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject var settings: Settings
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            List {
-                if HottestFetcher.cachedStories.count > 0 {
-                    ForEach(HottestFetcher.cachedStories) { story in
-                        StoryCell(story: story).environmentObject(settings).allowsHitTesting(false)
-                    }
-                } else {
-                    ForEach(1..<5) { _ in
-                        StoryCell(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
-                    }
-                }
-            }.listStyle(PlainListStyle()).frame(height: 175).padding(0).allowsHitTesting(false).overlay(Rectangle().foregroundColor(.clear).opacity(0.0).background(LinearGradient(gradient: Gradient(colors: [Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground)]), startPoint: .top, endPoint: .bottom)))
-            HStack {
-                Image(systemName: "doc.plaintext").renderingMode(.template).foregroundColor(.accentColor)
-                Slider(value: $settings.layoutValue, in: 0...2, step: 1, onEditingChanged: { _ in
-                    try? settings.managedObjectContext?.save()
-                }) {
-                        Text("Layout")
-                }
-                Image(systemName: "doc.richtext").renderingMode(.template).foregroundColor(.accentColor)
-            }
-        }
-    }
-}
-
 struct AppIcon: Codable {
     var alternateIconName: String?
     var name: String
@@ -56,7 +26,7 @@ struct AppIconView: View {
             Text("\(icon.name)")
             if settings.alternateIconName == icon.alternateIconName {
                 Spacer()
-                Image(systemName: "checkmark").foregroundColor(.accentColor)
+                Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
             }
         }
     }
@@ -64,26 +34,28 @@ struct AppIconView: View {
 
 struct ColorIconView: View {
     var color: UIColor
-    
+
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @EnvironmentObject var settings: Settings
     
     var body: some View {
         Button(action: {
             settings.accentColorData = color.data
+            try? settings.managedObjectContext?.save()
+            self.presentationMode.wrappedValue.dismiss()
         }, label: {
             HStack {
                 Image(systemName: "app.fill").foregroundColor(Color(color))
                 Text("\(color.name ?? "Unkown")")
                 if settings.accentColor == Color(color) {
                     Spacer()
-                    Image(systemName: "checkmark").foregroundColor(.accentColor)
+                    Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
                 }
             }
         })
         
     }
 }
-
 struct AccentColorChooserView: View {
     @EnvironmentObject var settings: Settings
     
@@ -95,9 +67,9 @@ struct AccentColorChooserView: View {
         }.navigationTitle("Accent Color")
     }
 }
-
 struct AppIconChooserView: View {
     @EnvironmentObject var settings: Settings
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
     @State var showAlert = false
     var body: some View {
@@ -110,6 +82,7 @@ struct AppIconChooserView: View {
                     }
                     settings.alternateIconName = nil
                     try? settings.managedObjectContext?.save()
+                    self.presentationMode.wrappedValue.dismiss()
                 })
             }, label: {
                 AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png")).environmentObject(settings)
@@ -122,6 +95,7 @@ struct AppIconChooserView: View {
                     }
                     settings.alternateIconName = "Classic"
                     try? settings.managedObjectContext?.save()
+                    self.presentationMode.wrappedValue.dismiss()
                 })
             }, label: {
                 AppIconView(icon: AppIcon(alternateIconName: "Classic", name: "Classic", assetName: "Classic@2x.png")).environmentObject(settings)
@@ -155,13 +129,19 @@ struct SettingsView: View {
     @EnvironmentObject var settings: Settings
     
     var body: some View {
-        NavigationView {
             List {
                 Section(header: Text("Appearance")) {
                     if UIApplication.shared.supportsAlternateIcons {
                         NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
                             HStack {
-                                ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, systemImage: "app", text: "App Icon")
+                                Label(
+                                    title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
+                                    icon: { ZStack {
+                                        Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(.accentColor)
+                                        Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png")!).resizable().aspectRatio( contentMode: .fit).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
+                                    } }
+                        ).labelStyle(HorizontallyAlignedLabelStyle())
+                                //ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, imageFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png", text: "App Icon", iconScale: 1.0)
                                 Spacer()
                                 Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
                             }
@@ -169,7 +149,7 @@ struct SettingsView: View {
                     }
                     NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
                         HStack {
-                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
                             Spacer()
                             Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
                         }
@@ -206,7 +186,6 @@ struct SettingsView: View {
                 MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
             }.listStyle(GroupedListStyle()
             ).navigationBarTitle("Settings", displayMode: .inline)
-        }
     }
 }
 

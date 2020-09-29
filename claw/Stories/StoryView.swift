@@ -3,124 +3,14 @@ import WebView
 import WebKit
 
 
-struct StoryHeaderView<T: GenericStory>: View {
-    var story: T
-    
-    @ObservedObject var webViewStore: WebViewStore
-    
-    @State var activeSheet: ActiveSheet?
-    
-    @EnvironmentObject var settings: Settings
-    
-    @State var navigationLinkActive = false
-    
-    @State var backgroundColorState = Color(UIColor.systemBackground)
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(story.title).font(.title2).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
-                    if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
-                        NavigationLink(
-                            destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? story.title),
-                            isActive: $navigationLinkActive,
-                            label: {
-                                Text(host).foregroundColor(Color.secondary).font(.callout)
-                            }).padding([.bottom], 4.0).onAppear {
-                            webViewStore.webView.load(URLRequest(url: url))
-                        }
-                    }
-                    HStack(alignment: .center, spacing: 16.0) {
-                        VStack(alignment: .center) {
-                            Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                            Text("\(story.score)").foregroundColor(.gray)
-                        }
-                        
-                        VStack(alignment: .leading) {
-                            TagList(tags: story.tags)
-                            SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
-                                Text("via ").font(.callout).foregroundColor(Color.secondary) +
-                                Text(story.submitter_user.username).font(.callout).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
-                                    Text(" " + story.time_ago).font(.callout).foregroundColor(Color.secondary)
-                            }
-                        }
-                    }
-                }
-                Spacer(minLength: 0)// ensure full width
-                if !story.url.isEmpty {
-                    // make chevron bold like navigationlink
-                    Image(systemName: "chevron.right").foregroundColor(Color(UIColor.systemGray3))
-                }
-            }.padding().background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems: {
-                if story.url.isEmpty {
-                    Button(action: {
-                        activeSheet = .second
-                    }, label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    })
-                } else {
-                    Menu(content: {
-                        Button(action: {
-                            activeSheet = .second
-                        }, label: {
-                            Label("Lobsters URL", systemImage: "book")
-                        })
-                        if !story.url.isEmpty {
-                            Button(action: {
-                                activeSheet = .first
-                            }, label: {
-                                Label("Story URL", systemImage: "link")
-                            })
-                            Button(action: {
-                                activeSheet = .third
-                            }, label: {
-                                Label("Story Cache URL", systemImage: "archivebox")
-                            })
-                        }
-                    }, label: {
-                        Label("Share", systemImage: "square.and.arrow.up.on.square")
-                    })
-                }
-            }).sheet(item: self.$activeSheet) {
-                item in
-                if item == .first {
-                    ShareSheet(activityItems: [URL(string: story.url)!])
-                } else if item == .second {
-                    ShareSheet(activityItems: [URL(string: story.short_id_url)!])
-                } else if item == .third {
-                    ShareSheet(activityItems: [URL(string: "https://archive.md/\(story.url)")!])
-                } else {
-                    Text("\(activeSheet.debugDescription)")
-                }
-            }
 
-            if story.description.count > 0 {
-                Divider().padding([.leading, .trailing])
-                VStack(alignment: .leading) {
-                    let html = HTMLView(html: story.description)
-                    html.fixedSize(horizontal: false, vertical: true)
-                    ForEach(html.links, id: \.self) { link in
-                        URLView(link: link)
-                    }
-                }.padding()
-            }
-        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
-            withAnimation(.easeIn) {
-                backgroundColorState = Color(UIColor.systemGray4)
-                withAnimation(.easeOut) {
-                    backgroundColorState = Color(UIColor.systemBackground)
-                }
-                navigationLinkActive = true
-            }
-        })
-    }
-}
 
 
 struct StoryView: View {
     var short_id: String
     var from_newest: NewestStory?
+    @Environment(\.didReselect) var didReselect
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @ObservedObject var story: StoryFetcher
     
     init(_ short_id: String) {
@@ -203,6 +93,10 @@ struct StoryView: View {
                     }
                 }
             }
-        }.navigationBarTitle(self.title, displayMode: .inline)
+        }.navigationBarTitle(self.title, displayMode: .inline).onReceive(didReselect) { _ in
+            DispatchQueue.main.async {
+                self.presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 }

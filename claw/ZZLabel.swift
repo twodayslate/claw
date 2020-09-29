@@ -5,6 +5,7 @@ struct ZZLabel: View {
     var iconColor: Color = Color.white
     var systemImage: String? = nil
     var image: String? = nil
+    var imageFile: String? = nil
     var text: String
     var iconScale = 0.6
     
@@ -13,10 +14,13 @@ struct ZZLabel: View {
             title: { Text(text).foregroundColor(Color(UIColor.label)) },
             icon: { ZStack {
                 Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(self.iconBackgroundColor)
-                if let name = image {
-                    Image(name).resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: 0.6, height: 0.6)).foregroundColor(self.iconColor)
+                if let path = imageFile, let uiImage = UIImage(contentsOfFile: path) {
+                    Image(uiImage: uiImage).resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
+                }
+                else if let name = image {
+                    Image(name).resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
                 } else {
-                    Image(systemName: systemImage ?? "xm ark.square").resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
+                    Image(systemName: systemImage ?? "xmark.square").resizable().aspectRatio( contentMode: .fit).scaleEffect(CGSize(width: iconScale, height: iconScale)).foregroundColor(self.iconColor)
                 }
             } }
 ).labelStyle(HorizontallyAlignedLabelStyle())

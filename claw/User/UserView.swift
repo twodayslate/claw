@@ -2,6 +2,8 @@ import SwiftUI
 
 struct UserView: View {
     var user: NewestUser
+    @Environment(\.didReselect) var didReselect
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
     var body: some View {
         List {
@@ -57,7 +59,11 @@ struct UserView: View {
                     HTMLView(html: user.about)
                 }
             }
-        }.navigationBarTitle(user.username)
+        }.navigationBarTitle(user.username).onReceive(didReselect) { _ in
+            DispatchQueue.main.async {
+                self.presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 }
 

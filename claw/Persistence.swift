@@ -24,13 +24,19 @@ public class Settings: NSManagedObject, Identifiable {
     }
     
     var accentUIColor: UIColor {
-        guard let data = self.accentColorData  else {
-            return defaultAccentColor
+        get {
+            guard let data = self.accentColorData  else {
+                return defaultAccentColor
+            }
+            guard let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) else {
+                return defaultAccentColor
+            }
+            return color
+        } set {
+            self.accentColorData = newValue.data
+            try? self.managedObjectContext?.save()
         }
-        guard let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) else {
-            return defaultAccentColor
-        }
-        return color
+        
     }
     
     var accentColor: Color {

@@ -64,6 +64,8 @@
 		F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */; };
 		F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */; };
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
+		F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */; };
+		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -163,6 +165,8 @@
 		F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsLinkView.swift; path = claw/Settings/SettingsLinkView.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZZLabel.swift; sourceTree = "<group>"; };
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
+		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
+		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -213,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				F669C971250E750200B1FF42 /* StoryView.swift */,
+				F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */,
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
 				F687670C251A9501003090D2 /* StoryListCellView.swift */,
 				F669C963250C711E00B1FF42 /* Story.swift */,
@@ -372,6 +377,7 @@
 			isa = PBXGroup;
 			children = (
 				F687666C2513FAAC003090D2 /* SettingsView.swift */,
+				F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */,
 				F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */,
 			);
 			path = Settings;
@@ -583,6 +589,8 @@
 				F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */,
 				F6291185251059E60065C3E9 /* GenericStory.swift in Sources */,
 				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
+				F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */,
+				F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */,
 				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
 				F6876713251AF800003090D2 /* SafariActivity.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
