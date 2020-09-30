@@ -7,14 +7,18 @@ struct SettingsLayoutSlider: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            List {
-                if HottestFetcher.cachedStories.count > 0 {
-                    ForEach(HottestFetcher.cachedStories) { story in
-                        StoryCell(story: story).environmentObject(settings).allowsHitTesting(false)
-                    }
-                } else {
-                    ForEach(1..<5) { _ in
-                        StoryCell(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if HottestFetcher.cachedStories.count > 0 {
+                        ForEach(HottestFetcher.cachedStories) { story in
+                            StoryListCellView(story: story).environmentObject(settings).allowsHitTesting(false)
+                            Divider().padding(0).padding([.leading])
+                        }
+                    } else {
+                        ForEach(1..<5) { _ in
+                                StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
+                            Divider().padding(0).padding([.leading])
+                        }
                     }
                 }
             }.listStyle(PlainListStyle()).frame(height: 175).padding(0).allowsHitTesting(false).overlay(Rectangle().foregroundColor(.clear).opacity(0.0).background(LinearGradient(gradient: Gradient(colors: [Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground)]), startPoint: .top, endPoint: .bottom)))
@@ -22,9 +26,9 @@ struct SettingsLayoutSlider: View {
             HStack {
                 Image(systemName: "doc.plaintext").renderingMode(.template).foregroundColor(.accentColor)
                 Picker("Story Cell Layout", selection: $settings.layoutValue, content: {
-                    Text("Compact").tag(0.0)
-                    Text("Comfortable").tag(1.0)
-                    Text("Default").tag(2.0)
+                    Text("Compact").tag(Settings.Layout.compact.rawValue)
+                    Text("Comfortable").tag(Settings.Layout.comfortable.rawValue)
+                    Text("Default").tag(Settings.Layout.Default.rawValue)
                 }).pickerStyle(SegmentedPickerStyle())
                 Image(systemName: "doc.richtext").renderingMode(.template).foregroundColor(.accentColor)
             }

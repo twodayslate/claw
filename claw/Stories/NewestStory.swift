@@ -22,7 +22,7 @@ struct NewestStory: GenericStory, Codable, Identifiable, Hashable {
     var tags: [String]
     
     static var placeholder: NewestStory {
-        return NewestStory(short_id: "bmqi6l", short_id_url: "https://lobste.rs/s/bmqi6l", created_at: "2020-09-17T08:35:19.000-05:00", title: "Story title", url: "https://lobste.rs", score: 6, flags: 0, comment_count: 9, description: "Description", comments_url: "", submitter_user: NewestUser.placeholder, tags: ["programming", "apple"])
+        return NewestStory(short_id: "bmqi6l", short_id_url: "https://lobste.rs/s/bmqi6l", created_at: "2020-09-17T08:35:19.000-05:00", title: "Story title", url: "https://lobste.rs", score: 6, flags: 0, comment_count: 9, description: "Description", comments_url: "", submitter_user: NewestUser.placeholder, tags: ["programming", "ios"])
     }
 }
 

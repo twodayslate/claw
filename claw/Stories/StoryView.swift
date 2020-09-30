@@ -3,9 +3,6 @@ import WebView
 import WebKit
 
 
-
-
-
 struct StoryView: View {
     var short_id: String
     var from_newest: NewestStory?
@@ -50,53 +47,76 @@ struct StoryView: View {
     
     @EnvironmentObject var settings: Settings
     
+    @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
+    
+    @Environment(\.managedObjectContext) private var viewContext
+    
+    @State private var scrollViewContentOffset = CGFloat(0)
+    
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if let story = story.story {
-                    StoryHeaderView<Story>(story: story, webViewStore: webViewStore).environmentObject(settings)
-                }
-                else if let story = from_newest  {
-                    StoryHeaderView<NewestStory>(story: story, webViewStore: webViewStore).environmentObject(settings)
-                } else {
-                    StoryHeaderView<NewestStory>(story: NewestStory.placeholder, webViewStore: webViewStore).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
-                }
-                Divider()
-                if let my_story = story.story {
-                    if  my_story.comments.count > 0 {
-                        HierarchyList(data: my_story.sorted_comments, header: { comment in
-                            HStack(alignment: .center) {
-                                SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
-                                    Text(comment.comment.commenting_user.username).foregroundColor(.gray)
-                                }
-                                Spacer()
-                                Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
-                            }
-                        }, rowContent: { comment in
-                            VStack(alignment: .leading, spacing: 8.0) {
-                                let html = HTMLView(html: comment.comment.comment)
-                                HStack {
-                                    html
-                                    Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
-                                }
-                                ForEach(html.links, id: \.self) { link in
-                                        URLView(link: link)
-                                }
-                            }
-                        }).padding([.bottom])
+        ScrollViewReader { scrollReader in
+            
+            TrackableScrollView(contentOffset: $scrollViewContentOffset) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let story = story.story {
+                        StoryHeaderView<Story>(story: story, webViewStore: webViewStore).id(0).environmentObject(settings)
+                    }
+                    else if let story = from_newest  {
+                        StoryHeaderView<NewestStory>(story: story, webViewStore: webViewStore).id(0).environmentObject(settings)
                     } else {
-                        HStack {
-                            Spacer()
-                            Text("No comments").foregroundColor(.gray)
-                            Spacer()
-                        }.padding()
+                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder, webViewStore: webViewStore).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
+                    }
+                    Divider()
+                    if let my_story = story.story {
+                        if  my_story.comments.count > 0 {
+                            HierarchyList(data: my_story.sorted_comments, header: { comment in
+                                HStack(alignment: .center) {
+                                    SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                                        Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                                    }
+                                    Spacer()
+                                    Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                                }
+                            }, rowContent: { comment in
+                                VStack(alignment: .leading, spacing: 8.0) {
+                                    let html = HTMLView(html: comment.comment.comment)
+                                    HStack {
+                                        html
+                                        Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
+                                    }
+                                    ForEach(html.links, id: \.self) { link in
+                                            URLView(link: link)
+                                    }
+                                }
+                            }).padding([.bottom])
+                        } else {
+                            HStack {
+                                Spacer()
+                                Text("No comments").foregroundColor(.gray)
+                                Spacer()
+                            }.padding()
+                        }
                     }
                 }
-            }
-        }.navigationBarTitle(self.title, displayMode: .inline).onReceive(didReselect) { _ in
-            DispatchQueue.main.async {
-                self.presentationMode.wrappedValue.dismiss()
-            }
+            }.navigationBarTitle(self.title, displayMode: .inline).onReceive(didReselect) { _ in
+                DispatchQueue.main.async {
+                    if scrollViewContentOffset > 0 {
+                        withAnimation {
+                            scrollReader.scrollTo(0)
+                        }
+                    } else {
+                        self.presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }.onAppear(perform: {
+                let contains = viewedItems.contains { element in
+                    element.short_id == story.short_id && element.isStory
+                }
+                if !contains {
+                    viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
+                    try? viewContext.save()
+                }
+            })
         }
     }
 }

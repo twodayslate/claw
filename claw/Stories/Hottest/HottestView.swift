@@ -9,33 +9,38 @@ struct HottestView: View {
     
     var body: some View {
         ScrollViewReader { scrollProxy in
-            List {
-                if hottest.stories.count <= 0 {
-                    ForEach(1..<10) { _ in
-                        StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    Divider().padding(0).padding([.leading])
+                    if hottest.stories.count <= 0 {
+                        ForEach(1..<10) { _ in
+                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false)
+                        }
+                        Divider().padding(0).padding([.leading])
                     }
-                }
-                ForEach(hottest.stories) { story in
-                    StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
-                        self.hottest.more(story)
-                    })
-                }
-                if hottest.isLoadingMore {
-                    HStack {
-                        Spacer()
-                        ProgressView()
-                        Spacer()
+                    ForEach(hottest.stories) { story in
+                        StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
+                            self.hottest.more(story)
+                        })
+                        Divider().padding(0).padding([.leading])
                     }
-                }
-            }.onDisappear(perform: {
-                self.isVisible = false
-            }).onAppear(perform: {
-                self.isVisible = true
-            }).navigationBarTitle("Hottest").onReceive(didReselect) { _ in
-                DispatchQueue.main.async {
-                    if self.isVisible {
-                        withAnimation {
-                            scrollProxy.scrollTo(hottest.stories.first)
+                    if hottest.isLoadingMore {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    }
+                }.onDisappear(perform: {
+                    self.isVisible = false
+                }).onAppear(perform: {
+                    self.isVisible = true
+                }).navigationBarTitle("Hottest").onReceive(didReselect) { _ in
+                    DispatchQueue.main.async {
+                        if self.isVisible {
+                            withAnimation {
+                                scrollProxy.scrollTo(hottest.stories.first)
+                            }
                         }
                     }
                 }

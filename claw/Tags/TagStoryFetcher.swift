@@ -1,20 +1,18 @@
-//
-//  newest.swift
-//  claw
-//
-//  Created by Zachary Gorak on 9/11/20.
-//
-
 import Foundation
 import SwiftUI
 
-class NewestFetcher: ObservableObject {
-    @Published var stories = NewestFetcher.cachedStories
-    static var cachedStories = [NewestStory]()
-    @Published var isLoadingMore = false
-    var page: Int = 1
+class TagStoryFetcher: ObservableObject {
+    @Published var stories = TagStoryFetcher.cachedStories
     
-    init() {
+    static var cachedStories = [NewestStory]()
+    
+    @Published var isLoadingMore = false
+    
+    
+    var tags: [String]
+    
+    init(tags: [String]) {
+        self.tags = tags
         load()
     }
     
@@ -27,30 +25,33 @@ class NewestFetcher: ObservableObject {
     private var moreSession: URLSessionTask? = nil
     
     func load() {
-        let url = URL(string: "https://lobste.rs/newest.json?page=\(self.page)")!
-    self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                do {
-                    if let d = data {
-                        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                        DispatchQueue.main.async {
-                            NewestFetcher.cachedStories = decodedLists
-                            self.stories = decodedLists
-                            self.page += 1
+        let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
+        
+        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
+                    do {
+                        if let d = data {
+                            let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
+                            DispatchQueue.main.async {
+                                TagStoryFetcher.cachedStories = decodedLists
+                                self.stories = decodedLists
+                                self.page += 1
+                            }
+                        }else {
+                            print("No Data")
                         }
-                    }else {
-                        print("No Data")
+                    } catch {
+                        print ("Error \(error) \(url)")
                     }
-                } catch {
-                    print ("Error \(error)")
                 }
-            }
         self.session?.resume()
     }
-    
+
+    var page: Int = 1
+
     func more(_ story: NewestStory? = nil) {
         if self.stories.last == story && !isLoadingMore {
-            let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
             self.isLoadingMore = true
+            let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
 
             self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
                 do {
@@ -63,7 +64,7 @@ class NewestFetcher: ObservableObject {
                                     self.stories.append(story)
                                 }
                             }
-                            HottestFetcher.cachedStories = self.stories
+                            TagStoryFetcher.cachedStories = self.stories
                             self.page += 1
                         }
                     }else {

@@ -12,37 +12,49 @@ struct StoryCell: View {
     
     var story: NewestStory
     
+    @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
+    
     var body: some View {
-        HStack(alignment: .center, spacing: 16.0) {
-            if settings.layoutValue > 1.0 {
-                VStack(alignment: .center) {
-                    Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                    Text("\(story.score)").foregroundColor(.gray)
-                }
+        ZStack(alignment: .trailing) {
+            Spacer(minLength: 0)// ensure full width
+            if !story.url.isEmpty {
+                // make chevron bold like navigationlink
+                Text("\(Image(systemName: "chevron.right"))").bold().foregroundColor(Color(UIColor.systemGray3))
             }
-            VStack(alignment: .leading) {
-                Text(story.title).font(.headline).foregroundColor(Color.accentColor)
-                if settings.layoutValue > 0 {
-                    Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
-                }
-                if settings.layoutValue > 0 {
-                    TagList(tags: story.tags)
-                }
-                HStack {
-                    SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
-                        Text("via ").font(.subheadline).foregroundColor(Color.secondary) +
-                        Text(story.submitter_user.username).font(.subheadline).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
-                            Text(" " +
-                                    story.time_ago).font(.subheadline).foregroundColor(Color.secondary)
+            HStack(alignment: .center, spacing: 16.0) {
+                if settings.layout > .comfortable {
+                    VStack(alignment: .center) {
+                        Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
+                        Text("\(story.score)").foregroundColor(.gray)
                     }
-                    Spacer()
-                    SGNavigationLink(destination: StoryView(story), withChevron: false) {
-                        if story.comment_count == 1 {
-                            Text("1 comment").font(.subheadline).foregroundColor(Color.secondary)
-                        } else {
-                            Text("\(story.comment_count) comments").font(.subheadline).foregroundColor(Color.secondary)
+                }
+                let contains = viewedItems.contains { element in
+                    element.short_id == story.short_id && element.isStory
+                }
+                VStack(alignment: .leading) {
+                    Text(story.title).font(.headline).foregroundColor(Color.accentColor.opacity(contains ? 0.69 : 1.0))
+                    if settings.layout > .compact {
+                        Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
+                    }
+                    if settings.layout > .compact {
+                        TagList(tags: story.tags)
+                    }
+                    HStack {
+                        SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
+                            Text("via ").font(.subheadline).foregroundColor(Color.secondary) +
+                            Text(story.submitter_user.username).font(.subheadline).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                                Text(" " +
+                                        story.time_ago).font(.subheadline).foregroundColor(Color.secondary)
                         }
-                    }.fixedSize()
+                        Spacer()
+                        SGNavigationLink(destination: StoryView(story), withChevron: false) {
+                            if story.comment_count == 1 {
+                                Text("1 comment").font(.subheadline).foregroundColor(Color.secondary)
+                            } else {
+                                Text("\(story.comment_count) comments").font(.subheadline).foregroundColor(Color.secondary)
+                            }
+                        }.fixedSize()
+                    }
                 }
             }
         }
@@ -52,7 +64,7 @@ struct StoryCell: View {
 struct StoryCell_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["apple", "programming"])).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["ios", "programming"])).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
         }.previewLayout(.sizeThatFits)
     }
 }

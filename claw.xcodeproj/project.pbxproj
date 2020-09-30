@@ -16,6 +16,12 @@
 		F6291185251059E60065C3E9 /* GenericStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericStory.swift */; };
 		F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
 		F629118C25105A440065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
+		F656F64C252523C6006FFAFD /* TagFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F64B252523C6006FFAFD /* TagFetcher.swift */; };
+		F656F65225252405006FFAFD /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65125252405006FFAFD /* Tag.swift */; };
+		F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65725252563006FFAFD /* TagStoryFetcher.swift */; };
+		F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65D252525DC006FFAFD /* TagStoryView.swift */; };
+		F656F66425252A18006FFAFD /* ScrollOffsetPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */; };
+		F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66925252A34006FFAFD /* TrackableScrollView.swift */; };
 		F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C92F250C5DD400B1FF42 /* clawApp.swift */; };
 		F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C931250C5DD400B1FF42 /* ContentView.swift */; };
 		F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F669C933250C5DDE00B1FF42 /* Assets.xcassets */; };
@@ -51,8 +57,8 @@
 		F687676A251E8677003090D2 /* claw@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876768251E8677003090D2 /* claw@2x~ipad.png */; };
 		F687676B251E8677003090D2 /* claw~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876769251E8677003090D2 /* claw~ipad.png */; };
 		F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
-		F6E9EDAD251EDF8E005E2B1C /* Newest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* Newest.swift */; };
-		F6E9EDAE251EDF90005E2B1C /* Newest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* Newest.swift */; };
+		F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */; };
+		F6E9EDAE251EDF90005E2B1C /* NewestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */; };
 		F6E9EDB7251EDF98005E2B1C /* NewestStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118625105A0F0065C3E9 /* NewestStory.swift */; };
 		F6E9EDBC251EDF9C005E2B1C /* NewestStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118625105A0F0065C3E9 /* NewestStory.swift */; };
 		F6E9EDC1251EDFAA005E2B1C /* GenericStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericStory.swift */; };
@@ -66,7 +72,6 @@
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
 		F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */; };
 		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
-		F6E9EE382522D04D005E2B1C /* StoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE372522D04D005E2B1C /* StoryListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,6 +124,12 @@
 		F6291184251059E60065C3E9 /* GenericStory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GenericStory.swift; path = claw/Stories/GenericStory.swift; sourceTree = SOURCE_ROOT; };
 		F629118625105A0F0065C3E9 /* NewestStory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewestStory.swift; path = claw/Stories/NewestStory.swift; sourceTree = SOURCE_ROOT; };
 		F629118A25105A3E0065C3E9 /* NewestUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewestUser.swift; path = claw/User/NewestUser.swift; sourceTree = SOURCE_ROOT; };
+		F656F64B252523C6006FFAFD /* TagFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFetcher.swift; sourceTree = "<group>"; };
+		F656F65125252405006FFAFD /* Tag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
+		F656F65725252563006FFAFD /* TagStoryFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagStoryFetcher.swift; sourceTree = "<group>"; };
+		F656F65D252525DC006FFAFD /* TagStoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagStoryView.swift; sourceTree = "<group>"; };
+		F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollOffsetPreferenceKey.swift; sourceTree = "<group>"; };
+		F656F66925252A34006FFAFD /* TrackableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableScrollView.swift; sourceTree = "<group>"; };
 		F669C92C250C5DD400B1FF42 /* claw.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = claw.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C92F250C5DD400B1FF42 /* clawApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawApp.swift; sourceTree = "<group>"; };
 		F669C931250C5DD400B1FF42 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -133,7 +144,7 @@
 		F669C94D250C5DDE00B1FF42 /* clawUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clawUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C951250C5DDE00B1FF42 /* clawUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawUITests.swift; sourceTree = "<group>"; };
 		F669C953250C5DDE00B1FF42 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F669C95F250C5DF000B1FF42 /* Newest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Newest.swift; path = claw/Stories/Newest/Newest.swift; sourceTree = SOURCE_ROOT; };
+		F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewestFetcher.swift; path = claw/Stories/Newest/NewestFetcher.swift; sourceTree = SOURCE_ROOT; };
 		F669C961250C61F000B1FF42 /* StoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryCell.swift; path = claw/Stories/StoryCell.swift; sourceTree = SOURCE_ROOT; };
 		F669C963250C711E00B1FF42 /* Story.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Story.swift; path = claw/Stories/Story.swift; sourceTree = SOURCE_ROOT; };
 		F669C96B250C847000B1FF42 /* HTMLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLView.swift; sourceTree = "<group>"; };
@@ -168,7 +179,6 @@
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
 		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
 		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
-		F6E9EE372522D04D005E2B1C /* StoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListView.swift; path = claw/Stories/StoryListView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,7 +228,6 @@
 		F617B551251EDDDF0060B21A /* Stories */ = {
 			isa = PBXGroup;
 			children = (
-				F6E9EE372522D04D005E2B1C /* StoryListView.swift */,
 				F669C971250E750200B1FF42 /* StoryView.swift */,
 				F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */,
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
@@ -235,7 +244,7 @@
 		F617B552251EDDFB0060B21A /* Newest */ = {
 			isa = PBXGroup;
 			children = (
-				F669C95F250C5DF000B1FF42 /* Newest.swift */,
+				F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */,
 				F6E9EDCB251EE005005E2B1C /* NewestView.swift */,
 			);
 			path = Newest;
@@ -280,6 +289,18 @@
 			path = hottest.widget;
 			sourceTree = "<group>";
 		};
+		F656F646252523B6006FFAFD /* Tags */ = {
+			isa = PBXGroup;
+			children = (
+				F669C96D250E746D00B1FF42 /* TagView.swift */,
+				F656F65D252525DC006FFAFD /* TagStoryView.swift */,
+				F656F64B252523C6006FFAFD /* TagFetcher.swift */,
+				F656F65725252563006FFAFD /* TagStoryFetcher.swift */,
+				F656F65125252405006FFAFD /* Tag.swift */,
+			);
+			path = Tags;
+			sourceTree = "<group>";
+		};
 		F669C923250C5DD400B1FF42 = {
 			isa = PBXGroup;
 			children = (
@@ -319,7 +340,9 @@
 				F6876712251AF800003090D2 /* SafariActivity.swift */,
 				F6291163251038810065C3E9 /* CommentHierarchy.swift */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
-				F669C96D250E746D00B1FF42 /* TagView.swift */,
+				F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */,
+				F656F66925252A34006FFAFD /* TrackableScrollView.swift */,
+				F656F646252523B6006FFAFD /* Tags */,
 				F617B551251EDDDF0060B21A /* Stories */,
 				F617B553251EDE0A0060B21A /* User */,
 				F617B54C251EDDD10060B21A /* Extensions */,
@@ -567,7 +590,7 @@
 				F6E9EDC6251EDFB9005E2B1C /* HottestFetcher.swift in Sources */,
 				F629118C25105A440065C3E9 /* NewestUser.swift in Sources */,
 				F6E9EDC1251EDFAA005E2B1C /* GenericStory.swift in Sources */,
-				F6E9EDAE251EDF90005E2B1C /* Newest.swift in Sources */,
+				F6E9EDAE251EDF90005E2B1C /* NewestFetcher.swift in Sources */,
 				F6E9EDBC251EDF9C005E2B1C /* NewestStory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -578,12 +601,14 @@
 			files = (
 				F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */,
 				F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */,
-				F6E9EE382522D04D005E2B1C /* StoryListView.swift in Sources */,
+				F656F64C252523C6006FFAFD /* TagFetcher.swift in Sources */,
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
 				F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */,
 				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,
 				F6E9EDE7251EE0E1005E2B1C /* ImageLoader.swift in Sources */,
+				F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */,
 				F6E9EDB7251EDF98005E2B1C /* NewestStory.swift in Sources */,
+				F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */,
 				F687667325141A27003090D2 /* MailView.swift in Sources */,
 				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
 				F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */,
@@ -596,16 +621,19 @@
 				F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */,
 				F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */,
 				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
+				F656F66425252A18006FFAFD /* ScrollOffsetPreferenceKey.swift in Sources */,
 				F6876713251AF800003090D2 /* SafariActivity.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
 				F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
+				F656F65225252405006FFAFD /* Tag.swift in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* UserAvatarLoader.swift in Sources */,
+				F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */,
 				F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */,
 				F669C970250E74CB00B1FF42 /* HottestView.swift in Sources */,
-				F6E9EDAD251EDF8E005E2B1C /* Newest.swift in Sources */,
+				F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */,
 				F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */,
 				F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */,
 				F669C96E250E746D00B1FF42 /* TagView.swift in Sources */,
@@ -665,7 +693,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -688,7 +716,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -831,7 +859,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
@@ -859,7 +887,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;

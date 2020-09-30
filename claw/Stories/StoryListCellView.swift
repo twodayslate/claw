@@ -14,11 +14,18 @@ struct StoryListCellView: View {
     @EnvironmentObject var settings: Settings
     
     @State var activeSheet: ActiveSheet?
+    @State var backgroundColorState = Color(UIColor.systemBackground)
+    
+    @State var navigationLinkActive = false
     
     var body: some View {
-        SGNavigationLink(destination: StoryView(story).environmentObject(settings)) {
+        ZStack {
+           NavigationLink(
+            destination: StoryView(story),
+            isActive: $navigationLinkActive,
+            label: { EmptyView() })
             StoryCell(story: story).environmentObject(settings)
-        }.contextMenu(menuItems:{
+                .padding([.horizontal]).padding([.vertical], settings.layout > .compact ? 8.0 : 4.0).background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems:{
             if story.url.isEmpty {
                 Button(action: {
                     activeSheet = .second
@@ -60,5 +67,14 @@ struct StoryListCellView: View {
                 Text("\(activeSheet.debugDescription)")
             }
         }
+        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+            withAnimation(.easeIn) {
+                backgroundColorState = Color(UIColor.systemGray4)
+                withAnimation(.easeOut) {
+                    backgroundColorState = Color(UIColor.systemBackground)
+                    navigationLinkActive = true
+                }
+            }
+        })
     }
 }

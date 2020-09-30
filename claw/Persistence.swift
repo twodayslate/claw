@@ -2,6 +2,37 @@ import Foundation
 import CoreData
 import SwiftUI
 
+public class ViewedItem: NSManagedObject, Identifiable {
+    @NSManaged public var short_id: String
+    @NSManaged public var isStory: Bool
+    @NSManaged public var isComment: Bool
+    @NSManaged public var timestamp: Date
+    
+    convenience init(context: NSManagedObjectContext, short_id: String, isStory: Bool = false, isComment: Bool = false) {
+        guard let entity = NSEntityDescription.entity(forEntityName: "ViewedItem", in: context) else {
+            fatalError("No entity named Settings")
+        }
+        self.init(entity: entity, insertInto: context)
+        self.short_id = short_id
+        self.isStory = isStory
+        self.isComment = isComment
+        self.timestamp = Date()
+    }
+}
+
+
+extension ViewedItem {
+    // ❇️ The @FetchRequest property wrapper in the ContentView will call this function
+    static func fetchAllRequest() -> NSFetchRequest<ViewedItem> {
+        let request: NSFetchRequest<ViewedItem> = ViewedItem.fetchRequest() as! NSFetchRequest<ViewedItem>
+        
+        // ❇️ The @FetchRequest property wrapper in the ContentView requires a sort descriptor
+        request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: true)]
+
+        return request
+    }
+}
+
 public class Settings: NSManagedObject, Identifiable {
     @NSManaged public var layoutValue: Double
     @NSManaged public var timestamp: Date
@@ -13,10 +44,24 @@ public class Settings: NSManagedObject, Identifiable {
             fatalError("No entity named Settings")
         }
         self.init(entity: entity, insertInto: context)
-        self.layoutValue = 2.0
+        self.layoutValue = Settings.Layout.Default.rawValue
         self.timestamp = Date()
         self.alternateIconName = nil
         self.accentColorData = UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0).data
+    }
+    
+    enum Layout: Double, Equatable, Comparable {
+        static func < (lhs: Settings.Layout, rhs: Settings.Layout) -> Bool {
+            return lhs.rawValue < rhs.rawValue
+        }
+        
+        case compact = 0.0
+        case comfortable = 1.0
+        case Default = 2.0
+    }
+    
+    var layout: Layout {
+        return Layout(rawValue: self.layoutValue) ?? Layout.Default
     }
     
     var defaultAccentColor: UIColor {
