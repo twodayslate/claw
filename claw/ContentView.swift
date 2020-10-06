@@ -26,7 +26,7 @@ extension EnvironmentValues {
 }
 
 enum TabSelection: String {
-    case Hottest, Newest, Settings
+    case Hottest, Newest, Settings, Tags
 }
 /** https://stackoverflow.com/a/64019877/193772 */
 struct NavigableTabViewItem<Content: View, TabItem: View>: View {
@@ -115,6 +115,13 @@ struct ContentView: View {
             }, tabItem: {
                 _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
+            }).environmentObject(settings)
+            
+            NavigableTabViewItem(tabSelection: TabSelection.Tags, content: {
+                    SelectedTagsView()
+            }, tabItem: {
+                _selection == .Tags ? Image(systemName: "tag.fill") : Image(systemName: "tag")
+                Text("Tags")
             }).environmentObject(settings)
 
             NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {

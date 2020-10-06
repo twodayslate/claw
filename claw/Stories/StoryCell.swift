@@ -15,6 +15,9 @@ struct StoryCell: View {
     @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
     
     var body: some View {
+        let contains = viewedItems.contains { element in
+            element.short_id == story.short_id && element.isStory
+        }
         ZStack(alignment: .trailing) {
             Spacer(minLength: 0)// ensure full width
             if !story.url.isEmpty {
@@ -28,9 +31,7 @@ struct StoryCell: View {
                         Text("\(story.score)").foregroundColor(.gray)
                     }
                 }
-                let contains = viewedItems.contains { element in
-                    element.short_id == story.short_id && element.isStory
-                }
+                
                 VStack(alignment: .leading) {
                     Text(story.title).font(.headline).foregroundColor(Color.accentColor.opacity(contains ? 0.69 : 1.0))
                     if settings.layout > .compact {
@@ -57,7 +58,7 @@ struct StoryCell: View {
                     }
                 }
             }
-        }
+        }.opacity(contains ? 0.9 : 1.0)
     }
 }
 

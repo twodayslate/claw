@@ -27,8 +27,9 @@ class TagFetcher: ObservableObject {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode([Tag].self, from: d)
                             DispatchQueue.main.async {
-                                TagFetcher.cachedTags = decodedLists
-                                self.tags = decodedLists
+                                let sorted = decodedLists.sorted(by: {$0.tag < $1.tag})
+                                TagFetcher.cachedTags = sorted
+                                self.tags = sorted
                             }
                         }else {
                             print("No Data")

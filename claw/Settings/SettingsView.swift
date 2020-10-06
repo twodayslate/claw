@@ -25,7 +25,7 @@ struct AppIconView: View {
         HStack {
             Image(uiImage: UIImage(contentsOfFile: path)!).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
             VStack(alignment: .leading) {
-                Text("\(icon.name)")
+                Text("\(icon.name)").foregroundColor(Color(UIColor.label))
                 if let subtitle = icon.subtitle {
                     Text("\(subtitle)").font(.subheadline).foregroundColor(.gray)
                 }
@@ -53,14 +53,13 @@ struct ColorIconView: View {
         }, label: {
             HStack {
                 Image(systemName: "app.fill").foregroundColor(Color(color))
-                Text("\(color.name ?? "Unkown")")
+                Text("\(color.name ?? "Unkown")").foregroundColor(Color(UIColor.label))
                 if settings.accentColor == Color(color) {
                     Spacer()
                     Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
                 }
             }
         })
-        
     }
 }
 struct AccentColorChooserView: View {
@@ -71,7 +70,7 @@ struct AccentColorChooserView: View {
             ForEach([settings.defaultAccentColor, UIColor.black, UIColor.white, UIColor.systemRed, UIColor.systemBlue, UIColor.systemGreen, UIColor.systemGray, UIColor.systemYellow, UIColor.systemTeal, UIColor.systemOrange, UIColor.systemPurple, UIColor.systemIndigo], id: \.self) { color in
                 ColorIconView(color: color)
             }
-        }.navigationTitle("Accent Color")
+        }.navigationTitle("Accent Color").listStyle(GroupedListStyle())
     }
 }
 struct AppIconChooserView: View {
@@ -107,7 +106,7 @@ struct AppIconChooserView: View {
             }, label: {
                 AppIconView(icon: AppIcon(alternateIconName: "Classic", name: "Classic", assetName: "Classic@2x.png")).environmentObject(settings)
             })
-        }.navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
+        }.listStyle(GroupedListStyle()).navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
     }

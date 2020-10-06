@@ -22,6 +22,8 @@
 		F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65D252525DC006FFAFD /* TagStoryView.swift */; };
 		F656F66425252A18006FFAFD /* ScrollOffsetPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */; };
 		F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66925252A34006FFAFD /* TrackableScrollView.swift */; };
+		F656F67C25268709006FFAFD /* SelectedTagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F67B25268709006FFAFD /* SelectedTagsView.swift */; };
+		F656F682252BEF42006FFAFD /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F681252BEF42006FFAFD /* SearchBar.swift */; };
 		F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C92F250C5DD400B1FF42 /* clawApp.swift */; };
 		F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C931250C5DD400B1FF42 /* ContentView.swift */; };
 		F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F669C933250C5DDE00B1FF42 /* Assets.xcassets */; };
@@ -130,6 +132,8 @@
 		F656F65D252525DC006FFAFD /* TagStoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagStoryView.swift; sourceTree = "<group>"; };
 		F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollOffsetPreferenceKey.swift; sourceTree = "<group>"; };
 		F656F66925252A34006FFAFD /* TrackableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableScrollView.swift; sourceTree = "<group>"; };
+		F656F67B25268709006FFAFD /* SelectedTagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedTagsView.swift; sourceTree = "<group>"; };
+		F656F681252BEF42006FFAFD /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		F669C92C250C5DD400B1FF42 /* claw.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = claw.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669C92F250C5DD400B1FF42 /* clawApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = clawApp.swift; sourceTree = "<group>"; };
 		F669C931250C5DD400B1FF42 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -294,6 +298,7 @@
 			children = (
 				F669C96D250E746D00B1FF42 /* TagView.swift */,
 				F656F65D252525DC006FFAFD /* TagStoryView.swift */,
+				F656F67B25268709006FFAFD /* SelectedTagsView.swift */,
 				F656F64B252523C6006FFAFD /* TagFetcher.swift */,
 				F656F65725252563006FFAFD /* TagStoryFetcher.swift */,
 				F656F65125252405006FFAFD /* Tag.swift */,
@@ -339,6 +344,7 @@
 				F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */,
 				F6876712251AF800003090D2 /* SafariActivity.swift */,
 				F6291163251038810065C3E9 /* CommentHierarchy.swift */,
+				F656F681252BEF42006FFAFD /* SearchBar.swift */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
 				F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */,
 				F656F66925252A34006FFAFD /* TrackableScrollView.swift */,
@@ -607,6 +613,7 @@
 				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,
 				F6E9EDE7251EE0E1005E2B1C /* ImageLoader.swift in Sources */,
 				F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */,
+				F656F67C25268709006FFAFD /* SelectedTagsView.swift in Sources */,
 				F6E9EDB7251EDF98005E2B1C /* NewestStory.swift in Sources */,
 				F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */,
 				F687667325141A27003090D2 /* MailView.swift in Sources */,
@@ -633,6 +640,7 @@
 				F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */,
 				F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */,
 				F669C970250E74CB00B1FF42 /* HottestView.swift in Sources */,
+				F656F682252BEF42006FFAFD /* SearchBar.swift in Sources */,
 				F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */,
 				F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */,
 				F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */,
