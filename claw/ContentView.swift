@@ -93,6 +93,8 @@ struct ContentView: View {
 
     @State private var didReselect = PassthroughSubject<TabSelection, Never>()
 
+    @Environment(\.sizeCategory) var sizeCategory
+    
     var body: some View {
         let selection = Binding(get: { self._selection },
                                         set: {
@@ -130,7 +132,7 @@ struct ContentView: View {
                 Image(systemName: "gear")
                 Text("Settings")
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
-        }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor)
+        }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
     }
 }
 

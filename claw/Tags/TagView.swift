@@ -6,6 +6,7 @@ struct TagView: View {
     var tag: String
     
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var settings: Settings
     
     var color: Color {
         if tag == "ask" || tag == "show" || tag == "announce" || tag == "interview" {
@@ -26,7 +27,7 @@ struct TagView: View {
     
     var body:some View {
         SGNavigationLink(destination: TagStoryView(tags: [tag]), title: tag, withChevron: false, content: {
-            Text(tag).font(.footnote).lineLimit(1).minimumScaleFactor(0.5).foregroundColor(foregroundColor).padding(EdgeInsets(top: 4.0, leading: 8.0, bottom: 4.0, trailing: 8.0)).background(color).overlay(
+            Text(tag).font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).lineLimit(1).minimumScaleFactor(0.5).foregroundColor(foregroundColor).padding(EdgeInsets(top: 4.0, leading: 8.0, bottom: 4.0, trailing: 8.0)).background(color).overlay(
                 RoundedRectangle(cornerRadius: 8.0)
                     .stroke(Color(UIColor.separator), lineWidth: 2.0)
             ).clipShape(RoundedRectangle(cornerRadius: 8.0))

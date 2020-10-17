@@ -33,28 +33,28 @@ struct StoryCell: View {
                 }
                 
                 VStack(alignment: .leading) {
-                    Text(story.title).font(.headline).foregroundColor(Color.accentColor.opacity(contains ? 0.69 : 1.0))
+                    Text(story.title).font(Font(.headline, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(Color.accentColor.opacity(contains ? 0.69 : 1.0))
                     if settings.layout > .compact {
-                        Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(.callout)
+                        Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                     }
                     if settings.layout > .compact {
                         TagList(tags: story.tags)
                     }
                     HStack {
                         SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
-                            Text("via ").font(.subheadline).foregroundColor(Color.secondary) +
-                            Text(story.submitter_user.username).font(.subheadline).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                            Text("via ").foregroundColor(Color.secondary) +
+                            Text(story.submitter_user.username).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                                 Text(" " +
-                                        story.time_ago).font(.subheadline).foregroundColor(Color.secondary)
-                        }
+                                        story.time_ago).foregroundColor(Color.secondary)
+                        }.font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
                         Spacer()
                         SGNavigationLink(destination: StoryView(story), withChevron: false) {
                             if story.comment_count == 1 {
-                                Text("1 comment").font(.subheadline).foregroundColor(Color.secondary)
+                                Text("1 comment").foregroundColor(Color.secondary)
                             } else {
-                                Text("\(story.comment_count) comments").font(.subheadline).foregroundColor(Color.secondary)
+                                Text("\(story.comment_count) comments").foregroundColor(Color.secondary)
                             }
-                        }.fixedSize()
+                        }.fixedSize().font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
                     }
                 }
             }

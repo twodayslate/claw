@@ -59,10 +59,15 @@ struct SelectTagsView: View {
     
     @ObservedObject var searchBar = SearchBar()
     
+    @State var lastScrolledId: String? = nil
+    
+    @EnvironmentObject var settings: Settings
+    
     var body: some View {
         ScrollViewReader { scrollReader in
             ZStack(alignment: .topTrailing) {
                 List {
+                    EmptyView().id("top")
                     ForEach(alphabet, id: \.self) { letter in
                         let filtered = fetcher.tags.filter({$0.tag.prefix(1).uppercased() == letter && (self.searchBar.text.isEmpty ||  $0.tag.lowercased().contains(self.searchBar.text.lowercased())) })
                         if filtered.count > 0 {
@@ -94,10 +99,15 @@ struct SelectTagsView: View {
                             }.id(letter)
                         }
                     }
+                    HStack {
+                        Spacer()
+                        Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
+                        Spacer()
+                    }.id("bottom")
                 }.listStyle(PlainListStyle()).add(self.searchBar)
                 
                 VStack(alignment: .trailing) {
-                    Spacer()
+                    Spacer().background(DestinationDataSetter(destination: "top"))
                         ForEach(alphabet, id: \.self) { letter in
                             HStack {
                                 Spacer()
@@ -105,9 +115,10 @@ struct SelectTagsView: View {
                                     print("letter = \(letter)")
                                     //need to figure out if there is a name in this section before I allow scrollto or it will crash
                                     if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == letter }) != nil {
-                                        withAnimation {
-                                            scrollReader.scrollTo(letter, anchor: .top)
-                                        }
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                        //withAnimation {
+                                        scrollReader.scrollTo(letter, anchor: .top)
+                                       //}
                                     }
                                 }, label: {
                                     Text(letter)
@@ -116,20 +127,29 @@ struct SelectTagsView: View {
                                 })
                             }
                         }
-                    Spacer()
+                    Spacer().background(DestinationDataSetter(destination: "bottom"))
                 }.ignoresSafeArea(.keyboard, edges: .all).zIndex(1.0).simultaneousGesture(DragGesture(minimumDistance: 0.0, coordinateSpace: .global).onChanged({ action in
                     print("drag letter", action, action.location, self.destinations)
                     for (id, frame) in self.destinations {
-                        
-                        if frame.insetBy(dx: -20, dy: -6).contains(action.location) {
+                        if frame.insetBy(dx: -20, dy: 0).contains(action.location) {
                             print("letter", id)
                             DispatchQueue.main.async {
                                 if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == id }) != nil {
+                                    if lastScrolledId != id {
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                    }
+                                    self.lastScrolledId = id
                                     scrollReader.scrollTo(id, anchor: .top)
+                                } else if id == "top" {
+                                    scrollReader.scrollTo(id, anchor: .top)
+                                } else if id == "bottom" {
+                                    scrollReader.scrollTo("bottom", anchor: .top)
                                 }
                             }
                         }
                     }
+                }).onEnded({ action in
+                    self.lastScrolledId = nil
                 }))
             }.onPreferenceChange(DestinationDataKey.self) { preferences in
                 for p in preferences {

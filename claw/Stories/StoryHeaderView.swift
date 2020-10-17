@@ -19,13 +19,13 @@ struct StoryHeaderView<T: GenericStory>: View {
         VStack(alignment: .leading) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(story.title).font(.title2).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
+                    Text(story.title).font(Font(.title2, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
                         NavigationLink(
                             destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? story.title),
                             isActive: $navigationLinkActive,
                             label: {
-                                Text(host).foregroundColor(Color.secondary).font(.callout)
+                                Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                             }).padding([.bottom], 4.0).onAppear {
                             webViewStore.webView.load(URLRequest(url: url))
                         }
@@ -39,10 +39,10 @@ struct StoryHeaderView<T: GenericStory>: View {
                         VStack(alignment: .leading) {
                             TagList(tags: story.tags)
                             SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
-                                Text("via ").font(.callout).foregroundColor(Color.secondary) +
-                                Text(story.submitter_user.username).font(.callout).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
-                                    Text(" " + story.time_ago).font(.callout).foregroundColor(Color.secondary)
-                            }
+                                Text("via ").foregroundColor(Color.secondary) +
+                                Text(story.submitter_user.username).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                                    Text(" " + story.time_ago).foregroundColor(Color.secondary)
+                            }.font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                         }
                     }
                 }

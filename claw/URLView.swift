@@ -9,15 +9,17 @@ import SwiftUI
 
 struct URLView: View {
     var link: HTMLLink
+    @EnvironmentObject var settings: Settings
+    
     var body: some View {
         VStack(alignment: .leading){
             if link.text != link.url {
-                Text("\(link.text)").font(.footnote).bold().foregroundColor(Color.primary)
+                Text("\(link.text)").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).bold().foregroundColor(Color.primary)
             }
-            Text("\(link.url)").font(.caption).foregroundColor(Color.primary)
-        }.padding().background(Color.secondary).overlay(
+            Text("\(link.url)").font(Font(.caption, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(Color.primary)
+        }.padding().background(Color.secondary.opacity(0.8)).overlay(
             RoundedRectangle(cornerRadius: 8.0)
-                .stroke(Color.primary, lineWidth: 2.0)
+                .stroke(Color.primary.opacity(0.8), lineWidth: 2.0)
         ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
             UIApplication.shared.open(URL(string: link.url)!)
         }

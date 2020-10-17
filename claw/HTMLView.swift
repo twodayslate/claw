@@ -14,6 +14,8 @@ import SwiftSoup
 // * https://github.com/Lambdo-Labs/MDText
 
 struct NodesView: View {
+    @EnvironmentObject var settings: Settings
+    
     var nodes: [Node]
     var bullet = "•"
     
@@ -47,7 +49,7 @@ struct NodesView: View {
                     } else if childElement.tagName() == "a" {
                         text = text + getText(from:childElement).foregroundColor(.accentColor).underline()
                     } else if childElement.tagName() == "code" {
-                        text = text + getText(from:childElement).font(.system(.body, design: .monospaced))
+                        text = text + getText(from:childElement).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)-1, design: .monospaced))
                     }
                 }
             }
@@ -75,11 +77,12 @@ struct NodesView: View {
                     combined = combined + getText(from:element).strikethrough()
                     hasAddedText = true
                 } else if element.tagName() == "code" {
-                    combined = combined + getText(from:element).font(.system(.body, design: .monospaced))
+                    combined = combined + getText(from:element)
+                        .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)-1, design: .monospaced))
                     hasAddedText = true
                 } else if element.tagName() == "pre" {
                     clearText()
-                    let bq = HTMLView(html: try! element.html()).padding().frame(minWidth: 0, maxWidth: .infinity, alignment: .topLeading).background(Color.secondary).font(.system(.body, design: .monospaced))
+                    let bq = HTMLView(html: try! element.html()).padding().frame(minWidth: 0, maxWidth: .infinity, alignment: .topLeading).background(Color.secondary.opacity(0.8)).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)-1, design: .monospaced))
                     ans.append(AnyView(bq))
                 }
                 else if element.tagName() == "blockquote" {

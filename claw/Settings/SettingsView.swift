@@ -27,7 +27,8 @@ struct AppIconView: View {
             VStack(alignment: .leading) {
                 Text("\(icon.name)").foregroundColor(Color(UIColor.label))
                 if let subtitle = icon.subtitle {
-                    Text("\(subtitle)").font(.subheadline).foregroundColor(.gray)
+                    Text("\(subtitle)").foregroundColor(.gray)
+                        .font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
                 }
             }
             
@@ -133,10 +134,11 @@ struct SettingsView: View {
     }
     
     @EnvironmentObject var settings: Settings
+    @Environment(\.sizeCategory) var sizeCategory
     
     var body: some View {
             List {
-                Section(header: Text("Appearance")) {
+                Section(header: Text("Appearance").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                     if UIApplication.shared.supportsAlternateIcons {
                         NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
                             HStack {
@@ -160,8 +162,13 @@ struct SettingsView: View {
                             Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
                         }
                     })
+                    
+                    HStack {
+                        SettingsTextSizeSlider()
+                    }
+                    
                 }
-                Section(header: Text("Layout")) {
+                Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                     SettingsLayoutSlider().environmentObject(settings)
                 }
                 Section {
@@ -184,14 +191,14 @@ struct SettingsView: View {
                     }
                     SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
                 }
-                Section(header: Text("Legal")) {
+                Section(header: Text("Legal").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                     SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
                     SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
                 }
             }.sheet(isPresented: $isShowingMailView) {
                 MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
             }.listStyle(GroupedListStyle()
-            ).navigationBarTitle("Settings", displayMode: .inline)
+            ).navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
     }
 }
 

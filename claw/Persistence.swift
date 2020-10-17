@@ -38,7 +38,8 @@ public class Settings: NSManagedObject, Identifiable {
     @NSManaged public var timestamp: Date
     @NSManaged public var alternateIconName: String?
     @NSManaged public var accentColorData: Data?
-    
+    @NSManaged public var textSizeModifier: Double
+
     convenience init(context: NSManagedObjectContext) {
         guard let entity = NSEntityDescription.entity(forEntityName: "Settings", in: context) else {
             fatalError("No entity named Settings")
@@ -48,6 +49,7 @@ public class Settings: NSManagedObject, Identifiable {
         self.timestamp = Date()
         self.alternateIconName = nil
         self.accentColorData = UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0).data
+        self.textSizeModifier = 0.0
     }
     
     enum Layout: Double, Equatable, Comparable {
