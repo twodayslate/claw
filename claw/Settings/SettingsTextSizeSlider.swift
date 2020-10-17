@@ -20,16 +20,31 @@ struct SettingsTextSizeSlider: View {
                 if settings.textSizeModifier == 0 {
                     Text("System Size").foregroundColor(.gray)
                 } else if settings.textSizeModifier > 0 {
-                    Text("System Size +\(Int(settings.textSizeModifier))").foregroundColor(.gray)
+                    Text("System Size +\(String(format: "%.1f", settings.textSizeModifier))").foregroundColor(.gray)
                 } else {
-                    Text("System Size \(Int(settings.textSizeModifier))").foregroundColor(.gray)
+                    Text("System Size \(String(format: "%.1f", settings.textSizeModifier))").foregroundColor(.gray)
                 }
             }
             HStack {
-                Text("\(Image(systemName: "textformat.size"))").foregroundColor(.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)-2))
-                    //.font(Font(.body, sizeModifier: settings.textSizeModifier - 2))
-                Slider(value: $settings.textSizeModifier, in: -6.0...6.0, step: 1.0)
-                Text("\(Image(systemName: "textformat.size"))").foregroundColor(.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)+2))
+                Button(action: {
+                    if settings.textSizeModifier >= -5.0 {
+                        settings.textSizeModifier -= 1.0
+                    }
+                    
+                }, label: {
+                    Text("\(Image(systemName: "minus"))").foregroundColor(.accentColor).font(.body)
+                }).buttonStyle(BorderlessButtonStyle())
+                
+                Slider(value: $settings.textSizeModifier, in: -6.0...6.0, step: 0.5).zIndex(1.0)
+                
+                Button(action: {
+                    if settings.textSizeModifier <= 5.0 {
+                        settings.textSizeModifier += 1.0
+                    }
+                    
+                }, label: {
+                    Text("\(Image(systemName: "plus"))").foregroundColor(.accentColor).font(.body)
+                }).buttonStyle(BorderlessButtonStyle())
             }
         }
     }
