@@ -25,6 +25,24 @@ extension EnvironmentValues {
     }
 }
 
+enum OpenerSheetSelection: Identifiable {
+    var id: String {
+        switch self {
+            case .Story(let story_id):
+                return story_id
+            case .User(let user_id):
+                return user_id
+        case .Unknown(let url):
+            return "\(url)"
+        }
+    }
+    
+    case Story(String)
+    case User(String)
+    case Unknown(URL)
+}
+
+
 enum TabSelection: String {
     case Hottest, Newest, Settings, Tags
 }
@@ -94,6 +112,8 @@ struct ContentView: View {
     @State private var didReselect = PassthroughSubject<TabSelection, Never>()
 
     @Environment(\.sizeCategory) var sizeCategory
+        
+    @State var sheet: OpenerSheetSelection? = nil
     
     var body: some View {
         let selection = Binding(get: { self._selection },
@@ -132,7 +152,40 @@ struct ContentView: View {
                 Image(systemName: "gear")
                 Text("Settings")
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
-        }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
+        }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier))).onOpenURL(perform: { url in
+            let _ = print(url)
+            if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
+                if lobsters_url.pathComponents.count > 2 {
+                    if lobsters_url.pathComponents[1] == "s" {
+                        self.sheet = OpenerSheetSelection.Story(lobsters_url.pathComponents[2])
+                    }
+                    else if lobsters_url.pathComponents[1] == "u" {
+                        self.sheet = OpenerSheetSelection.User(lobsters_url.pathComponents[2])
+                    } else {
+                        self.sheet = OpenerSheetSelection.Unknown(lobsters_url)
+                    }
+                } else {
+                    self.sheet = OpenerSheetSelection.Unknown(lobsters_url)
+                }
+            } else {
+                self.sheet = OpenerSheetSelection.Unknown(url)
+            }
+        }).sheet(item: $sheet, content: { item in
+            EZPanel {
+                switch item {
+                case .Story(let story_id):
+                    StoryView(story_id)
+                case .User(let username):
+                    UserView(username)
+                case .Unknown(let url):
+                    VStack {
+                        Text("Unknown URL").bold()
+                        Text("\(url)")
+                    }
+                }
+                
+            }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+        }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
     }
 }
 

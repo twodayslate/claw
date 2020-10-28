@@ -41,7 +41,7 @@ struct StoryCell: View {
                         TagList(tags: story.tags)
                     }
                     HStack {
-                        SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
+                        SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                             Text("via ").foregroundColor(Color.secondary) +
                             Text(story.submitter_user.username).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                                 Text(" " +

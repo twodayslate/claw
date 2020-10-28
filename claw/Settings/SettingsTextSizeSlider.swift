@@ -41,7 +41,6 @@ struct SettingsTextSizeSlider: View {
                     if settings.textSizeModifier <= 5.0 {
                         settings.textSizeModifier += 1.0
                     }
-                    
                 }, label: {
                     Text("\(Image(systemName: "plus"))").foregroundColor(.accentColor).font(.body)
                 }).buttonStyle(BorderlessButtonStyle())

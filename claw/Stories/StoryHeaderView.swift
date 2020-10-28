@@ -38,7 +38,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         
                         VStack(alignment: .leading) {
                             TagList(tags: story.tags)
-                            SGNavigationLink(destination: UserView(user: story.submitter_user), withChevron: false) {
+                            SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                                 Text("via ").foregroundColor(Color.secondary) +
                                 Text(story.submitter_user.username).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                                     Text(" " + story.time_ago).foregroundColor(Color.secondary)

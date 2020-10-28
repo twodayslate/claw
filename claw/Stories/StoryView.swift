@@ -71,7 +71,7 @@ struct StoryView: View {
                         if  my_story.comments.count > 0 {
                             HierarchyList(data: my_story.sorted_comments, header: { comment in
                                 HStack(alignment: .center) {
-                                    SGNavigationLink(destination: UserView(user: comment.comment.commenting_user), withChevron: false) {
+                                    SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
                                         Text(comment.comment.commenting_user.username).foregroundColor(.gray)
                                     }
                                     Spacer()

@@ -7,10 +7,16 @@
 
 import SwiftUI
 
+extension String: Identifiable {
+    public var id: String {
+        return self
+    }
+}
+
 @main
 struct clawApp: App {
     let persistenceController = PersistenceController.shared
-
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
