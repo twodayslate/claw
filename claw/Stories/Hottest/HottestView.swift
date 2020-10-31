@@ -43,7 +43,13 @@ struct HottestView: View {
                             }
                         }
                     }
-                }
+                }.navigationBarItems(trailing: Button(action: { hottest.reload() }, label: {
+                    if self.hottest.isReloading {
+                        ProgressView().progressViewStyle(CircularProgressViewStyle())
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }))
             }
         }
     }

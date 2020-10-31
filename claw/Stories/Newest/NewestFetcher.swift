@@ -12,6 +12,7 @@ class NewestFetcher: ObservableObject {
     @Published var stories = NewestFetcher.cachedStories
     static var cachedStories = [NewestStory]()
     @Published var isLoadingMore = false
+    @Published var isReloading = false
     var page: Int = 1
     
     init() {
@@ -26,7 +27,17 @@ class NewestFetcher: ObservableObject {
     private var session: URLSessionTask? = nil
     private var moreSession: URLSessionTask? = nil
     
-    func load() {
+    func reload(completion: ((Error?)->Void)? = nil) {
+        self.session?.cancel()
+        self.isReloading = true
+        self.page = 1
+        self.load(completion: { error in
+            self.isReloading = false
+            completion?(error)
+        })
+    }
+    
+    func load(completion: ((Error?)->Void)? = nil) {
         let url = URL(string: "https://lobste.rs/newest.json?page=\(self.page)")!
     self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                 do {
@@ -36,20 +47,23 @@ class NewestFetcher: ObservableObject {
                             NewestFetcher.cachedStories = decodedLists
                             self.stories = decodedLists
                             self.page += 1
+                            completion?(nil)
                         }
                     }else {
                         print("No Data")
+                        completion?(nil) // todo: throw error
                     }
                 } catch {
                     print ("Error \(error)")
+                    completion?(error)
                 }
             }
         self.session?.resume()
     }
     
-    func more(_ story: NewestStory? = nil) {
+    func more(_ story: NewestStory? = nil, completion: ((Error?)->Void)? = nil) {
         if self.stories.last == story && !isLoadingMore {
-            let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
+            let url = URL(string: "https://lobste.rs/newest.json?page=\(self.page)")!
             self.isLoadingMore = true
 
             self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
@@ -65,12 +79,15 @@ class NewestFetcher: ObservableObject {
                             }
                             NewestFetcher.cachedStories = self.stories
                             self.page += 1
+                            completion?(nil)
                         }
                     }else {
                         print("No Data")
+                        completion?(nil) // todo: actually do error
                     }
                 } catch {
                     print ("Error \(error)")
+                    completion?(error)
                 }
                 DispatchQueue.main.async {
                     self.isLoadingMore = false

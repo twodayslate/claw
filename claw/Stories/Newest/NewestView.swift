@@ -6,6 +6,7 @@ struct NewestView: View {
     @EnvironmentObject var settings: Settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
+    
     var body: some View {
         ScrollViewReader { scrollProxy in
             ScrollView {
@@ -45,7 +46,13 @@ struct NewestView: View {
                         }
                        
                     }
-                }
+                }.navigationBarItems(trailing: Button(action: { newest.reload() }, label: {
+                    if self.newest.isReloading {
+                        ProgressView().progressViewStyle(CircularProgressViewStyle())
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }))
             }
         }
     }

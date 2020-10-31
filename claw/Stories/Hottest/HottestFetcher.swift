@@ -7,6 +7,7 @@ class HottestFetcher: ObservableObject {
     static var cachedStories = [NewestStory]()
     
     @Published var isLoadingMore = false
+    @Published var isReloading = false
     
     init() {
         load()
@@ -20,7 +21,14 @@ class HottestFetcher: ObservableObject {
     private var session: URLSessionTask? = nil
     private var moreSession: URLSessionTask? = nil
     
-    func load() {
+    func reload() {
+        self.session?.cancel()
+        self.page = 1
+        self.isReloading = true
+        self.load(completion: { _ in self.isReloading = false })
+    }
+    
+    func load(completion: ((Error?)->Void)? = nil) {
         let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
         
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
@@ -31,12 +39,15 @@ class HottestFetcher: ObservableObject {
                                 HottestFetcher.cachedStories = decodedLists
                                 self.stories = decodedLists
                                 self.page += 1
+                                completion?(nil)
                             }
                         }else {
                             print("No Data")
+                            completion?(nil) // todo: actually throw an error
                         }
                     } catch {
                         print ("Error \(error)")
+                        completion?(error)
                     }
                 }
         self.session?.resume()
@@ -44,7 +55,7 @@ class HottestFetcher: ObservableObject {
 
     var page: Int = 1
 
-    func more(_ story: NewestStory? = nil) {
+    func more(_ story: NewestStory? = nil, completion: ((Error?)->Void)? = nil) {
         if self.stories.last == story && !isLoadingMore {
             self.isLoadingMore = true
             let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
@@ -62,12 +73,15 @@ class HottestFetcher: ObservableObject {
                             }
                             HottestFetcher.cachedStories = self.stories
                             self.page += 1
+                            completion?(nil)
                         }
                     }else {
                         print("No Data")
+                        completion?(nil) // todo: throw actual error
                     }
                 } catch {
                     print ("Error \(error)")
+                    completion?(error)
                 }
                 DispatchQueue.main.async {
                     self.isLoadingMore = false
