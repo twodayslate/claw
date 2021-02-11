@@ -44,7 +44,6 @@
 		F669C974250EA28700B1FF42 /* UserAvatarLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C973250EA28700B1FF42 /* UserAvatarLoader.swift */; };
 		F669C976250EA56400B1FF42 /* URLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C975250EA56400B1FF42 /* URLView.swift */; };
 		F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */; };
-		F669C99B250ED07800B1FF42 /* WebView in Frameworks */ = {isa = PBXBuildFile; productRef = F669C99A250ED07800B1FF42 /* WebView */; };
 		F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C99C250EE5AA00B1FF42 /* UIColor.swift */; };
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
@@ -81,6 +80,8 @@
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
 		F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */; };
 		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
+		F6F2012425D5C130008BA024 /* BetterSafariView in Frameworks */ = {isa = PBXBuildFile; productRef = F6F2012325D5C130008BA024 /* BetterSafariView */; };
+		F6F2013525D5CCD6008BA024 /* ObservableURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F2013425D5CCD6008BA024 /* ObservableURL.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -206,6 +207,7 @@
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
 		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
 		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
+		F6F2013425D5CCD6008BA024 /* ObservableURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableURL.swift; sourceTree = "<group>"; };
 		F6F326AE2549042700798BC5 /* opener-action.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "opener-action.entitlements"; sourceTree = "<group>"; };
 		F6F326AF254904A100798BC5 /* hottest.widgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = hottest.widgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -224,7 +226,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F669C99B250ED07800B1FF42 /* WebView in Frameworks */,
+				F6F2012425D5C130008BA024 /* BetterSafariView in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -390,6 +392,7 @@
 				F617B553251EDE0A0060B21A /* User */,
 				F617B54C251EDDD10060B21A /* Extensions */,
 				F6876706251A82FE003090D2 /* ShareSheet.swift */,
+				F6F2013425D5CCD6008BA024 /* ObservableURL.swift */,
 				F6E9EDE6251EE0E1005E2B1C /* ImageLoader.swift */,
 				F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
@@ -503,7 +506,7 @@
 			name = claw;
 			packageProductDependencies = (
 				F669C969250C846200B1FF42 /* SwiftSoup */,
-				F669C99A250ED07800B1FF42 /* WebView */,
+				F6F2012325D5C130008BA024 /* BetterSafariView */,
 			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
@@ -601,7 +604,7 @@
 			mainGroup = F669C923250C5DD400B1FF42;
 			packageReferences = (
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
-				F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */,
+				F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */,
 			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
@@ -716,6 +719,7 @@
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
 				F656F65225252405006FFAFD /* Tag.swift in Sources */,
 				F6E01E912548C00C00AADFBC /* EZPanel.swift in Sources */,
+				F6F2013525D5CCD6008BA024 /* ObservableURL.swift in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* UserAvatarLoader.swift in Sources */,
@@ -1215,12 +1219,12 @@
 				minimumVersion = 2.3.2;
 			};
 		};
-		F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */ = {
+		F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/phatblat/WebView";
+			repositoryURL = "https://github.com/stleamist/BetterSafariView.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.1;
+				minimumVersion = 2.3.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1231,10 +1235,10 @@
 			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
 		};
-		F669C99A250ED07800B1FF42 /* WebView */ = {
+		F6F2012325D5C130008BA024 /* BetterSafariView */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F669C999250ED07800B1FF42 /* XCRemoteSwiftPackageReference "WebView" */;
-			productName = WebView;
+			package = F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */;
+			productName = BetterSafariView;
 		};
 /* End XCSwiftPackageProductDependency section */
 

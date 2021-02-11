@@ -1,19 +1,17 @@
 import SwiftUI
-import WebView
-import WebKit
+import BetterSafariView
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T
-    
-    @ObservedObject var webViewStore: WebViewStore
     
     @State var activeSheet: ActiveSheet?
     
     @EnvironmentObject var settings: Settings
     
-    @State var navigationLinkActive = false
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
+    
+    @EnvironmentObject var urlToOpen: ObservableURL
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -21,14 +19,11 @@ struct StoryHeaderView<T: GenericStory>: View {
                 VStack(alignment: .leading) {
                     Text(story.title).font(Font(.title2, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
-                        NavigationLink(
-                            destination: WebView(webView: webViewStore.webView).navigationTitle(webViewStore.webView.title ?? story.title),
-                            isActive: $navigationLinkActive,
-                            label: {
-                                Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
-                            }).padding([.bottom], 4.0).onAppear {
-                            webViewStore.webView.load(URLRequest(url: url))
-                        }
+                        Button(action: {
+                            urlToOpen.url = URL(string: story.url)
+                        }, label: {
+                            Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
+                            }).padding([.bottom], 4.0)
                     }
                     HStack(alignment: .center, spacing: 16.0) {
                         VStack(alignment: .center) {
@@ -110,7 +105,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                 withAnimation(.easeOut) {
                     backgroundColorState = Color(UIColor.systemBackground)
                 }
-                navigationLinkActive = true
+                urlToOpen.url = URL(string: story.url)
             }
         })
     }
@@ -120,7 +115,7 @@ struct StoryHeaderView<T: GenericStory>: View {
 struct StoryHeaderView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryHeaderView(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["ios", "programming"]), webViewStore: WebViewStore(webView: WKWebView()))
+            StoryHeaderView(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["ios", "programming"]))
         }.previewLayout(.sizeThatFits)
     }
 }

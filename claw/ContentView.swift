@@ -1,13 +1,5 @@
-//
-//  ContentView.swift
-//  claw
-//
-//  Created by Zachary Gorak on 9/11/20.
-//
-
 import SwiftUI
 import CoreData
-import WebKit
 import Combine
 
 struct DidReselectKey: EnvironmentKey {

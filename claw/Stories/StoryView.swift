@@ -1,7 +1,5 @@
 import SwiftUI
-import WebView
-import WebKit
-
+import BetterSafariView
 
 struct StoryView: View {
     var short_id: String
@@ -39,10 +37,7 @@ struct StoryView: View {
     
     // https://stackoverflow.com/questions/58093295/swiftui-avoid-recreating-rerendering-view-in-tabview-with-mkmapviewuiviewrepre
     // this webview is recreated everytime a settings changes and is slow af
-    static var webView = WKWebView()
-    
-    @ObservedObject var webViewStore = WebViewStore(webView: StoryView.webView)
-    
+        
     @State var activeSheet: ActiveSheet?
     
     @EnvironmentObject var settings: Settings
@@ -53,18 +48,20 @@ struct StoryView: View {
     
     @State private var scrollViewContentOffset = CGFloat(0)
     
+    @ObservedObject var urlToOpen = ObservableURL()
+    
     var body: some View {
         ScrollViewReader { scrollReader in
             
             TrackableScrollView(contentOffset: $scrollViewContentOffset) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let story = story.story {
-                        StoryHeaderView<Story>(story: story, webViewStore: webViewStore).id(0).environmentObject(settings)
+                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
                     }
                     else if let story = from_newest  {
-                        StoryHeaderView<NewestStory>(story: story, webViewStore: webViewStore).id(0).environmentObject(settings)
+                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
                     } else {
-                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder, webViewStore: webViewStore).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
+                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
                     }
                     Divider()
                     if let my_story = story.story {
@@ -116,6 +113,14 @@ struct StoryView: View {
                     viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
                     try? viewContext.save()
                 }
+            }).fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+                SafariView(
+                    url: url,
+                    configuration: SafariView.Configuration(
+                        entersReaderIfAvailable: false,
+                        barCollapsingEnabled: true
+                    )
+                ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
             })
         }
     }
