@@ -44,7 +44,9 @@ struct NodesView: View {
                         text = text + getText(from:childElement).bold()
                     } else if childElement.tagName() == "em" {
                         text = text + getText(from:childElement).italic()
-                    } else if childElement.tagName() == "strike" {
+                    } else if childElement.tagName() == "del" {
+                        text = text + getText(from:childElement).strikethrough()
+                    } else if ["del", "strike"].contains(childElement.tagName()) {
                         text = text + getText(from:childElement).strikethrough()
                     } else if childElement.tagName() == "a" {
                         text = text + getText(from:childElement).foregroundColor(.accentColor).underline()
@@ -73,7 +75,7 @@ struct NodesView: View {
                 } else if element.tagName() == "em" {
                     combined = combined + getText(from:element).italic()
                     hasAddedText = true
-                } else if element.tagName() == "strike" {
+                } else if ["del", "strike"].contains(element.tagName()) {
                     combined = combined + getText(from:element).strikethrough()
                     hasAddedText = true
                 } else if element.tagName() == "code" {
@@ -232,6 +234,14 @@ struct HTMLView_Previews: PreviewProvider {
 <p>Here’s an edge case that breaks this grammar:</p>\n<pre><code>**Bold and *Italic***\n</code></pre>\n<p>which renders as <strong>Bold and <em>Italic</em></strong> using Lobsters’ Markdown renderer</p>\n
 """)
             }
+            
+            // https://lobste.rs/s/f5dt41/pip_has_dropped_support_for_python_2#c_ke2hvl
+            ScrollView {
+                HTMLView(html: """
+            <p>Python 2 support has been dropped by <del>pip</del> the Python Packaging Authority (PyPA) at the Python Packaging Index (PyPI), which is the default configuration for every distribution of pip I’m aware of. If you have critical dependencies on Python 2 packages and are unwilling to migrate to Python 3, set up your own package index <del>or pull the libraries you depend on directly into the vcs for your legacy project</del> (which is definitely more work than migrating to Python 3, but <em>is</em> a choice you have).</p>\n<p>Another easier alternative would be to pull the libraries you depend on directly into the vcs for your legacy project.</p>\n
+""")
+            }
+            
             ScrollView {
                 HTMLView(html: """
 <p>I’ve been down a parallel road to this - the Control key has enough of an established usage for me when using the shell (which features in ~80%  of my computer time) that I don’t see why I’d want to overload it as a gui shortcut key when Alt is sitting there largely unused).</p>\n<p>The article doesn’t mention Firefox (possibly because the author doesn’t use it). If it doesn’t use the Gtk settings - I haven’t checked, because I didn’t know about them (thanks!) - you can switch it from  Control to Alt by changing the “ui.key.accelKey” preference to 18.  I do this by dropping a <code>user.js</code> file in my profile directory containing the line</p>\n<pre><code>user_pref(\"ui.key.accelKey\", 18); # use Alt instead of Ctrl\n</code></pre>\n
@@ -265,6 +275,6 @@ struct HTMLView_Previews: PreviewProvider {
     """)
             }
             " ".join([Text("Hello"), Text("link").foregroundColor(.blue), Text("world!")])
-        }.previewLayout(.sizeThatFits)
+        }.previewLayout(.sizeThatFits).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
     }
 }
