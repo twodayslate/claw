@@ -10,6 +10,7 @@ import SwiftUI
 struct URLView: View {
     var link: HTMLLink
     @EnvironmentObject var settings: Settings
+    @EnvironmentObject var urlToOpen: ObservableURL
     
     var body: some View {
         VStack(alignment: .leading){
@@ -21,7 +22,11 @@ struct URLView: View {
             RoundedRectangle(cornerRadius: 8.0)
                 .stroke(Color.primary.opacity(0.8), lineWidth: 2.0)
         ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
-            UIApplication.shared.open(URL(string: link.url)!)
+            if settings.browser == .inAppSafari {
+                urlToOpen.url = URL(string: link.url)
+            } else {
+                UIApplication.shared.open(URL(string: link.url)!)
+            }
         }
     }
 }

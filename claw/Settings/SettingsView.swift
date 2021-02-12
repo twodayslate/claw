@@ -171,6 +171,21 @@ struct SettingsView: View {
                 Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                     SettingsLayoutSlider().environmentObject(settings)
                 }
+                Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+                        
+                    Picker(selection: $settings.browser, label:
+                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
+                    , content: {
+                        Text("In-App Safari").tag(Browser.inAppSafari)
+                        Text("Default Browser").tag(Browser.defaultBrowser)
+                    })
+                    
+                    if settings.browser == Browser.inAppSafari {
+                        Toggle(isOn: $settings.readerModeEnabled, label: {
+                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
+                        })
+                    }
+                }
                 Section {
                     SettingsLinkView(image: "github", text: "GitHub", url: "https://github.com/twodayslate/claw", iconColor: .black)
                     SettingsLinkView(image: "twitter", text: "Twitter", url: twitterURL.absoluteString, iconColor: .blue)

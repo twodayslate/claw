@@ -18,7 +18,11 @@ struct StoryHeaderView<T: GenericStory>: View {
                     Text(story.title).font(Font(.title2, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
                         Button(action: {
-                            urlToOpen.url = URL(string: story.url)
+                            if settings.browser == .inAppSafari {
+                                urlToOpen.url = URL(string: story.url)
+                            } else {
+                                UIApplication.shared.open(URL(string: story.url)!)
+                            }
                         }, label: {
                             Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                             }).padding([.bottom], 4.0)
@@ -82,7 +86,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description)
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link)
+                        URLView(link: link).environmentObject(urlToOpen)
                     }
                 }.padding()
             }
@@ -93,7 +97,11 @@ struct StoryHeaderView<T: GenericStory>: View {
                     withAnimation(.easeOut) {
                         backgroundColorState = Color(UIColor.systemBackground)
                     }
-                    urlToOpen.url = URL(string: story.url)
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = URL(string: story.url)
+                    } else {
+                        UIApplication.shared.open(URL(string: story.url)!)
+                    }
                 }
             }
         })

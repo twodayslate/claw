@@ -85,7 +85,7 @@ struct StoryView: View {
                                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                                     }
                                     ForEach(html.links, id: \.self) { link in
-                                            URLView(link: link)
+                                            URLView(link: link).environmentObject(urlToOpen)
                                     }
                                 }
                             }).padding([.bottom])
@@ -130,7 +130,7 @@ struct StoryView: View {
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(
-                    entersReaderIfAvailable: false,
+                    entersReaderIfAvailable: settings.readerModeEnabled,
                     barCollapsingEnabled: true
                 )
             ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)

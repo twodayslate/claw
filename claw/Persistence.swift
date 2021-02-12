@@ -33,12 +33,19 @@ extension ViewedItem {
     }
 }
 
+public enum Browser: Int16 {
+    case inAppSafari = 0
+    case defaultBrowser = 1
+}
+
 public class Settings: NSManagedObject, Identifiable {
     @NSManaged public var layoutValue: Double
     @NSManaged public var timestamp: Date
     @NSManaged public var alternateIconName: String?
     @NSManaged public var accentColorData: Data?
     @NSManaged public var textSizeModifier: Double
+    @NSManaged public var browserRawValue: Int16
+    @NSManaged public var readerMode: Bool
 
     convenience init(context: NSManagedObjectContext) {
         guard let entity = NSEntityDescription.entity(forEntityName: "Settings", in: context) else {
@@ -68,6 +75,26 @@ public class Settings: NSManagedObject, Identifiable {
     
     var defaultAccentColor: UIColor {
         return UIColor.init(red: 158.0/255.0, green: 38.0/255.0, blue: 27.0/255.0, alpha: 1.0)
+    }
+    
+    var readerModeEnabled: Bool {
+        get {
+            return self.readerMode
+        }
+        set {
+            self.readerMode = newValue
+            try? self.managedObjectContext?.save()
+        }
+    }
+    
+    var browser: Browser {
+        get {
+            return Browser(rawValue: self.browserRawValue) ?? .inAppSafari
+        }
+        set {
+            self.browserRawValue = newValue.rawValue
+            try? self.managedObjectContext?.save()
+        }
     }
     
     var accentUIColor: UIColor {
