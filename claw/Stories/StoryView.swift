@@ -50,16 +50,19 @@ struct StoryView: View {
     
     @ObservedObject var urlToOpen = ObservableURL()
     
+    @ObservedObject var observableSheet = ObservableActiveSheet()
+    
     var body: some View {
         ScrollViewReader { scrollReader in
             
             TrackableScrollView(contentOffset: $scrollViewContentOffset) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let story = story.story {
-                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
+                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen).environmentObject(observableSheet)
                     }
                     else if let story = from_newest  {
                         StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
+                            .environmentObject(observableSheet)
                     } else {
                         StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
                     }
@@ -113,15 +116,24 @@ struct StoryView: View {
                     viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
                     try? viewContext.save()
                 }
-            }).fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
-                SafariView(
-                    url: url,
-                    configuration: SafariView.Configuration(
-                        entersReaderIfAvailable: false,
-                        barCollapsingEnabled: true
-                    )
-                ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
             })
+        }.sheet(item: self.observableSheet.bindingSheet) {
+            item in
+            switch item {
+                case .share(let url):
+                    ShareSheet(activityItems: [url])
+                default:
+                    Text("Error: \(activeSheet.debugDescription)")
+            }
         }
+        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+            SafariView(
+                url: url,
+                configuration: SafariView.Configuration(
+                    entersReaderIfAvailable: false,
+                    barCollapsingEnabled: true
+                )
+            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+        })
     }
 }

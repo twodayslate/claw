@@ -2,10 +2,41 @@ import Foundation
 import SwiftUI
 
 enum ActiveSheet: Identifiable {
-    case first, second, third
+    enum `Type`: Identifiable {
+        case fullScreenCover
+        case sheet
+        
+        var id: Int {
+            hashValue
+        }
+    }
+    
+    case share(URL)
+    
+    case safari(URL)
+    
+    case url(`Type`, URL)
     
     var id: Int {
-        hashValue
+        switch self {
+            case .share(let url): return url.hashValue
+            case .url(let t, let url): return t.hashValue + url.hashValue
+            case .safari(let url): return url.hashValue
+        default:
+            return "\(self)".hashValue
+        }
+    }
+}
+
+public class ObservableActiveSheet: ObservableObject {
+    @Published var sheet: ActiveSheet? = nil
+    
+    var bindingSheet: Binding<ActiveSheet?> {
+        return Binding(get: {
+            return self.sheet
+        }, set: { newValue in
+            self.sheet = newValue
+        })
     }
 }
 
@@ -28,25 +59,25 @@ struct StoryListCellView: View {
                 .padding([.horizontal]).padding([.vertical], settings.layout > .compact ? 8.0 : 4.0).background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems:{
             if story.url.isEmpty {
                 Button(action: {
-                    activeSheet = .second
+                    activeSheet = .share(URL(string: story.short_id_url)!)
                 }, label: {
                     Label("Share", systemImage: "square.and.arrow.up")
                 })
             } else {
                 Menu(content: {
                     Button(action: {
-                        activeSheet = .second
+                        activeSheet = .share(URL(string: story.short_id_url)!)
                     }, label: {
                         Label("Lobsters URL", systemImage: "book")
                     })
                     if !story.url.isEmpty {
                         Button(action: {
-                            activeSheet = .first
+                            activeSheet = .share(URL(string: story.url)!)
                         }, label: {
                             Label("Story URL", systemImage: "link")
                         })
                         Button(action: {
-                            activeSheet = .third
+                            activeSheet = .share(URL(string: "https://archive.md/\(story.url)")!)
                         }, label: {
                             Label("Story Cache URL", systemImage: "archivebox")
                         })
@@ -57,13 +88,10 @@ struct StoryListCellView: View {
             }
         }).sheet(item: self.$activeSheet) {
             item in
-            if item == .first {
-                ShareSheet(activityItems: [URL(string: story.url)!])
-            } else if item == .second {
-                ShareSheet(activityItems: [URL(string: story.short_id_url)!])
-            } else if item == .third {
-                ShareSheet(activityItems: [URL(string: "https://archive.md/\(story.url)")!])
-            } else {
+            switch item {
+            case .share(let url):
+                ShareSheet(activityItems: [url])
+            default:
                 Text("\(activeSheet.debugDescription)")
             }
         }

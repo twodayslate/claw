@@ -3,15 +3,13 @@ import BetterSafariView
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T
-    
-    @State var activeSheet: ActiveSheet?
-    
+        
     @EnvironmentObject var settings: Settings
-    
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
     
     @EnvironmentObject var urlToOpen: ObservableURL
+    @EnvironmentObject var observableSheet: ObservableActiveSheet
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -49,25 +47,25 @@ struct StoryHeaderView<T: GenericStory>: View {
             }.padding().background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems: {
                 if story.url.isEmpty {
                     Button(action: {
-                        activeSheet = .second
+                        observableSheet.sheet = .share(URL(string: story.short_id_url)!)
                     }, label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     })
                 } else {
                     Menu(content: {
                         Button(action: {
-                            activeSheet = .second
+                            observableSheet.sheet = .share(URL(string: story.short_id_url)!)
                         }, label: {
                             Label("Lobsters URL", systemImage: "book")
                         })
                         if !story.url.isEmpty {
                             Button(action: {
-                                activeSheet = .first
+                                observableSheet.sheet = .share(URL(string: story.url)!)
                             }, label: {
                                 Label("Story URL", systemImage: "link")
                             })
                             Button(action: {
-                                activeSheet = .third
+                                observableSheet.sheet = .share(URL(string: "https://archive.md/\(story.url)")!)
                             }, label: {
                                 Label("Story Cache URL", systemImage: "archivebox")
                             })
@@ -76,18 +74,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         Label("Share", systemImage: "square.and.arrow.up.on.square")
                     })
                 }
-            }).sheet(item: self.$activeSheet) {
-                item in
-                if item == .first {
-                    ShareSheet(activityItems: [URL(string: story.url)!])
-                } else if item == .second {
-                    ShareSheet(activityItems: [URL(string: story.short_id_url)!])
-                } else if item == .third {
-                    ShareSheet(activityItems: [URL(string: "https://archive.md/\(story.url)")!])
-                } else {
-                    Text("\(activeSheet.debugDescription)")
-                }
-            }
+            })
 
             if story.description.count > 0 {
                 Divider().padding([.leading, .trailing])
@@ -100,12 +87,14 @@ struct StoryHeaderView<T: GenericStory>: View {
                 }.padding()
             }
         }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
-            withAnimation(.easeIn) {
-                backgroundColorState = Color(UIColor.systemGray4)
-                withAnimation(.easeOut) {
-                    backgroundColorState = Color(UIColor.systemBackground)
+            if !story.url.isEmpty {
+                withAnimation(.easeIn) {
+                    backgroundColorState = Color(UIColor.systemGray4)
+                    withAnimation(.easeOut) {
+                        backgroundColorState = Color(UIColor.systemBackground)
+                    }
+                    urlToOpen.url = URL(string: story.url)
                 }
-                urlToOpen.url = URL(string: story.url)
             }
         })
     }
