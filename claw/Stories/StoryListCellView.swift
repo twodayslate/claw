@@ -1,33 +1,6 @@
 import Foundation
 import SwiftUI
 
-enum ActiveSheet: Identifiable {
-    enum `Type`: Identifiable {
-        case fullScreenCover
-        case sheet
-        
-        var id: Int {
-            hashValue
-        }
-    }
-    
-    case share(URL)
-    
-    case safari(URL)
-    
-    case url(`Type`, URL)
-    
-    var id: Int {
-        switch self {
-            case .share(let url): return url.hashValue
-            case .url(let t, let url): return t.hashValue + url.hashValue
-            case .safari(let url): return url.hashValue
-        default:
-            return "\(self)".hashValue
-        }
-    }
-}
-
 public class ObservableActiveSheet: ObservableObject {
     @Published var sheet: ActiveSheet? = nil
     

@@ -1,5 +1,4 @@
 import SwiftUI
-import BetterSafariView
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T

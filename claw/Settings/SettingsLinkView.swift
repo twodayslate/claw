@@ -8,9 +8,16 @@ struct SettingsLinkView: View {
     var url: String
     var iconColor: Color = Color.accentColor
     
+    @EnvironmentObject var settings: Settings
+    @EnvironmentObject var urlToOpen: ObservableURL
+    
     var body: some View {
             Button(action: {
-                UIApplication.shared.open(URL(string: url)!)
+                if settings.browser == .inAppSafari {
+                    urlToOpen.url = URL(string: url)
+                } else {
+                    UIApplication.shared.open(URL(string: url)!)
+                }
             }, label: {
                 ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
         })

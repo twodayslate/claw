@@ -82,6 +82,7 @@
 		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
 		F6F2012425D5C130008BA024 /* BetterSafariView in Frameworks */ = {isa = PBXBuildFile; productRef = F6F2012325D5C130008BA024 /* BetterSafariView */; };
 		F6F2013525D5CCD6008BA024 /* ObservableURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F2013425D5CCD6008BA024 /* ObservableURL.swift */; };
+		F6F2015A25D63C04008BA024 /* ActiveSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F2015925D63C04008BA024 /* ActiveSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -208,6 +209,7 @@
 		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
 		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
 		F6F2013425D5CCD6008BA024 /* ObservableURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableURL.swift; sourceTree = "<group>"; };
+		F6F2015925D63C04008BA024 /* ActiveSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSheet.swift; sourceTree = "<group>"; };
 		F6F326AE2549042700798BC5 /* opener-action.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "opener-action.entitlements"; sourceTree = "<group>"; };
 		F6F326AF254904A100798BC5 /* hottest.widgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = hottest.widgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -394,6 +396,7 @@
 				F6876706251A82FE003090D2 /* ShareSheet.swift */,
 				F6F2013425D5CCD6008BA024 /* ObservableURL.swift */,
 				F6E9EDE6251EE0E1005E2B1C /* ImageLoader.swift */,
+				F6F2015925D63C04008BA024 /* ActiveSheet.swift */,
 				F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
 				F669C938250C5DDE00B1FF42 /* Persistence.swift */,
@@ -693,6 +696,7 @@
 				F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */,
 				F656F64C252523C6006FFAFD /* TagFetcher.swift in Sources */,
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
+				F6F2015A25D63C04008BA024 /* ActiveSheet.swift in Sources */,
 				F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */,
 				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,
 				F6E9EDE7251EE0E1005E2B1C /* ImageLoader.swift in Sources */,

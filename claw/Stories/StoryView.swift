@@ -1,5 +1,4 @@
 import SwiftUI
-import BetterSafariView
 
 struct StoryView: View {
     var short_id: String
@@ -48,9 +47,8 @@ struct StoryView: View {
     
     @State private var scrollViewContentOffset = CGFloat(0)
     
-    @ObservedObject var urlToOpen = ObservableURL()
-    
-    @ObservedObject var observableSheet = ObservableActiveSheet()
+    @EnvironmentObject var urlToOpen: ObservableURL
+    @EnvironmentObject var observableSheet: ObservableActiveSheet
     
     var body: some View {
         ScrollViewReader { scrollReader in
@@ -117,23 +115,6 @@ struct StoryView: View {
                     try? viewContext.save()
                 }
             })
-        }.sheet(item: self.observableSheet.bindingSheet) {
-            item in
-            switch item {
-                case .share(let url):
-                    ShareSheet(activityItems: [url])
-                default:
-                    Text("Error: \(activeSheet.debugDescription)")
-            }
         }
-        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
-            SafariView(
-                url: url,
-                configuration: SafariView.Configuration(
-                    entersReaderIfAvailable: settings.readerModeEnabled,
-                    barCollapsingEnabled: true
-                )
-            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
-        })
     }
 }

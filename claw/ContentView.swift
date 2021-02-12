@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 import Combine
+import BetterSafariView
 
 struct DidReselectKey: EnvironmentKey {
     static let defaultValue = PassthroughSubject<TabSelection, Never>().eraseToAnyPublisher()
@@ -15,23 +16,6 @@ extension EnvironmentValues {
             self[DidReselectKey.self] = newValue
         }
     }
-}
-
-enum OpenerSheetSelection: Identifiable {
-    var id: String {
-        switch self {
-            case .Story(let story_id):
-                return story_id
-            case .User(let user_id):
-                return user_id
-        case .Unknown(let url):
-            return "\(url)"
-        }
-    }
-    
-    case Story(String)
-    case User(String)
-    case Unknown(URL)
 }
 
 
@@ -105,7 +89,8 @@ struct ContentView: View {
 
     @Environment(\.sizeCategory) var sizeCategory
         
-    @State var sheet: OpenerSheetSelection? = nil
+    @ObservedObject var observableSheet = ObservableActiveSheet()
+    @ObservedObject var urlToOpen = ObservableURL()
     
     var body: some View {
         let selection = Binding(get: { self._selection },
@@ -149,35 +134,47 @@ struct ContentView: View {
             if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
                 if lobsters_url.pathComponents.count > 2 {
                     if lobsters_url.pathComponents[1] == "s" {
-                        self.sheet = OpenerSheetSelection.Story(lobsters_url.pathComponents[2])
+                        self.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
                     }
                     else if lobsters_url.pathComponents[1] == "u" {
-                        self.sheet = OpenerSheetSelection.User(lobsters_url.pathComponents[2])
+                        self.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
                     } else {
-                        self.sheet = OpenerSheetSelection.Unknown(lobsters_url)
+                        self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
                     }
                 } else {
-                    self.sheet = OpenerSheetSelection.Unknown(lobsters_url)
+                    self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
                 }
             } else {
-                self.sheet = OpenerSheetSelection.Unknown(url)
+                self.observableSheet.sheet = ActiveSheet.url(url)
             }
-        }).sheet(item: $sheet, content: { item in
-            EZPanel {
-                switch item {
-                case .Story(let story_id):
-                    StoryView(story_id)
-                case .User(let username):
-                    UserView(username)
-                case .Unknown(let url):
+        }).sheet(item: self.observableSheet.bindingSheet, content: { item in
+            switch item {
+            case .story(let id):
+                EZPanel{ StoryView(id) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+            case .user(let username):
+                EZPanel{ UserView(username) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+            case .url(let url):
+                EZPanel {
                     VStack {
                         Text("Unknown URL").bold()
                         Text("\(url)")
                     }
                 }
-                
-            }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
-        }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
+            case .share(let url):
+                ShareSheet(activityItems: [url])
+            default:
+                Text("Error: \(item.debugDescription)")
+            }
+        }).environmentObject(settings).environment(\.managedObjectContext, viewContext).environmentObject(self.observableSheet).environmentObject(urlToOpen)
+        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+            SafariView(
+                url: url,
+                configuration: SafariView.Configuration(
+                    entersReaderIfAvailable: settings.readerModeEnabled,
+                    barCollapsingEnabled: true
+                )
+            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+        })
     }
 }
 

@@ -18,7 +18,7 @@ class SafariActivity: UIActivity {
     }
     
     override var activityTitle: String? {
-        return "Open in Safari"
+        return "Open in Default Browser"
     }
     
     override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
