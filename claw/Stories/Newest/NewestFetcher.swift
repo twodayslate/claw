@@ -19,6 +19,8 @@ class NewestFetcher: ObservableObject {
         load()
     }
     
+    static var shared = NewestFetcher()
+    
     deinit {
         self.session?.cancel()
         self.moreSession?.cancel()

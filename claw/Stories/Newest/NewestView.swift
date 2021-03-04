@@ -2,7 +2,7 @@ import SwiftUI
 
 
 struct NewestView: View {
-    @ObservedObject var newest = NewestFetcher()
+    @ObservedObject var newest = NewestFetcher.shared
     @EnvironmentObject var settings: Settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false

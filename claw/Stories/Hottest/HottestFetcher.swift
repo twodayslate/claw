@@ -9,6 +9,10 @@ class HottestFetcher: ObservableObject {
     @Published var isLoadingMore = false
     @Published var isReloading = false
     
+    // we need a shared object as a not singleton will be deinitialized after about 2
+    // navigation views deep
+    static var shared = HottestFetcher()
+    
     init() {
         load()
     }
