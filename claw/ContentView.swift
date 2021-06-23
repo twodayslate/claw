@@ -147,10 +147,16 @@ struct ContentView: View {
             } else {
                 self.observableSheet.sheet = ActiveSheet.url(url)
             }
-        }).sheet(item: self.observableSheet.bindingSheet, content: { item in
+        })
+        .sheet(item: self.observableSheet.bindingSheet, content: { item in
             switch item {
             case .story(let id):
-                EZPanel{ StoryView(id) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+                EZPanel{ StoryView(id)
+                }
+                .environmentObject(urlToOpen)
+                .environmentObject(settings)
+                .environmentObject(self.observableSheet)
+                .environment(\.managedObjectContext, viewContext)
             case .user(let username):
                 EZPanel{ UserView(username) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
             case .url(let url):
