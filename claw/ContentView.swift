@@ -131,6 +131,7 @@ struct ContentView: View {
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
         }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier))).onOpenURL(perform: { url in
             let _ = print(url)
+            UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: nil)
             if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
                 if lobsters_url.pathComponents.count > 2 {
                     if lobsters_url.pathComponents[1] == "s" {
