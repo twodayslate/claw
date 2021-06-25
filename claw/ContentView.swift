@@ -151,27 +151,43 @@ struct ContentView: View {
         .sheet(item: self.observableSheet.bindingSheet, content: { item in
             switch item {
             case .story(let id):
-                EZPanel{ StoryView(id)
+                EZPanel{
+                    StoryView(id)
                 }
                 .environmentObject(urlToOpen)
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
             case .user(let username):
-                EZPanel{ UserView(username) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+                EZPanel{
+                    UserView(username)
+                }
+                .environmentObject(urlToOpen)
+                .environmentObject(settings)
+                .environmentObject(self.observableSheet)
+                .environment(\.managedObjectContext, viewContext)
             case .url(let url):
                 EZPanel {
                     VStack {
                         Text("Unknown URL").bold()
-                        Text("\(url)")
+                        Text("\(url)").foregroundColor(Color.accentColor).underline()
                     }
                 }
+                .environmentObject(urlToOpen)
+                .environmentObject(settings)
+                .environmentObject(self.observableSheet)
+                .environment(\.managedObjectContext, viewContext)
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
                 Text("Error: \(item.debugDescription)")
             }
-        }).environmentObject(settings).environment(\.managedObjectContext, viewContext).environmentObject(self.observableSheet).environmentObject(urlToOpen)
+        })
+        .environmentObject(settings)
+        .environment(\.managedObjectContext, viewContext)
+        .environmentObject(self.observableSheet)
+        .environmentObject(urlToOpen)
+
         EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
             SafariView(
                 url: url,
