@@ -148,9 +148,8 @@ struct ContentView: View {
             
             if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
                 UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
-                                                                                                            openAction()
+                        openAction()
                 })
-                
             } else {
                 openAction()
             }
@@ -158,21 +157,32 @@ struct ContentView: View {
         .sheet(item: self.observableSheet.bindingSheet, content: { item in
             switch item {
             case .story(let id):
-                EZPanel{ StoryView(id)
+                EZPanel{
+                    StoryView(id)
                 }
                 .environmentObject(urlToOpen)
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
             case .user(let username):
-                EZPanel{ UserView(username) }.environmentObject(settings).environment(\.managedObjectContext, viewContext)
+                EZPanel{
+                    UserView(username)
+                }
+                .environmentObject(urlToOpen)
+                .environmentObject(settings)
+                .environmentObject(self.observableSheet)
+                .environment(\.managedObjectContext, viewContext)
             case .url(let url):
                 EZPanel {
                     VStack {
                         Text("Unknown URL").bold()
-                        Text("\(url)")
+                        Text("\(url)").foregroundColor(Color.accentColor).underline()
                     }
                 }
+                .environmentObject(urlToOpen)
+                .environmentObject(settings)
+                .environmentObject(self.observableSheet)
+                .environment(\.managedObjectContext, viewContext)
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
