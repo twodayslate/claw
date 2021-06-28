@@ -44,14 +44,11 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
         }).eraseToAnyPublisher()
 
         NavigationView {
-
                 self.content.environmentObject(settings).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         self.presentationMode.wrappedValue.dismiss()
                     }
                 }
-
-            
         }.tabItem {
             self.tabItem
         }
@@ -100,7 +97,6 @@ struct ContentView: View {
                                             }
                                             self._selection = $0
                                         })
-
         TabView(selection: selection) {
             NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
                 HottestView()
