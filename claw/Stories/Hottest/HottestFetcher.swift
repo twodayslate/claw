@@ -29,7 +29,11 @@ class HottestFetcher: ObservableObject {
         self.session?.cancel()
         self.page = 1
         self.isReloading = true
-        self.load(completion: { _ in self.isReloading = false })
+        self.load(completion: { _ in
+            DispatchQueue.main.async {
+                self.isReloading = false
+            }
+        })
     }
     
     func load(completion: ((Error?)->Void)? = nil) {

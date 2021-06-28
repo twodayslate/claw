@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MessageUI
+import BetterSafariView
 
 struct AppIcon: Codable {
     var alternateIconName: String?
