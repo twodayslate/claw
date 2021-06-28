@@ -6,6 +6,7 @@ struct StoryView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @ObservedObject var story: StoryFetcher
+    @Environment(\.settingValue) var settingValue
     
     init(_ short_id: String) {
         self.short_id = short_id
@@ -42,34 +43,29 @@ struct StoryView: View {
     @EnvironmentObject var settings: Settings
     
     @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
-    
-    @Environment(\.managedObjectContext) private var viewContext
-    
+
     @State private var scrollViewContentOffset = CGFloat(0)
-    
-    @EnvironmentObject var urlToOpen: ObservableURL
-    @EnvironmentObject var observableSheet: ObservableActiveSheet
-    
+
     var body: some View {
         ScrollViewReader { scrollReader in
             
             TrackableScrollView(contentOffset: $scrollViewContentOffset) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let story = story.story {
-                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen).environmentObject(observableSheet)
+                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings) .environment(\.settingValue,settingValue)
                     }
                     else if let story = from_newest  {
-                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
-                            .environmentObject(observableSheet)
+                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(settings) .environment(\.settingValue,settingValue)
                     } else {
-                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
+                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).environmentObject(settings)
+                            .environment(\.settingValue,settingValue).redacted(reason: .placeholder).allowsHitTesting(false)
                     }
                     Divider()
                     if let my_story = story.story {
                         if  my_story.comments.count > 0 {
                             HierarchyList(data: my_story.sorted_comments, header: { comment in
                                 HStack(alignment: .center) {
-                                    SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
+                                    SGNavigationLink(destination: UserView(comment.comment.commenting_user).environment(\.settingValue,settingValue), withChevron: false) {
                                         Text(comment.comment.commenting_user.username).foregroundColor(.gray)
                                     }
                                     Spacer()
@@ -83,7 +79,7 @@ struct StoryView: View {
                                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                                     }
                                     ForEach(html.links, id: \.self) { link in
-                                            URLView(link: link).environmentObject(urlToOpen)
+                                        URLView(link: link).environmentObject(settingValue.urlToOpen)
                                     }
                                 }
                             }).padding([.bottom])
@@ -111,8 +107,8 @@ struct StoryView: View {
                     element.short_id == story.short_id && element.isStory
                 }
                 if !contains {
-                    viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
-                    try? viewContext.save()
+                    settingValue.viewContext.insert(ViewedItem(context: settingValue.viewContext, short_id: story.short_id, isStory: true, isComment: false))
+                    try? settingValue.viewContext.save()
                 }
             })
         }

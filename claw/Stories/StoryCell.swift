@@ -9,6 +9,7 @@ import SwiftUI
 
 struct StoryCell: View {
     @EnvironmentObject var settings: Settings
+    @Environment(\.settingValue) var settingValue
     
     var story: NewestStory
     
@@ -41,14 +42,14 @@ struct StoryCell: View {
                         TagList(tags: story.tags)
                     }
                     HStack {
-                        SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
+                        SGNavigationLink(destination: UserView(story.submitter_user).environment(\.settingValue,settingValue), withChevron: false) {
                             Text("via ").foregroundColor(Color.secondary) +
                             Text(story.submitter_user.username).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                                 Text(" " +
                                         story.time_ago).foregroundColor(Color.secondary)
                         }.font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
                         Spacer()
-                        SGNavigationLink(destination: StoryView(story), withChevron: false) {
+                        SGNavigationLink(destination: StoryView(story).environment(\.settingValue,settingValue), withChevron: false) {
                             if story.comment_count == 1 {
                                 Text("1 comment").foregroundColor(Color.secondary)
                             } else {

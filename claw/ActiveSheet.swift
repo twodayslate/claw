@@ -11,8 +11,8 @@ enum ActiveSheet: Identifiable {
         switch self {
         case .share(let url): return "share:\(url.absoluteString)"
         case .safari(let url): return "safari:\(url.absoluteString)"
-        case .user(let id): return "user:\(id)"
-        case .story(let username): return "username:\(username)"
+        case .user(let username): return "user:\(username)"
+        case .story(let id): return "id:\(id)"
         case .url(let url): return "url\(url.absoluteString)"
         }
     }

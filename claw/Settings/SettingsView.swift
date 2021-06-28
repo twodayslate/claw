@@ -117,6 +117,7 @@ struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
     @State var isShowingMailViewAlert = false
+    @Environment(\.settingValue) var settingValue
     
     var twitterURL: URL {
         let twitter = URL(string: "twitter://user?screen_name=twodayslate")!
@@ -170,6 +171,7 @@ struct SettingsView: View {
                 }
                 Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                     SettingsLayoutSlider().environmentObject(settings)
+                        .environment(\.settingValue,settingValue)
                 }
                 Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                         

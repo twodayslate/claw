@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 struct SettingsLayoutSlider: View {
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.settingValue) var settingValue
     @EnvironmentObject var settings: Settings
     
     var body: some View {
@@ -11,12 +11,13 @@ struct SettingsLayoutSlider: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     if HottestFetcher.cachedStories.count > 0 {
                         ForEach(HottestFetcher.cachedStories) { story in
-                            StoryListCellView(story: story).environmentObject(settings).allowsHitTesting(false)
+                            StoryListCellView(story: story).environmentObject(settings) .environment(\.settingValue,settingValue).allowsHitTesting(false)
                             Divider().padding(0).padding([.leading])
                         }
                     } else {
                         ForEach(1..<5) { _ in
-                                StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
+                                StoryListCellView(story: NewestStory.placeholder).environmentObject(settings)
+                                    .environment(\.settingValue,settingValue).allowsHitTesting(false)
                             Divider().padding(0).padding([.leading])
                         }
                     }

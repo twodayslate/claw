@@ -6,10 +6,8 @@ struct StoryHeaderView<T: GenericStory>: View {
     @EnvironmentObject var settings: Settings
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
-    
-    @EnvironmentObject var urlToOpen: ObservableURL
-    @EnvironmentObject var observableSheet: ObservableActiveSheet
-    
+    @Environment(\.settingValue) var settingValue
+  
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -18,7 +16,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
                         Button(action: {
                             if settings.browser == .inAppSafari {
-                                urlToOpen.url = URL(string: story.url)
+                                settingValue.urlToOpen.url = URL(string: story.url)
                             } else {
                                 UIApplication.shared.open(URL(string: story.url)!)
                             }
@@ -34,7 +32,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         
                         VStack(alignment: .leading) {
                             TagList(tags: story.tags)
-                            SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
+                            SGNavigationLink(destination: UserView(story.submitter_user).environment(\.settingValue,settingValue), withChevron: false) {
                                 Text("via ").foregroundColor(Color.secondary) +
                                 Text(story.submitter_user.username).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
                                     Text(" " + story.time_ago).foregroundColor(Color.secondary)
@@ -50,25 +48,25 @@ struct StoryHeaderView<T: GenericStory>: View {
             }.padding().background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems: {
                 if story.url.isEmpty {
                     Button(action: {
-                        observableSheet.sheet = .share(URL(string: story.short_id_url)!)
+                        settingValue.observableSheet.sheet = .share(URL(string: story.short_id_url)!)
                     }, label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     })
                 } else {
                     Menu(content: {
                         Button(action: {
-                            observableSheet.sheet = .share(URL(string: story.short_id_url)!)
+                            settingValue.observableSheet.sheet = .share(URL(string: story.short_id_url)!)
                         }, label: {
                             Label("Lobsters URL", systemImage: "book")
                         })
                         if !story.url.isEmpty {
                             Button(action: {
-                                observableSheet.sheet = .share(URL(string: story.url)!)
+                                settingValue.observableSheet.sheet = .share(URL(string: story.url)!)
                             }, label: {
                                 Label("Story URL", systemImage: "link")
                             })
                             Button(action: {
-                                observableSheet.sheet = .share(URL(string: "https://archive.md/\(story.url)")!)
+                                settingValue.observableSheet.sheet = .share(URL(string: "https://archive.md/\(story.url)")!)
                             }, label: {
                                 Label("Story Cache URL", systemImage: "archivebox")
                             })
@@ -85,7 +83,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description)
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link).environmentObject(urlToOpen)
+                        URLView(link: link).environmentObject(settingValue.urlToOpen)
                     }
                 }.padding()
             }
@@ -97,7 +95,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         backgroundColorState = Color(UIColor.systemBackground)
                     }
                     if settings.browser == .inAppSafari {
-                        urlToOpen.url = URL(string: story.url)
+                        settingValue.urlToOpen.url = URL(string: story.url)
                     } else {
                         UIApplication.shared.open(URL(string: story.url)!)
                     }

@@ -4,6 +4,7 @@ import SwiftUI
 struct HottestView: View {
     @ObservedObject var hottest = HottestFetcher.shared
     @EnvironmentObject var settings: Settings
+    @Environment(\.settingValue) var settingValue
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
     

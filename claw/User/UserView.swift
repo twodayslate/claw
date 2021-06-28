@@ -7,8 +7,9 @@ struct UserView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
+    @Environment(\.settingValue) var settingValue
+    
     @EnvironmentObject var settings: Settings
-    @EnvironmentObject var urlToOpen: ObservableURL
     
     init(_ user: NewestUser) {
         self.user = user
@@ -62,7 +63,7 @@ struct UserView: View {
                                     Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
                                         let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username)!
                                         if settings.browser == .inAppSafari {
-                                            urlToOpen.url = keybase_url
+                                            settingValue.urlToOpen.url = keybase_url
                                         } else {
                                             UIApplication.shared.open(keybase_url)
                                         }
@@ -70,7 +71,7 @@ struct UserView: View {
                                     Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
                                         if let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username  + "/sigchain#" + auth.sig_hash) {
                                             if settings.browser == .inAppSafari {
-                                                urlToOpen.url = keybase_url
+                                                settingValue.urlToOpen.url = keybase_url
                                             } else {
                                                 UIApplication.shared.open(keybase_url)
                                             }

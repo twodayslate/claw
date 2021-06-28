@@ -10,8 +10,6 @@ import MobileCoreServices
 
 class ActionViewController: UIViewController {
 
-    @IBOutlet weak var imageView: UIImageView!
-
     override func viewDidLoad() {
         super.viewDidLoad()
     

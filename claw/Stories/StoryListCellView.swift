@@ -16,6 +16,7 @@ public class ObservableActiveSheet: ObservableObject {
 struct StoryListCellView: View {
     var story: NewestStory
     @EnvironmentObject var settings: Settings
+    @Environment(\.settingValue) var settingValue
     
     @State var activeSheet: ActiveSheet?
     @State var backgroundColorState = Color(UIColor.systemBackground)

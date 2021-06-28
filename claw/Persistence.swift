@@ -46,7 +46,7 @@ public class Settings: NSManagedObject, Identifiable {
     @NSManaged public var textSizeModifier: Double
     @NSManaged public var browserRawValue: Int16
     @NSManaged public var readerMode: Bool
-
+ 
     convenience init(context: NSManagedObjectContext) {
         guard let entity = NSEntityDescription.entity(forEntityName: "Settings", in: context) else {
             fatalError("No entity named Settings")
