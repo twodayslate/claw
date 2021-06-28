@@ -1,4 +1,5 @@
 import SwiftUI
+import BetterSafariView
 
 struct StoryView: View {
     var short_id: String
@@ -116,5 +117,15 @@ struct StoryView: View {
                 }
             })
         }
+        // this is necessary until multiple sheets can be displayed at one time. See #22
+        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+            SafariView(
+                url: url,
+                configuration: SafariView.Configuration(
+                    entersReaderIfAvailable: settings.readerModeEnabled,
+                    barCollapsingEnabled: true
+                )
+            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+        })
     }
 }

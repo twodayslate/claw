@@ -44,14 +44,11 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
         }).eraseToAnyPublisher()
 
         NavigationView {
-
                 self.content.environmentObject(settings).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         self.presentationMode.wrappedValue.dismiss()
                     }
                 }
-
-            
         }.tabItem {
             self.tabItem
         }
@@ -100,7 +97,6 @@ struct ContentView: View {
                                             }
                                             self._selection = $0
                                         })
-
         TabView(selection: selection) {
             NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
                 HottestView()
@@ -131,21 +127,32 @@ struct ContentView: View {
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
         }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier))).onOpenURL(perform: { url in
             let _ = print(url)
-            if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
-                if lobsters_url.pathComponents.count > 2 {
-                    if lobsters_url.pathComponents[1] == "s" {
-                        self.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
-                    }
-                    else if lobsters_url.pathComponents[1] == "u" {
-                        self.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
+            let openAction = {
+                if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
+                    if lobsters_url.pathComponents.count > 2 {
+                        if lobsters_url.pathComponents[1] == "s" {
+                            self.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
+                        }
+                        else if lobsters_url.pathComponents[1] == "u" {
+                            self.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
+                        } else {
+                            self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
+                        }
                     } else {
                         self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
                     }
                 } else {
-                    self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
+                    self.observableSheet.sheet = ActiveSheet.url(url)
                 }
+            }
+            
+            if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
+                UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
+                                                                                                            openAction()
+                })
+                
             } else {
-                self.observableSheet.sheet = ActiveSheet.url(url)
+                openAction()
             }
         })
         .sheet(item: self.observableSheet.bindingSheet, content: { item in
@@ -169,18 +176,19 @@ struct ContentView: View {
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
-                Text("Error: \(item.debugDescription)")
+                EZPanel {
+                    Text("Error: \(item.debugDescription)")
+                }
+                .environmentObject(settings)
+                .environment(\.managedObjectContext, viewContext)
+                .environmentObject(self.observableSheet)
+                .environmentObject(urlToOpen)
             }
-        }).environmentObject(settings).environment(\.managedObjectContext, viewContext).environmentObject(self.observableSheet).environmentObject(urlToOpen)
-        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
-            SafariView(
-                url: url,
-                configuration: SafariView.Configuration(
-                    entersReaderIfAvailable: settings.readerModeEnabled,
-                    barCollapsingEnabled: true
-                )
-            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
         })
+        .environmentObject(settings)
+        .environment(\.managedObjectContext, viewContext)
+        .environmentObject(self.observableSheet)
+        .environmentObject(urlToOpen)
     }
 }
 
