@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import BetterSafariView
 
 struct SettingsLinkView: View {
     var systemImage: String? = nil
@@ -9,18 +10,28 @@ struct SettingsLinkView: View {
     var iconColor: Color = Color.accentColor
     
     @EnvironmentObject var settings: Settings
-    @EnvironmentObject var urlToOpen: ObservableURL
+    @Environment(\.settingValue) var settingValue
     
     var body: some View {
             Button(action: {
                 if settings.browser == .inAppSafari {
-                    urlToOpen.url = URL(string: url)
+                    settingValue.urlToOpen.url = URL(string: url)
                 } else {
                     UIApplication.shared.open(URL(string: url)!)
                 }
             }, label: {
                 ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
         })
+            // this is necessary until multiple sheets can be displayed at one time. See #22
+        EmptyView().fullScreenCover(item: settingValue.urlToOpen.bindingUrl, content: { url in
+                SafariView(
+                    url: url,
+                    configuration: SafariView.Configuration(
+                        entersReaderIfAvailable: settings.readerModeEnabled,
+                        barCollapsingEnabled: true
+                    )
+                ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+            })
     }
 }
 

@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import BetterSafariView
 
 struct URLView: View {
     var link: HTMLLink
     @EnvironmentObject var settings: Settings
-    @EnvironmentObject var urlToOpen: ObservableURL
+    @Environment(\.settingValue) var settingValue
     
     var body: some View {
         VStack(alignment: .leading){
@@ -23,7 +24,7 @@ struct URLView: View {
                 .stroke(Color.primary.opacity(0.8), lineWidth: 2.0)
         ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
             if settings.browser == .inAppSafari {
-                urlToOpen.url = URL(string: link.url)
+                settingValue.urlToOpen.url = URL(string: link.url)
             } else {
                 UIApplication.shared.open(URL(string: link.url)!)
             }

@@ -1,4 +1,5 @@
 import SwiftUI
+import BetterSafariView
 
 struct UserView: View {
     var user: NewestUser?
@@ -94,6 +95,16 @@ struct UserView: View {
                 self.presentationMode.wrappedValue.dismiss()
             }
         }
+        // this is necessary until multiple sheets can be displayed at one time. See #22
+        EmptyView().fullScreenCover(item: settingValue.urlToOpen.bindingUrl, content: { url in
+            SafariView(
+                url: url,
+                configuration: SafariView.Configuration(
+                    entersReaderIfAvailable: settings.readerModeEnabled,
+                    barCollapsingEnabled: true
+                )
+            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+        })
     }
 }
 

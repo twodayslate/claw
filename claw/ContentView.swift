@@ -24,21 +24,6 @@ public class SettingModel:ObservableObject {
     @ObservedObject var observableSheet = ObservableActiveSheet()
     @ObservedObject var urlToOpen = ObservableURL()
     @Published var settings: Settings? = nil
-//    var settings: Settings {
-//        if let first = self.all_settings.first {
-//            if UIApplication.shared.alternateIconName != first.alternateIconName {
-//                UIApplication.shared.setAlternateIconName(first.alternateIconName, completionHandler: {error in
-//                    if let _ = error {
-//                        first.alternateIconName = nil
-//                        try? first.managedObjectContext?.save()
-//                        return
-//                    }
-//                })
-//            }
-//            return first
-//        }
-//        return Settings(context: viewContext)
-//    }
 }
 
 struct SettingValue: EnvironmentKey {
@@ -131,60 +116,67 @@ struct ContentView: View {
                                             }
                                             self._selection = $0
                                         })
-
         TabView(selection: selection) {
             NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
-                HottestView()
+                HottestView().environment(\.settingValue,settingValue)
             }, tabItem: {
                 _selection == .Hottest ? Image(systemName: "flame.fill") : Image(systemName: "flame")
                 Text("Hottest")
             }).environment(\.settingValue,settingValue)
             
             NavigableTabViewItem(tabSelection: TabSelection.Newest, content: {
-                    NewestView()
+                    NewestView().environment(\.settingValue,settingValue)
             }, tabItem: {
                 _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
             }).environment(\.settingValue,settingValue)
             
             NavigableTabViewItem(tabSelection: TabSelection.Tags, content: {
-                    SelectedTagsView()
+                    SelectedTagsView().environment(\.settingValue,settingValue)
             }, tabItem: {
                 _selection == .Tags ? Image(systemName: "tag.fill") : Image(systemName: "tag")
                 Text("Tags")
             }).environment(\.settingValue,settingValue)
 
             NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
-                    SettingsView()
+                    SettingsView().environment(\.settingValue,settingValue)
             }, tabItem: {
                 Image(systemName: "gear")
                 Text("Settings")
             }).environment(\.settingValue,settingValue)
         }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier))).onOpenURL(perform: { url in
-            let _ = print(url)
-            //UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: nil)
-            
-            if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
-                if lobsters_url.pathComponents.count > 2 {
-                    if lobsters_url.pathComponents[1] == "s" {
-                        settingValue.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
-                    }
-                    else if lobsters_url.pathComponents[1] == "u" {
-                        settingValue.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
+            let openAction = {
+                if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
+                    if lobsters_url.pathComponents.count > 2 {
+                        if lobsters_url.pathComponents[1] == "s" {
+                            settingValue.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
+                        }
+                        else if lobsters_url.pathComponents[1] == "u" {
+                            settingValue.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
+                        } else {
+                            settingValue.observableSheet.sheet = ActiveSheet.url(lobsters_url)
+                        }
                     } else {
                         settingValue.observableSheet.sheet = ActiveSheet.url(lobsters_url)
                     }
                 } else {
-                    settingValue.observableSheet.sheet = ActiveSheet.url(lobsters_url)
+                    settingValue.observableSheet.sheet = ActiveSheet.url(url)
                 }
+            }
+            
+            if url.host == "open" && (settingValue.observableSheet.sheet != nil || settingValue.urlToOpen.url != nil) {
+                UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
+                        openAction()
+                })
             } else {
-                settingValue.observableSheet.sheet = ActiveSheet.url(url)
+                openAction()
             }
         })
         .sheet(item: settingValue.observableSheet.bindingSheet, content: { item in
             switch item {
             case .story(let id):
-                EZPanel{ StoryView(id)
+                EZPanel{
+                    StoryView(id)
                 }
                 .environment(\.settingValue,settingValue)
             case .user(let username):
@@ -193,15 +185,19 @@ struct ContentView: View {
                 EZPanel {
                     VStack {
                         Text("Unknown URL").bold()
-                        Text("\(url)")
+                        Text("\(url)").foregroundColor(Color.accentColor).underline()
                     }
                 }
+                .environment(\.settingValue,settingValue)
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
-                Text("Error: \(item.debugDescription)")
+                EZPanel {
+                    Text("Error: \(item.debugDescription)")
+                }
+                .environment(\.settingValue,settingValue)
             }
-        }).environmentObject(settings).environment(\.settingValue,settingValue)
+        }).environmentObject(settingValue.settings!).environment(\.settingValue,settingValue)
         EmptyView().fullScreenCover(item: settingValue.urlToOpen.bindingUrl, content: { url in
             SafariView(
                 url: url,
@@ -211,6 +207,7 @@ struct ContentView: View {
                 )
             ).preferredControlAccentColor(settingValue.settings!.accentColor).dismissButtonStyle(.close)
         })
+        .environment(\.settingValue,settingValue)
     }
 }
 
