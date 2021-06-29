@@ -148,10 +148,14 @@ struct ContentView: View {
             
             if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
                 UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
+                    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) {
                         openAction()
+                    }
                 })
             } else {
-                openAction()
+                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) {
+                    openAction()
+                }
             }
         })
         .sheet(item: self.observableSheet.bindingSheet, content: { item in
