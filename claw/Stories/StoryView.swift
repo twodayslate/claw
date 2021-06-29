@@ -84,7 +84,7 @@ struct StoryView: View {
                                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                                     }
                                     ForEach(html.links, id: \.self) { link in
-                                            URLView(link: link).environmentObject(urlToOpen)
+                                        URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)
                                     }
                                 }
                             }).padding([.bottom])
