@@ -14,7 +14,6 @@ struct ShareSheet: UIViewControllerRepresentable {
             activityItems: activityItems,
             applicationActivities: applicationActivities ?? [SafariActivity()])
         controller.excludedActivityTypes = excludedActivityTypes
-        controller.completionWithItemsHandler = callback
         return controller
     }
     

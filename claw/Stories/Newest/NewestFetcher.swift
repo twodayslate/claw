@@ -56,7 +56,7 @@ class NewestFetcher: ObservableObject {
                         completion?(nil) // todo: throw error
                     }
                 } catch {
-                    print ("Error \(error)")
+                    print ("Error fetching newest \(error)")
                     completion?(error)
                 }
             }
@@ -88,7 +88,7 @@ class NewestFetcher: ObservableObject {
                         completion?(nil) // todo: actually do error
                     }
                 } catch {
-                    print ("Error \(error)")
+                    print ("Error fetching newest more \(error)")
                     completion?(error)
                 }
                 DispatchQueue.main.async {

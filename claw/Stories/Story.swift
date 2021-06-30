@@ -89,7 +89,6 @@ class StoryFetcher: ObservableObject {
     
     init(_ short_id: String) {
         self.short_id = short_id
-        load()
     }
     
     deinit {
@@ -123,7 +122,7 @@ class StoryFetcher: ObservableObject {
                             print("No Data")
                         }
                     } catch {
-                        print ("Error \(error)")
+                        print ("Error fetching story \(error)")
                     }
                 }
         self.session?.resume()

@@ -7,7 +7,6 @@ class UserFetcher: ObservableObject {
     
     init(_ username: String) {
         self.username = username
-        load()
     }
     
     deinit {
@@ -30,7 +29,7 @@ class UserFetcher: ObservableObject {
                             print("No Data")
                         }
                     } catch {
-                        print ("Error \(error)")
+                        print ("Error fetching user \(error)")
                     }
                 }
         self.session?.resume()

@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TagStoryView: View {
     @ObservedObject var stories: TagStoryFetcher
-    @ObservedObject var tags = TagFetcher()
+    @ObservedObject var tags = TagFetcher.shared
     @EnvironmentObject var settings: Settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
@@ -47,6 +47,8 @@ struct TagStoryView: View {
                 }.onDisappear(perform: {
                     self.isVisible = false
                 }).onAppear(perform: {
+                    self.stories.load()
+                    self.tags.loadIfEmpty()
                     self.isVisible = true
                 }).navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {

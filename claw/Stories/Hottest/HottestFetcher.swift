@@ -54,7 +54,7 @@ class HottestFetcher: ObservableObject {
                             completion?(nil) // todo: actually throw an error
                         }
                     } catch {
-                        print ("Error \(error)")
+                        print ("Error fetching hottest \(error)")
                         completion?(error)
                     }
                 }
@@ -88,7 +88,7 @@ class HottestFetcher: ObservableObject {
                         completion?(nil) // todo: throw actual error
                     }
                 } catch {
-                    print ("Error \(error)")
+                    print ("Error fetching hottest more \(error)")
                     completion?(error)
                 }
                 DispatchQueue.main.async {

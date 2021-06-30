@@ -85,7 +85,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description)
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link).environmentObject(urlToOpen)
+                        URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)
                     }
                 }.padding()
             }
