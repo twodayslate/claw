@@ -6,10 +6,10 @@ class TagFetcher: ObservableObject {
     
     static var cachedTags = [Tag]()
         
+    static var shared = TagFetcher()
+    
     init() {
-        if self.tags.count <= 0 {
-            load()
-        }
+        self.load()
     }
     
     deinit {
@@ -18,6 +18,12 @@ class TagFetcher: ObservableObject {
     
     private var session: URLSessionTask? = nil
     private var moreSession: URLSessionTask? = nil
+    
+    func loadIfEmpty() {
+        if self.tags.count <= 0 {
+            load()
+        }
+    }
     
     func load() {
         let url = URL(string: "https://lobste.rs/tags.json")!
@@ -32,10 +38,10 @@ class TagFetcher: ObservableObject {
                                 self.tags = sorted
                             }
                         }else {
-                            print("No Data")
+                            print("No Data for tag")
                         }
                     } catch {
-                        print ("Error \(error)")
+                        print ("Error fetching tag \(error)")
                     }
                 }
         self.session?.resume()

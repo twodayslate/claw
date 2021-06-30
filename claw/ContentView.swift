@@ -145,17 +145,19 @@ struct ContentView: View {
                     self.observableSheet.sheet = ActiveSheet.url(url)
                 }
             }
-            
-            if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
+            // If the share sheet is currently present, dismiss it. See #22
+            if url.host == "open", let shareSheet = ((UIApplication.shared.windows.first?.rootViewController?.presentedViewController as? SwiftUI.UIHostingController<SwiftUI.AnyView>)?.children.first as? UIActivityViewController) {
+                shareSheet.dismiss(animated: true, completion: {
+                    openAction()
+                })
+            }
+            // Dismiss the current sheet. See #22
+            else if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
                 UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
-                    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) {
                         openAction()
-                    }
                 })
             } else {
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) {
-                    openAction()
-                }
+                openAction()
             }
         })
         .sheet(item: self.observableSheet.bindingSheet, content: { item in

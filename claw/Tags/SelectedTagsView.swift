@@ -51,7 +51,7 @@ struct DestinationDataSetter: View {
 struct SelectTagsView: View {
     @Binding var tags: [String]
     
-    @ObservedObject var fetcher = TagFetcher()
+    @ObservedObject var fetcher = TagFetcher.shared
     
     @GestureState var longPressGestureState = false
     
@@ -155,7 +155,9 @@ struct SelectTagsView: View {
                 for p in preferences {
                     self.destinations[p.destination] = p.frame
                 }
-            }
+            }.onAppear(perform: {
+                self.fetcher.loadIfEmpty()
+            })
         }
     }
 }

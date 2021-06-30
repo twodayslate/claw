@@ -22,16 +22,16 @@ struct SettingsLinkView: View {
             }, label: {
                 ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
         })
-            // this is necessary until multiple sheets can be displayed at one time. See #22
-            EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
-                SafariView(
-                    url: url,
-                    configuration: SafariView.Configuration(
-                        entersReaderIfAvailable: settings.readerModeEnabled,
-                        barCollapsingEnabled: true
-                    )
-                ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
-            })
+        // this is necessary until multiple sheets can be displayed at one time. See #22
+        .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+            SafariView(
+                url: url,
+                configuration: SafariView.Configuration(
+                    entersReaderIfAvailable: settings.readerModeEnabled,
+                    barCollapsingEnabled: true
+                )
+            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+        })
     }
 }
 

@@ -38,21 +38,34 @@ struct UserView: View {
                         Text("\(karma)")
                     }
                 }
-                if let username = user.github_username {
-                    HStack {
-                        Text("GitHub").bold()
-                        Link(destination: URL(string: "https://github.com/" + username)!, label: {
+                if let username = user.github_username, let url = URL(string: "https://github.com/" + username) {
+                    Button(action: {
+                        if settings.browser == .inAppSafari {
+                            urlToOpen.url = url
+                        } else {
+                            UIApplication.shared.open(url)
+                        }
+                    }, label: {
+                        HStack {
+                            Text("GitHub").bold()
                             Text(username).foregroundColor(.accentColor)
-                        })
-                    }
+                        }
+                    })
                 }
-                if let username = user.twitter_username {
-                    HStack {
-                        Text("Twitter").bold()
-                        Link(destination: URL(string: "https://twitter.com/" + username)!, label: {
+                if let username = user.twitter_username, let url = URL(string: "https://twitter.com/\(username)") {
+                    Button(action: {
+                        if settings.browser == .inAppSafari {
+                            urlToOpen.url = url
+                        } else {
+                            UIApplication.shared.open(url)
+                        }
+                    }, label: {
+                        HStack {
+                            Text("Twitter").bold()
                             Text("@" + username).foregroundColor(.accentColor)
-                        })
-                    }
+                        }
+                    })
+                   
                 }
                 if let keybase = user.keybase_signatures {
                     HStack {
@@ -93,9 +106,11 @@ struct UserView: View {
             DispatchQueue.main.async {
                 self.presentationMode.wrappedValue.dismiss()
             }
-        }
+        }.onAppear(perform: {
+            self.userFetcher.load()
+        })
         // this is necessary until multiple sheets can be displayed at one time. See #22
-        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+        .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(

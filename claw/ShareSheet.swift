@@ -14,11 +14,6 @@ struct ShareSheet: UIViewControllerRepresentable {
             activityItems: activityItems,
             applicationActivities: applicationActivities ?? [SafariActivity()])
         controller.excludedActivityTypes = excludedActivityTypes
-        // We need to dismiss the controller otherwise we have issues with the new sheet not displaying
-        // see #22
-        controller.completionWithItemsHandler = { t,t1,t2,t3 in
-            controller.dismiss(animated: true, completion: nil)
-        }
         return controller
     }
     

@@ -108,6 +108,7 @@ struct StoryView: View {
                     }
                 }
             }.onAppear(perform: {
+                self.story.load()
                 let contains = viewedItems.contains { element in
                     element.short_id == story.short_id && element.isStory
                 }
@@ -118,7 +119,7 @@ struct StoryView: View {
             })
         }
         // this is necessary until multiple sheets can be displayed at one time. See #22
-        EmptyView().fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+        .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(

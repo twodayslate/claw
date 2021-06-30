@@ -13,7 +13,6 @@ class TagStoryFetcher: ObservableObject {
     
     init(tags: [String]) {
         self.tags = tags
-        load()
     }
     
     deinit {
@@ -40,7 +39,7 @@ class TagStoryFetcher: ObservableObject {
                             print("No Data")
                         }
                     } catch {
-                        print ("Error \(error) \(url)")
+                        print ("Error fetching tag story \(error) \(url)")
                     }
                 }
         self.session?.resume()
@@ -71,7 +70,7 @@ class TagStoryFetcher: ObservableObject {
                         print("No Data")
                     }
                 } catch {
-                    print ("Error \(error)")
+                    print ("Error fetching tag story more \(error)")
                 }
                 DispatchQueue.main.async {
                     self.isLoadingMore = false
