@@ -95,6 +95,38 @@ struct StoryView: View {
                                 Spacer()
                             }.padding()
                         }
+                    } else if let story = self.from_newest {
+                        if story.comment_count > 0 {
+                            VStack(alignment: .leading) {
+                                ForEach(0..<story.comment_count) { count in
+                                    VStack(alignment: .leading) {
+                                        HStack(alignment: .center) {
+                                            SGNavigationLink(destination: UserView(story.submitter_user.id), withChevron: false) {
+                                                Text(story.submitter_user.id).foregroundColor(.gray)
+                                            }
+                                            Spacer()
+                                            Text("\(Image(systemName: "arrow.up")) \(story.score)").foregroundColor(.gray)
+                                        }
+                                        Text(String(repeating: " ", count: 100))
+                                        if count < story.comment_count {
+                                            Divider()
+                                        }
+                                    }.redacted(reason: .placeholder).disabled(true)
+                                }
+                            }.padding()
+                        } else {
+                            HStack {
+                                Spacer()
+                                Text("No comments").foregroundColor(.gray)
+                                Spacer()
+                            }.padding()
+                        }
+                    } else {
+                        HStack {
+                            Spacer()
+                            ProgressView().progressViewStyle(CircularProgressViewStyle())
+                            Spacer()
+                        }.padding()
                     }
                 }
             }.navigationBarTitle(self.title, displayMode: .inline).onReceive(didReselect) { _ in
