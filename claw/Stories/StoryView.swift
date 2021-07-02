@@ -98,16 +98,16 @@ struct StoryView: View {
                     } else if let story = self.from_newest {
                         if story.comment_count > 0 {
                             VStack(alignment: .leading) {
-                                ForEach(0..<story.comment_count) { count in
+                                ForEach(1..<(story.comment_count+1)) { count in
                                     VStack(alignment: .leading) {
                                         HStack(alignment: .center) {
                                             SGNavigationLink(destination: UserView(story.submitter_user.id), withChevron: false) {
-                                                Text(story.submitter_user.id).foregroundColor(.gray)
+                                                Text(String(repeating: " ", count: Int.random(in: 3..<8))).foregroundColor(.gray)
                                             }
                                             Spacer()
-                                            Text("\(Image(systemName: "arrow.up")) \(story.score)").foregroundColor(.gray)
+                                            Text("\(Image(systemName: "arrow.up")) \(count)").foregroundColor(.gray)
                                         }
-                                        Text(String(repeating: " ", count: 100))
+                                        Text(String(repeating: " ", count: Int.random(in: 24..<164)))
                                         if count < story.comment_count {
                                             Divider()
                                         }
