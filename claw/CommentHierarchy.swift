@@ -81,13 +81,13 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                         rowContent(child).padding([.leading])
                         if let subChildren = child.children {
                             Divider().padding([.top, .leading])
-                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
+                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 10)
                         }
                     }
                 },
                 label: {
                     header(child).padding([.leading])
-                }).padding([.top], 6.0).padding(indentLevel > 0 ? [.trailing] : [], 4.0)
+                }).padding([.top], 6.0).padding(indentLevel > 0 ? [.trailing] : [], 2.0)
             if !last {
                 Divider().padding([.horizontal])
             }
