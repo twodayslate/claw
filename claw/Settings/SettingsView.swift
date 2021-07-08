@@ -94,19 +94,18 @@ struct AppIconChooserView: View {
             }, label: {
                 AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
             })
-            Button(action: {
-                UIApplication.shared.setAlternateIconName("Classic", completionHandler: { error in
-                    guard error == nil else {
-                        showAlert = true
-                        return
-                    }
-                    settings.alternateIconName = "Classic"
-                    try? settings.managedObjectContext?.save()
-                    self.presentationMode.wrappedValue.dismiss()
-                })
-            }, label: {
-                AppIconView(icon: AppIcon(alternateIconName: "Classic", name: "Classic", assetName: "Classic@2x.png")).environmentObject(settings)
-            })
+            VStack(alignment: .leading) {
+                HStack(alignment: .center) {
+                    Spacer()
+                    Text("More coming soon!").bold().font(.callout)
+                    Spacer()
+                }
+                HStack(alignment: .bottom) {
+                    Spacer()
+                    Text("Thank you for the support!").font(.subheadline)
+                    Spacer()
+                }
+            }
         }.listStyle(GroupedListStyle()).navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
