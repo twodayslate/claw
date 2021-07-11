@@ -10,6 +10,7 @@ struct TagStoryView: View {
     
     init(tags: [String]) {
         self.stories = TagStoryFetcher(tags: tags)
+        self.stories.load()
     }
     @State private var scrollViewContentOffset = CGFloat(0)
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
@@ -47,7 +48,6 @@ struct TagStoryView: View {
                 }.onDisappear(perform: {
                     self.isVisible = false
                 }).onAppear(perform: {
-                    self.stories.load()
                     self.tags.loadIfEmpty()
                     self.isVisible = true
                 }).navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
