@@ -25,7 +25,7 @@ class TagStoryFetcher: ObservableObject {
     
     func load() {
         let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
-        
+        self.session?.cancel()
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
@@ -33,7 +33,6 @@ class TagStoryFetcher: ObservableObject {
                             DispatchQueue.main.async {
                                 TagStoryFetcher.cachedStories = decodedLists
                                 self.stories = decodedLists
-                                self.page += 1
                             }
                         }else {
                             print("No Data")
