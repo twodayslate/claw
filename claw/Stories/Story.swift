@@ -98,6 +98,12 @@ class StoryFetcher: ObservableObject {
     static var cachedStories = [Story]()
     
     private var session: URLSessionTask? = nil
+    @Published var isReloading = false
+    func reload() {
+        self.session?.cancel()
+        self.isReloading = true
+        self.load()
+    }
     
     func load() {
         for cachedStory in StoryFetcher.cachedStories {
@@ -108,7 +114,10 @@ class StoryFetcher: ObservableObject {
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
             
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
+            DispatchQueue.main.async {
+                self.isReloading = false
+            }
+                do {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode(Story.self, from: d)
                             DispatchQueue.main.async {
