@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol GenericStory: Codable, Identifiable {
+protocol GenericStory: Codable, Hashable, Identifiable {
     var id: String { get }
     var short_id: String { get }
     var short_id_url: String { get }
