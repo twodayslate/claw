@@ -148,7 +148,13 @@ struct StoryView: View {
                     viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
                     try? viewContext.save()
                 }
-            })
+            }).navigationBarItems(trailing: Button(action: {self.story.reload() }, label: {
+                if self.story.isReloading {
+                    ProgressView().progressViewStyle(CircularProgressViewStyle())
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }))
         }
         // this is necessary until multiple sheets can be displayed at one time. See #22
         .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
