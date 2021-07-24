@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct Story: GenericStory, Codable, Identifiable {
+struct Story: GenericStory, Codable, Hashable, Identifiable {
     var id: String {
         return short_id
     }
@@ -64,7 +64,7 @@ extension CommentStructure: Equatable {
     }
 }
 
-struct Comment: Codable, Identifiable {
+struct Comment: Codable, Hashable, Identifiable {
     var id: String {
         return short_id
     }
@@ -84,19 +84,19 @@ struct Comment: Codable, Identifiable {
 
 class StoryFetcher: ObservableObject {
     @Published var story: Story? = nil
-    
+
     var short_id: String
-    
+
     init(_ short_id: String) {
         self.short_id = short_id
     }
-    
+
     deinit {
         self.session?.cancel()
     }
-    
+
     static var cachedStories = [Story]()
-    
+
     private var session: URLSessionTask? = nil
     @Published var isReloading = false
     func reload() {
@@ -104,12 +104,10 @@ class StoryFetcher: ObservableObject {
         self.isReloading = true
         self.load()
     }
-    
+
     func load() {
-        for cachedStory in StoryFetcher.cachedStories {
-            if cachedStory.short_id == short_id {
-                self.story = cachedStory
-            }
+        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == self.short_id}) {
+            self.story = cachedStory
         }
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
             
@@ -117,23 +115,24 @@ class StoryFetcher: ObservableObject {
             DispatchQueue.main.async {
                 self.isReloading = false
             }
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode(Story.self, from: d)
-                            DispatchQueue.main.async {
-                                self.story = decodedLists
-                                StoryFetcher.cachedStories.append(decodedLists)
-                                if StoryFetcher.cachedStories.count > 10 {
-                                    StoryFetcher.cachedStories.removeFirst()
-                                }
-                            }
-                        }else {
-                            print("No Data")
+            do {
+                if let d = data {
+                    let decodedLists = try JSONDecoder().decode(Story.self, from: d)
+                    DispatchQueue.main.async {
+                        self.story = decodedLists
+                        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == self.short_id})
+                        StoryFetcher.cachedStories.append(decodedLists)
+                        if StoryFetcher.cachedStories.count > 10 {
+                            StoryFetcher.cachedStories.removeFirst()
                         }
-                    } catch {
-                        print ("Error fetching story \(error)")
                     }
+                }else {
+                    print("No Data")
                 }
+            } catch {
+                print ("Error fetching story \(error)")
+            }
+        }
         self.session?.resume()
     }
 }
