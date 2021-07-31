@@ -2,14 +2,18 @@ import Foundation
 import SwiftUI
 
 class TagStoryFetcher: ObservableObject {
-    @Published var stories = TagStoryFetcher.cachedStories
+    @Published var stories = [NewestStory]()
     
-    static var cachedStories = [NewestStory]()
+    static var cachedStories = [[String]: [NewestStory]]()
     
     @Published var isLoadingMore = false
     
     
-    var tags: [String]
+    var tags: [String] {
+        didSet {
+            self.page = 1
+        }
+    }
     
     init(tags: [String]) {
         self.tags = tags
@@ -24,14 +28,24 @@ class TagStoryFetcher: ObservableObject {
     private var moreSession: URLSessionTask? = nil
     
     func load() {
+        if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
+            self.stories = cachedStories
+        }
+
         let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
+        
+        self.session?.cancel()
         
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
                             DispatchQueue.main.async {
-                                TagStoryFetcher.cachedStories = decodedLists
+                                if TagStoryFetcher.cachedStories.count > 10 {
+                                    // xxx: I'd like to remove the last used cache but this will do for now
+                                    TagStoryFetcher.cachedStories.removeAll()
+                                }
+                                TagStoryFetcher.cachedStories[self.tags] = decodedLists
                                 self.stories = decodedLists
                                 self.page += 1
                             }
@@ -63,7 +77,7 @@ class TagStoryFetcher: ObservableObject {
                                     self.stories.append(story)
                                 }
                             }
-                            TagStoryFetcher.cachedStories = self.stories
+                            TagStoryFetcher.cachedStories[self.tags] = self.stories
                             self.page += 1
                         }
                     }else {

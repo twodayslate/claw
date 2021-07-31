@@ -8,7 +8,7 @@ struct SelectedTagsView: View {
     }
     
     var body: some View {
-        TagStoryView(tags: self.tags).navigationBarItems(trailing: NavigationLink(
+        TagStoryViewWrapper(tags: self.$tags).navigationBarItems(trailing: NavigationLink(
                                                             destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
                                                             label: {
                                                                 Text("Edit").bold()

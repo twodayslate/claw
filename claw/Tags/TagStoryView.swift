@@ -1,6 +1,20 @@
 import Foundation
 import SwiftUI
 
+struct TagStoryViewWrapper: View {
+    @Binding var tags: [String]
+    
+    var body: some View {
+        let story = TagStoryView(tags: self.tags)
+        story.onChange(of: tags, perform: { value in
+            DispatchQueue.main.async {
+                story.stories.tags = tags
+                story.stories.load()
+            }
+        })
+    }
+}
+
 struct TagStoryView: View {
     @ObservedObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
