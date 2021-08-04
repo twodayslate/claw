@@ -4,7 +4,7 @@ import SwiftUI
 class TagStoryFetcher: ObservableObject {
     @Published var stories = [NewestStory]()
     
-    static var cachedStories = [[String]: [NewestStory]]()
+    static var cachedStories = [NewestStory]()
     
     @Published var isLoadingMore = false
     
@@ -28,10 +28,7 @@ class TagStoryFetcher: ObservableObject {
     private var moreSession: URLSessionTask? = nil
     
     func load() {
-        if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
-            self.stories = cachedStories
-        }
-
+        self.stories = TagStoryFetcher.cachedStories
         let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
         
         self.session?.cancel()
@@ -41,11 +38,7 @@ class TagStoryFetcher: ObservableObject {
                         if let d = data {
                             let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
                             DispatchQueue.main.async {
-                                if TagStoryFetcher.cachedStories.count > 10 {
-                                    // xxx: I'd like to remove the last used cache but this will do for now
-                                    TagStoryFetcher.cachedStories.removeAll()
-                                }
-                                TagStoryFetcher.cachedStories[self.tags] = decodedLists
+                                TagStoryFetcher.cachedStories = decodedLists
                                 self.stories = decodedLists
                                 self.page += 1
                             }
@@ -77,7 +70,7 @@ class TagStoryFetcher: ObservableObject {
                                     self.stories.append(story)
                                 }
                             }
-                            TagStoryFetcher.cachedStories[self.tags] = self.stories
+                            TagStoryFetcher.cachedStories = self.stories
                             self.page += 1
                         }
                     }else {
