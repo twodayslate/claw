@@ -28,6 +28,7 @@ class TagStoryFetcher: ObservableObject {
     private var moreSession: URLSessionTask? = nil
     
     func load() {
+        self.page = 1
         self.stories = TagStoryFetcher.cachedStories
         let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
         
