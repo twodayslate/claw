@@ -1,41 +1,36 @@
 import Foundation
 import SwiftUI
+import Combine
 
-class TagStoryFetcher: ObservableObject {
-    @Published var stories = [NewestStory]()
+class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     
     static var cachedStories = [[String]: [NewestStory]]()
-    
-    @Published var isLoadingMore = false
-    
     
     var tags: [String] {
         didSet {
             self.page = 1
+            if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
+                self.items = cachedStories
+            } else {
+                self.items = []
+            }
         }
     }
-    
-    init(tags: [String]) {
+
+    init(tags: [String] = []) {
         self.tags = tags
     }
     
-    deinit {
-        self.session?.cancel()
-        self.moreSession?.cancel()
-    }
-    
-    private var session: URLSessionTask? = nil
-    private var moreSession: URLSessionTask? = nil
-    
-    func load() {
+
+    override func load() {
+        super.load()
+        
         if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
-            self.stories = cachedStories
+            self.items = cachedStories
         }
 
         let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
-        
-        self.session?.cancel()
-        
+                
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
                         if let d = data {
@@ -46,7 +41,8 @@ class TagStoryFetcher: ObservableObject {
                                     TagStoryFetcher.cachedStories.removeAll()
                                 }
                                 TagStoryFetcher.cachedStories[self.tags] = decodedLists
-                                self.stories = decodedLists
+                                self.objectWillChange.send()
+                                self.items = decodedLists
                                 self.page += 1
                             }
                         }else {
@@ -59,10 +55,8 @@ class TagStoryFetcher: ObservableObject {
         self.session?.resume()
     }
 
-    var page: Int = 1
-
-    func more(_ story: NewestStory? = nil) {
-        if self.stories.last == story && !isLoadingMore {
+    override func more(_ story: NewestStory? = nil) {
+        if self.items.last == story && !isLoadingMore {
             self.isLoadingMore = true
             let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
 
@@ -73,11 +67,11 @@ class TagStoryFetcher: ObservableObject {
                         DispatchQueue.main.async {
                             let stories = decodedLists
                             for story in stories {
-                                if !self.stories.contains(story) {
-                                    self.stories.append(story)
+                                if !self.items.contains(story) {
+                                    self.items.append(story)
                                 }
                             }
-                            TagStoryFetcher.cachedStories[self.tags] = self.stories
+                            TagStoryFetcher.cachedStories[self.tags] = self.items
                             self.page += 1
                         }
                     }else {

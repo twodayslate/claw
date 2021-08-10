@@ -8,11 +8,24 @@ struct SelectedTagsView: View {
     }
     
     var body: some View {
-        TagStoryViewWrapper(tags: self.$tags).navigationBarItems(trailing: NavigationLink(
-                                                            destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
-                                                            label: {
-                                                                Text("Edit").bold()
-                                                            }))
+        let wrapper = TagStoryViewWrapper(tags: self.$tags)
+        
+        wrapper
+            .navigationBarItems(leading: NavigationLink(
+                                    destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
+            label: {
+                Text("Edit").bold()
+            }), trailing: Button(action: {
+                DispatchQueue.main.async {
+                    wrapper.story.stories.reload()
+                }
+            }, label: {
+                if wrapper.story.stories.isReloading {
+                    ProgressView().progressViewStyle(CircularProgressViewStyle())
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }))
     }
 }
 
