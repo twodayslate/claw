@@ -127,7 +127,7 @@ class StoryFetcher: ObservableObject {
                         }
                     }
                 }else {
-                    print("No Data")
+                    print("No Data for story")
                 }
             } catch {
                 print ("Error fetching story \(error)")

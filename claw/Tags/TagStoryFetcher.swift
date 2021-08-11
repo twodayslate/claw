@@ -20,7 +20,6 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     init(tags: [String] = []) {
         self.tags = tags
     }
-    
 
     override func load() {
         super.load()
@@ -41,12 +40,11 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
                                     TagStoryFetcher.cachedStories.removeAll()
                                 }
                                 TagStoryFetcher.cachedStories[self.tags] = decodedLists
-                                self.objectWillChange.send()
                                 self.items = decodedLists
                                 self.page += 1
                             }
                         }else {
-                            print("No Data")
+                            print("No Data for tags \(self.tags)")
                         }
                     } catch {
                         print ("Error fetching tag story \(error) \(url)")
@@ -75,7 +73,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
                             self.page += 1
                         }
                     }else {
-                        print("No Data")
+                        print("No Data for more tags \(self.tags)")
                     }
                 } catch {
                     print ("Error fetching tag story more \(error)")

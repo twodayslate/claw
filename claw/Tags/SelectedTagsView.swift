@@ -8,7 +8,7 @@ struct SelectedTagsView: View {
     }
     
     var body: some View {
-        let wrapper = TagStoryViewWrapper(tags: self.$tags)
+        let wrapper = TagStoryView(tags: self.tags)
         
         wrapper
             .navigationBarItems(leading: NavigationLink(
@@ -17,15 +17,18 @@ struct SelectedTagsView: View {
                 Text("Edit").bold()
             }), trailing: Button(action: {
                 DispatchQueue.main.async {
-                    wrapper.story.stories.reload()
+                    wrapper.stories.reload()
                 }
             }, label: {
-                if wrapper.story.stories.isReloading {
+                if wrapper.stories.isReloading {
                     ProgressView().progressViewStyle(CircularProgressViewStyle())
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }
-            }))
+            })).onChange(of: tags, perform: { value in
+                wrapper.stories.tags = tags
+                wrapper.stories.load()
+            })
     }
 }
 

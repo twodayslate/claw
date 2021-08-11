@@ -1,23 +1,6 @@
 import Foundation
 import SwiftUI
 
-struct TagStoryViewWrapper: View {
-    @Binding var tags: [String]
-        
-    var story: TagStoryView {
-        return TagStoryView(tags: self.tags)
-    }
-    
-    var body: some View {
-        story.onChange(of: tags, perform: { value in
-            DispatchQueue.main.async {
-                story.stories.tags = value
-                story.stories.load()
-            }
-        })
-    }
-}
-
 struct TagStoryView: View {
     @ObservedObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
@@ -45,7 +28,7 @@ struct TagStoryView: View {
                    
                     if stories.items.count <= 0 {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false)
+                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     }
