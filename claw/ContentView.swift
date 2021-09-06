@@ -1,7 +1,6 @@
 import SwiftUI
 import CoreData
 import Combine
-import BetterSafariView
 
 struct DidReselectKey: EnvironmentKey {
     static let defaultValue = PassthroughSubject<TabSelection, Never>().eraseToAnyPublisher()

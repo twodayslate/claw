@@ -110,7 +110,9 @@ class StoryFetcher: ObservableObject {
             self.story = cachedStory
         }
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
-            
+
+        self.session?.cancel()
+
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
             DispatchQueue.main.async {
                 self.isReloading = false
