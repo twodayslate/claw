@@ -6,13 +6,29 @@ struct SelectedTagsView: View {
             UserDefaults.standard.set(self.tags, forKey: "selectedTags")
         }
     }
-    
+
     var body: some View {
-        TagStoryView(tags: self.tags).navigationBarItems(trailing: NavigationLink(
-                                                            destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
-                                                            label: {
-                                                                Text("Edit").bold()
-                                                            }))
+        let wrapper = TagStoryView(tags: self.tags)
+        
+        wrapper.id(self.tags)
+            .navigationBarItems(leading: NavigationLink(
+                                    destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
+            label: {
+                Text("Edit").bold()
+            }), trailing: Button(action: {
+                DispatchQueue.main.async {
+                    wrapper.stories.reload()
+                }
+            }, label: {
+                if wrapper.stories.isReloading {
+                    ProgressView().progressViewStyle(CircularProgressViewStyle())
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            })).onChange(of: tags, perform: { value in
+                wrapper.stories.tags = tags
+                wrapper.stories.load()
+            })
     }
 }
 
