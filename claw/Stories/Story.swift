@@ -12,6 +12,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var id: String {
         return short_id
     }
+
     var short_id: String
     var short_id_url: String
     var created_at: String
@@ -102,6 +103,13 @@ class StoryFetcher: ObservableObject {
     func reload() {
         self.session?.cancel()
         self.isReloading = true
+        self.load()
+    }
+    
+    func loadIfEmpty() {
+        if let _ = self.story {
+            return
+        }
         self.load()
     }
 

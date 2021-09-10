@@ -23,7 +23,7 @@ struct SettingsLinkView: View {
                 ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
         })
         // this is necessary until multiple sheets can be displayed at one time. See #22
-        .safariView(item: urlToOpen.bindingUrl, content: { url in
+            .safariView(item: $urlToOpen.url, content: { url in
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(

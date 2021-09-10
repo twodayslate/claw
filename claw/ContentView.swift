@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 import Combine
+import BetterSafariView
 
 struct DidReselectKey: EnvironmentKey {
     static let defaultValue = PassthroughSubject<TabSelection, Never>().eraseToAnyPublisher()
@@ -124,7 +125,8 @@ struct ContentView: View {
                 Image(systemName: "gear")
                 Text("Settings")
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
-        }.environment(\.didReselect, didReselect.eraseToAnyPublisher()).accentColor(settings.accentColor).font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier))).onOpenURL(perform: { url in
+        }.environment(\.didReselect, didReselect.eraseToAnyPublisher())
+        .onOpenURL(perform: { url in
             let _ = print(url)
             let openAction = {
                 if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
@@ -159,7 +161,7 @@ struct ContentView: View {
                 openAction()
             }
         })
-        .sheet(item: self.observableSheet.bindingSheet, content: { item in
+        .sheet(item: self.$observableSheet.sheet, content: { item in
             switch item {
             case .story(let id):
                 EZPanel{
@@ -204,6 +206,8 @@ struct ContentView: View {
         .environment(\.managedObjectContext, viewContext)
         .environmentObject(self.observableSheet)
         .environmentObject(urlToOpen)
+        .accentColor(settings.accentColor)
+        .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
     }
 }
 

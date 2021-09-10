@@ -156,7 +156,7 @@ struct StoryView: View {
                 }
             }))
         } // scrollviewreader
-        .safariView(item: urlToOpen.bindingUrl,
+        .safariView(item: $urlToOpen.url,
         content:
          { url in
             SafariView(

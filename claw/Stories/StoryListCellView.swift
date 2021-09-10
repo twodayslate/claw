@@ -3,14 +3,6 @@ import SwiftUI
 
 public class ObservableActiveSheet: ObservableObject {
     @Published var sheet: ActiveSheet? = nil
-    
-    var bindingSheet: Binding<ActiveSheet?> {
-        return Binding(get: {
-            return self.sheet
-        }, set: { newValue in
-            self.sheet = newValue
-        })
-    }
 }
 
 struct StoryListCellView: View {
