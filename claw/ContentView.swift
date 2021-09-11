@@ -86,8 +86,8 @@ struct ContentView: View {
 
     @Environment(\.sizeCategory) var sizeCategory
         
-    @ObservedObject var observableSheet = ObservableActiveSheet()
-    @ObservedObject var urlToOpen = ObservableURL()
+    @StateObject var observableSheet = ObservableActiveSheet()
+    @StateObject var urlToOpen = ObservableURL()
     
     var body: some View {
         let selection = Binding(get: { self._selection },
@@ -165,16 +165,16 @@ struct ContentView: View {
             switch item {
             case .story(let id):
                 EZPanel{
-                    StoryView(id)
-                }
+                    StoryView(id).id(id)
+                }.id(id)
                 .environmentObject(urlToOpen)
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
             case .user(let username):
                 EZPanel{
-                    UserView(username)
-                }
+                    UserView(username).id(username)
+                }.id(username)
                 .environmentObject(urlToOpen)
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
