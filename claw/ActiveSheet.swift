@@ -1,6 +1,6 @@
 import Foundation
 
-enum ActiveSheet: Identifiable {
+enum ActiveSheet: Identifiable, Equatable {
     case share(URL)
     case safari(URL)
     case story(id:String)

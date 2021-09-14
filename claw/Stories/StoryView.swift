@@ -6,21 +6,19 @@ struct StoryView: View {
     var from_newest: NewestStory?
     @Environment(\.didReselect) var didReselect
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
-    @ObservedObject var story: StoryFetcher
+    @StateObject var story = StoryFetcher()
     
     init(_ short_id: String) {
         self.short_id = short_id
-        self.story = StoryFetcher(short_id)
     }
     
     init(_ story: NewestStory) {
         self.from_newest = story
         self.short_id = story.short_id
-        self.story = StoryFetcher(short_id)
     }
     
     var title: String {
-        if let story = story.story{
+        if let story = self.story.story{
             if story.comment_count == 1 {
                 return "1 comment"
             }
@@ -50,7 +48,7 @@ struct StoryView: View {
     
     @EnvironmentObject var urlToOpen: ObservableURL
     @EnvironmentObject var observableSheet: ObservableActiveSheet
-    
+
     var body: some View {
         ScrollViewReader { scrollReader in
             
@@ -140,12 +138,13 @@ struct StoryView: View {
                     }
                 }
             }.onAppear(perform: {
+                self.story.short_id = self.short_id
                 self.story.load()
                 let contains = viewedItems.contains { element in
                     element.short_id == story.short_id && element.isStory
                 }
                 if !contains {
-                    viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id, isStory: true, isComment: false))
+                    viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id!, isStory: true, isComment: false))
                     try? viewContext.save()
                 }
             }).navigationBarItems(trailing: Button(action: {self.story.reload() }, label: {
@@ -155,16 +154,19 @@ struct StoryView: View {
                     Image(systemName: "arrow.clockwise")
                 }
             }))
-        }
-        // this is necessary until multiple sheets can be displayed at one time. See #22
-        .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+        } // scrollviewreader
+        .safariView(item: $urlToOpen.url,
+        content:
+         { url in
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(
                     entersReaderIfAvailable: settings.readerModeEnabled,
                     barCollapsingEnabled: true
                 )
-            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+            )
+            .preferredControlAccentColor(settings.accentColor)
+            .dismissButtonStyle(.close)
         })
     }
 }

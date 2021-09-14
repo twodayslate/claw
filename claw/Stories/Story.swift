@@ -12,6 +12,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var id: String {
         return short_id
     }
+
     var short_id: String
     var short_id_url: String
     var created_at: String
@@ -85,9 +86,9 @@ struct Comment: Codable, Hashable, Identifiable {
 class StoryFetcher: ObservableObject {
     @Published var story: Story? = nil
 
-    var short_id: String
+    public var short_id: String? = nil
 
-    init(_ short_id: String) {
+    init(_ short_id: String? = nil) {
         self.short_id = short_id
     }
 
@@ -104,13 +105,25 @@ class StoryFetcher: ObservableObject {
         self.isReloading = true
         self.load()
     }
+    
+    func loadIfEmpty() {
+        if let _ = self.story {
+            return
+        }
+        self.load()
+    }
 
     func load() {
-        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == self.short_id}) {
+        guard let short_id = self.short_id else {
+            return
+        }
+        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
-            
+
+        self.session?.cancel()
+
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
             DispatchQueue.main.async {
                 self.isReloading = false
@@ -120,7 +133,7 @@ class StoryFetcher: ObservableObject {
                     let decodedLists = try JSONDecoder().decode(Story.self, from: d)
                     DispatchQueue.main.async {
                         self.story = decodedLists
-                        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == self.short_id})
+                        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
                         StoryFetcher.cachedStories.append(decodedLists)
                         if StoryFetcher.cachedStories.count > 10 {
                             StoryFetcher.cachedStories.removeFirst()

@@ -110,7 +110,7 @@ struct UserView: View {
             self.userFetcher.load()
         })
         // this is necessary until multiple sheets can be displayed at one time. See #22
-        .fullScreenCover(item: urlToOpen.bindingUrl, content: { url in
+        .safariView(item: $urlToOpen.url, content: { url in
             SafariView(
                 url: url,
                 configuration: SafariView.Configuration(
