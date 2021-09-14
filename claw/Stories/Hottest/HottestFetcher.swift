@@ -50,7 +50,7 @@ class HottestFetcher: ObservableObject {
                                 completion?(nil)
                             }
                         }else {
-                            print("No Data")
+                            print("No Data for hottest")
                             completion?(nil) // todo: actually throw an error
                         }
                     } catch {
@@ -84,7 +84,7 @@ class HottestFetcher: ObservableObject {
                             completion?(nil)
                         }
                     }else {
-                        print("No Data")
+                        print("No Data for more hottest")
                         completion?(nil) // todo: throw actual error
                     }
                 } catch {

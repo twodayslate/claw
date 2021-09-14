@@ -11,6 +11,7 @@ struct TagStoryView: View {
     init(tags: [String]) {
         self.stories = TagStoryFetcher(tags: tags)
     }
+    
     @State private var scrollViewContentOffset = CGFloat(0)
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
@@ -25,13 +26,13 @@ struct TagStoryView: View {
                         Divider().id(0).padding(0).padding([.leading])
                     }
                    
-                    if stories.stories.count <= 0 {
+                    if stories.items.count <= 0 {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false)
+                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     }
-                    ForEach(stories.stories) { story in
+                    ForEach(stories.items) { story in
                         StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
                             self.stories.more(story)
                         })
@@ -47,10 +48,11 @@ struct TagStoryView: View {
                 }.onDisappear(perform: {
                     self.isVisible = false
                 }).onAppear(perform: {
-                    self.stories.load()
+                    self.stories.loadIfEmpty()
                     self.tags.loadIfEmpty()
                     self.isVisible = true
-                }).navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
+                })
+                .navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible && scrollViewContentOffset > 0.1 {
                             withAnimation {
