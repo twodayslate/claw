@@ -18,10 +18,14 @@ struct URLView: View {
                 Text("\(link.text)").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).bold().foregroundColor(Color.primary)
             }
             Text("\(link.url)").font(Font(.caption, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(Color.primary)
-        }.padding().background(Color.secondary.opacity(0.8)).overlay(
+        }
+        .padding()
+        .background(.thinMaterial)
+        .overlay(
             RoundedRectangle(cornerRadius: 8.0)
-                .stroke(Color.primary.opacity(0.8), lineWidth: 2.0)
-        ).clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
+                .stroke(Color(UIColor.opaqueSeparator), lineWidth: 2.0)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8.0)).onTapGesture {
             if settings.browser == .inAppSafari {
                 urlToOpen.url = URL(string: link.url)
             } else {
@@ -35,11 +39,18 @@ struct URLView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             URLView(link: HTMLLink(text: "zac.gorak.us", url: "https://zac.gorak.us"))
+                .padding()
             URLView(link: HTMLLink(text: "https://zac.gorak.us", url: "https://zac.gorak.us"))
-            ZStack {
+                .padding()
+            Group {
                 URLView(link: HTMLLink(text: "zac.gorak.us", url: "https://zac.gorak.us"))
-            }.background(Color(UIColor.systemBackground)).environment(\.colorScheme, .dark)
-        }.previewLayout(.sizeThatFits)
-        
+                    .padding()
+            }
+            .background(Color(UIColor.systemBackground))
+            .environment(\.colorScheme, .dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .environmentObject(ObservableURL())
     }
 }

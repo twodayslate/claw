@@ -82,45 +82,7 @@ struct SelectTagsView: View {
     var body: some View {
         ScrollViewReader { scrollReader in
             ZStack(alignment: .topTrailing) {
-                List {
-                    EmptyView().id("top")
-                    ForEach(alphabet, id: \.self) { letter in
-                        let filtered = fetcher.tags.filter({$0.tag.prefix(1).uppercased() == letter && (self.searchBar.text.isEmpty ||  $0.tag.lowercased().contains(self.searchBar.text.lowercased())) })
-                        if filtered.count > 0 {
-                            Section(header: Text(letter)) {
-                                ForEach(filtered) { tag in
-                                    Button(action: {
-                                        
-                                        if tags.contains(where: {$0 == tag.tag}) {
-                                            if tags.count > 1 {
-                                                tags.removeAll(where: {$0 == tag.tag})
-                                            }
-                                        } else {
-                                            tags.append(tag.tag)
-                                        }
-                                        UserDefaults.standard.set(self.tags, forKey: "selectedTags")
-                                    }, label: {
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text("\(tag.tag)").bold()
-                                                Text("\(tag.description)").foregroundColor(.gray)
-                                            }
-                                            Spacer()
-                                            if tags.contains(where: {$0 == tag.tag}) {
-                                                Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
-                                            }
-                                        }
-                                    })
-                                }
-                            }.id(letter)
-                        }
-                    }
-                    HStack {
-                        Spacer()
-                        Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
-                        Spacer()
-                    }.id("bottom")
-                }.listStyle(PlainListStyle()).add(self.searchBar)
+                body_list
                 
                 VStack(alignment: .trailing) {
                     Spacer().background(DestinationDataSetter(destination: "top"))
@@ -174,6 +136,60 @@ struct SelectTagsView: View {
             }.onAppear(perform: {
                 self.fetcher.loadIfEmpty()
             })
+        }
+    }
+    
+    @ViewBuilder
+    var body_list: some View {
+        List {
+            EmptyView().id("top")
+            ForEach(alphabet, id: \.self) { letter in
+                let filtered = fetcher.tags.filter({$0.tag.prefix(1).uppercased() == letter && (self.searchBar.text.isEmpty ||  $0.tag.lowercased().contains(self.searchBar.text.lowercased())) })
+                listSection(letter: letter, items: filtered)
+            }
+            bottom_list_item
+        }.listStyle(PlainListStyle()).add(self.searchBar)
+    }
+    
+    @ViewBuilder
+    var bottom_list_item: some View {
+        HStack {
+            Spacer()
+            Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
+            Spacer()
+        }.id("bottom")
+    }
+    
+    @ViewBuilder
+    func listSection(letter: String, items filtered: [Tag]) -> some View {
+        if filtered.count > 0 {
+            Section(header: Text(letter)) {
+                ForEach(filtered) { tag in
+                    Button(action: {
+                        
+                        if tags.contains(where: {$0 == tag.tag}) {
+                            if tags.count > 1 {
+                                tags.removeAll(where: {$0 == tag.tag})
+                            }
+                        } else {
+                            tags.append(tag.tag)
+                        }
+                        UserDefaults.standard.set(self.tags, forKey: "selectedTags")
+                    }, label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("\(tag.tag)").bold()
+                                Text("\(tag.description)").foregroundColor(.gray)
+                            }
+                            Spacer()
+                            if tags.contains(where: {$0 == tag.tag}) {
+                                Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
+                            }
+                        }
+                    })
+                }
+            }
+            .id(letter)
         }
     }
 }

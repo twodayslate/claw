@@ -171,6 +171,13 @@ struct ContentView: View {
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
+                .environment(\.openURL, OpenURLAction { url in
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = url
+                        return .handled
+                    }
+                    return .systemAction
+                })
             case .user(let username):
                 EZPanel{
                     UserView(username).id(username)
@@ -179,6 +186,13 @@ struct ContentView: View {
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
+                .environment(\.openURL, OpenURLAction { url in
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = url
+                        return .handled
+                    }
+                    return .systemAction
+                })
             case .url(let url):
                 EZPanel {
                     VStack {
@@ -190,6 +204,13 @@ struct ContentView: View {
                 .environmentObject(settings)
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
+                .environment(\.openURL, OpenURLAction { url in
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = url
+                        return .handled
+                    }
+                    return .systemAction
+                })
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
@@ -200,6 +221,13 @@ struct ContentView: View {
                 .environment(\.managedObjectContext, viewContext)
                 .environmentObject(self.observableSheet)
                 .environmentObject(urlToOpen)
+                .environment(\.openURL, OpenURLAction { url in
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = url
+                        return .handled
+                    }
+                    return .systemAction
+                })
             }
         })
         .environmentObject(settings)
@@ -208,6 +236,13 @@ struct ContentView: View {
         .environmentObject(urlToOpen)
         .accentColor(settings.accentColor)
         .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
+        .environment(\.openURL, OpenURLAction { url in
+            if settings.browser == .inAppSafari {
+                urlToOpen.url = url
+                return .handled
+            }
+            return .systemAction
+        })
     }
 }
 

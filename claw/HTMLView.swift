@@ -8,7 +8,6 @@
 import SwiftUI
 import SwiftSoup
 
-
 // inspired by
 // * https://github.com/lukasmoellerch/SwiftUIFormattedText
 // * https://github.com/Lambdo-Labs/MDText
@@ -66,8 +65,21 @@ struct NodesView: View {
                 }
             } else if let element = n as? Element {
                 if element.tagName() == "a" {
-                    let link: Text = getText(from:element).foregroundColor(.accentColor).underline()
-                    combined = combined + link
+                    // Support simple URLs via Apple's markdown parser
+                    if element.hasAttr("href"),
+                       let attr = try? element.attr("href"),
+                       let url = URL(string: attr),
+                       let html = try? element.html(),
+                       let text = try? element.text(),
+                       html == text {
+                        let link: Text =  Text(.init("[\(text)](\(url.absoluteString))"))
+                            .foregroundColor(.accentColor)
+                            .underline()
+                        combined = combined + link
+                    } else {
+                        let link: Text = getText(from:element).foregroundColor(.accentColor).underline()
+                        combined = combined + link
+                    }
                     hasAddedText = true
                 } else if element.tagName() == "strong" {
                     combined = combined + getText(from:element).bold()
@@ -259,7 +271,7 @@ struct HTMLView_Previews: PreviewProvider {
             }
             ScrollView {
                 HTMLView(html: """
-    <p>You might have heard of <a href="https://github.com/mawww/kakoune" rel="ugc">kakoune</a> and how it’s a bit like vim, except that verb and object are reversed. One interesting and rarely-mentioned consequence is that you can do manipulation that is very close to what is described in the <a href="http://doc.cat-v.org/bell_labs/structural_regexps/se.pdf" rel="ugc">structural regexp</a> document.</p>
+    <p>You might have heard of <a href="https://github.com/mawww/kakoune" rel="ugc">kakoune</a> and how it’s a bit like vim, except that verb and <a href="https://google.com"><em>obj</em><code>e</code><strike>c</strike><del>t</del></a> are reversed. One interesting and rarely-mentioned <a href="#"><em>c</em><strong>o</strong>nsequence</a> is that you can do <a href="#">m<strike>an</strike>ipulation</a> that is very close to what is described in the <a href="http://doc.cat-v.org/bell_labs/structural_regexps/se.pdf" rel="ugc">structural regexp</a> document. <a href="#"><strong>Bold and <em>Italic</em></strong></a></p>
                         <p>Consider this hypothetical structural regex <code>y/".*"/ y/’.*’/ x/[a-zA-Z0-9]+/ g/n/ v/../ c/num/</code> that they describe. Put simply, it is supposed to change each variable named <code>n</code> into <code>num</code> while being careful not to do so in strings (in <code>\n</code> for example).</p>
                         <p>This exact processing can be done interactively in kakoune with the following key sequence: <code>S".*"&lt;ret&gt;S'.*'&lt;ret&gt;s[a-z-A-Z0-9]+&lt;ret&gt;&lt;a-k&gt;n&lt;ret&gt;&lt;a-K&gt;..&lt;ret&gt;cnum&lt;esc&gt;</code></p>
                         <p>It looks cryptic, but it’s a sequence of the following operations:</p>
@@ -274,7 +286,7 @@ struct HTMLView_Previews: PreviewProvider {
                         <p>And the nice thing about being interactive is that you don’t have to think up the entire command at once. You can simply do it progressively and see that your selections are narrowing down to exactly what you want to change.</p>
     """)
             }
-            " ".join([Text("Hello"), Text("link").foregroundColor(.blue), Text("world!")])
+            " ".join([Text("Hello"), Text("link").foregroundColor(.blue), Text("world!"), Text("**[bold](https://site.com)**")])
         }.previewLayout(.sizeThatFits).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
     }
 }

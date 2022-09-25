@@ -65,7 +65,7 @@ struct UserView: View {
                             Text("@" + username).foregroundColor(.accentColor)
                         }
                     })
-                   
+                    
                 }
                 if let keybase = user.keybase_signatures {
                     HStack {
@@ -98,7 +98,8 @@ struct UserView: View {
                 if !user.about.isEmpty {
                     VStack(alignment: .leading) {
                         Text("About").bold()
-                        HTMLView(html: user.about)
+                        // BUG: https://github.com/lobsters/lobsters/issues/933
+                        Text(.init(user.about))
                     }
                 }
             }
