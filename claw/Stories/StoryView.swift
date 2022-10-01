@@ -76,7 +76,7 @@ struct StoryView: View {
                                 }
                             }, rowContent: { comment in
                                 VStack(alignment: .leading, spacing: 8.0) {
-                                    let html = HTMLView(html: comment.comment.comment)
+                                    let html = HTMLView(html: comment.comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
                                     HStack {
                                         html
                                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
@@ -95,7 +95,7 @@ struct StoryView: View {
                         }
                     } else if let story = self.from_newest {
                         if story.comment_count > 0 {
-                            VStack(alignment: .leading) {
+                            LazyVStack(alignment: .leading) {
                                 ForEach(1..<(story.comment_count+1)) { count in
                                     VStack(alignment: .leading) {
                                         HStack(alignment: .center) {
@@ -137,7 +137,8 @@ struct StoryView: View {
                         self.presentationMode.wrappedValue.dismiss()
                     }
                 }
-            }.onAppear(perform: {
+            }
+            .task {
                 self.story.short_id = self.short_id
                 self.story.load()
                 let contains = viewedItems.contains { element in
@@ -147,7 +148,8 @@ struct StoryView: View {
                     viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id!, isStory: true, isComment: false))
                     try? viewContext.save()
                 }
-            }).navigationBarItems(trailing: Button(action: {self.story.reload() }, label: {
+            }
+            .navigationBarItems(trailing: Button(action: {self.story.reload() }, label: {
                 if self.story.isReloading {
                     ProgressView().progressViewStyle(CircularProgressViewStyle())
                 } else {

@@ -33,9 +33,9 @@ struct TagStoryView: View {
                         }
                     }
                     ForEach(stories.items) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
+                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
                             self.stories.more(story)
-                        })
+                        }
                         Divider().padding(0).padding([.leading])
                     }
                     if stories.isLoadingMore {
@@ -47,11 +47,20 @@ struct TagStoryView: View {
                     }
                 }.onDisappear(perform: {
                     self.isVisible = false
-                }).onAppear(perform: {
-                    self.stories.loadIfEmpty()
-                    self.tags.loadIfEmpty()
-                    self.isVisible = true
                 })
+                .task {
+                    self.stories.loadIfEmpty()
+                }
+                .task {
+                    do {
+                        try await self.tags.loadIfEmpty()
+                    } catch {
+                        // todo: set and use error
+                    }
+                }
+                .onAppear {
+                    self.isVisible = true
+                }
                 .navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible && scrollViewContentOffset > 0.1 {

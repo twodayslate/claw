@@ -140,6 +140,10 @@ struct PersistenceController {
             let newItem = Settings(context: viewContext)
             newItem.timestamp = Date()
         }
+        
+        let item = ViewedItem(context: viewContext)
+        item.timestamp = Date()
+        
         do {
             try viewContext.save()
         } catch {

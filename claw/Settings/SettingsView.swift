@@ -42,7 +42,7 @@ struct AppIconView: View {
 
 struct ColorIconView: View {
     var color: UIColor
-
+    
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @EnvironmentObject var settings: Settings
     
@@ -129,90 +129,99 @@ struct SettingsView: View {
     
     var emailSubject: String {
         return
-             "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
+        "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
     }
     
     @EnvironmentObject var settings: Settings
     @Environment(\.sizeCategory) var sizeCategory
     
     var body: some View {
-            List {
-                Section(header: Text("Appearance").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                    if UIApplication.shared.supportsAlternateIcons {
-                        NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
-                            HStack {
-                                Label(
-                                    title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
-                                    icon: { ZStack {
-                                        Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(.accentColor)
-                                        Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png")!).resizable().aspectRatio( contentMode: .fit).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
-                                    } }
-                        ).labelStyle(HorizontallyAlignedLabelStyle())
-                                //ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, imageFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png", text: "App Icon", iconScale: 1.0)
-                                Spacer()
-                                Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
-                            }
-                        })
-                    }
-                    NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
+        List {
+            Section(header: Text("Appearance").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+                if UIApplication.shared.supportsAlternateIcons {
+                    NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
                         HStack {
-                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                            Label(
+                                title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
+                                icon: { ZStack {
+                                    Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(.accentColor)
+                                    Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png")!).resizable().aspectRatio( contentMode: .fit).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
+                                } }
+                            ).labelStyle(HorizontallyAlignedLabelStyle())
+                            //ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, imageFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png", text: "App Icon", iconScale: 1.0)
                             Spacer()
-                            Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                            Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
                         }
                     })
-                    
+                }
+                NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
                     HStack {
-                        SettingsTextSizeSlider()
+                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                        Spacer()
+                        Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
                     }
-                    
+                })
+                
+                HStack {
+                    SettingsTextSizeSlider()
                 }
-                Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                    SettingsLayoutSlider().environmentObject(settings)
-                }
-                Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                        
-                    Picker(selection: $settings.browser, label:
-                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
-                    , content: {
-                        Text("In-App Safari").tag(Browser.inAppSafari)
-                        Text("Default Browser").tag(Browser.defaultBrowser)
+                
+            }
+            Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+                SettingsLayoutSlider().environmentObject(settings)
+            }
+            Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+                
+                Picker(selection: $settings.browser, label:
+                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
+                       , content: {
+                    Text("In-App Safari").tag(Browser.inAppSafari)
+                    Text("Default Browser").tag(Browser.defaultBrowser)
+                })
+                
+                if settings.browser == Browser.inAppSafari {
+                    Toggle(isOn: $settings.readerModeEnabled, label: {
+                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
-                    
-                    if settings.browser == Browser.inAppSafari {
-                        Toggle(isOn: $settings.readerModeEnabled, label: {
-                            ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
-                        })
-                    }
                 }
-                Section {
-                    SettingsLinkView(image: "github", text: "GitHub", url: "https://github.com/twodayslate/claw", iconColor: .black)
-                    SettingsLinkView(image: "twitter", text: "Twitter", url: twitterURL.absoluteString, iconColor: .blue)
-                    if MFMailComposeViewController.canSendMail() {
-                        Button(action: {
-                            self.isShowingMailView.toggle()
-                        }, label: {
-                            ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
-                        })
-                    } else {
-                        Button(action: {
-                            self.isShowingMailViewAlert.toggle()
-                        }, label: {
-                            ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
-                        }).alert(isPresented: $isShowingMailViewAlert, content: {
-                            Alert(title: Text("Email"), message: Text("zac+claw@gorak.us"), dismissButton: .default(Text("Okay")))
-                        })
-                    }
-                    SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
+            }
+            Section {
+                SettingsLinkView(image: "github", text: "GitHub", url: "https://github.com/twodayslate/claw", iconColor: .black)
+                SettingsLinkView(image: "twitter", text: "Twitter", url: twitterURL.absoluteString, iconColor: .blue)
+                if MFMailComposeViewController.canSendMail() {
+                    Button(action: {
+                        self.isShowingMailView.toggle()
+                    }, label: {
+                        ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                    })
+                } else {
+                    Button(action: {
+                        self.isShowingMailViewAlert.toggle()
+                    }, label: {
+                        ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                    }).alert(isPresented: $isShowingMailViewAlert, content: {
+                        Alert(title: Text("Email"), message: Text("zac+claw@gorak.us"), dismissButton: .default(Text("Okay")))
+                    })
                 }
-                Section(header: Text("Legal").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                    SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
-                    SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
-                }
-            }.sheet(isPresented: $isShowingMailView) {
-                MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
-            }.listStyle(GroupedListStyle()
-            ).navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
+                SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
+            }
+            Section(
+                header: Text("Legal")
+                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))),
+                footer: Text(emailSubject)
+                    .font(Font(.caption2, sizeModifier: CGFloat(settings.textSizeModifier)))
+                    .opacity(0.4)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            ) {
+                SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
+                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
+            }
+        }
+        .sheet(isPresented: $isShowingMailView) {
+            MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
+        }
+        .listStyle(GroupedListStyle())
+        .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -220,8 +229,12 @@ struct SettingsView_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
-            SettingsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
-        }.previewLayout(.sizeThatFits)
+            SettingsView()
+        }
+        .previewLayout(.sizeThatFits)
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .environmentObject(ObservableURL())
         
     }
 }

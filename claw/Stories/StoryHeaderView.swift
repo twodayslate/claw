@@ -82,7 +82,7 @@ struct StoryHeaderView<T: GenericStory>: View {
             if story.description.count > 0 {
                 Divider().padding([.leading, .trailing])
                 VStack(alignment: .leading) {
-                    let html = HTMLView(html: story.description)
+                    let html = HTMLView(html: story.description.trimmingCharacters(in: .whitespacesAndNewlines))
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
                         URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)

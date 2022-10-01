@@ -19,9 +19,9 @@ struct HottestView: View {
                         Divider().padding(0).padding([.leading])
                     }
                     ForEach(hottest.stories) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
+                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
                             self.hottest.more(story)
-                        })
+                        }
                         Divider().padding(0).padding([.leading])
                     }
                     if hottest.isLoadingMore {
@@ -31,11 +31,15 @@ struct HottestView: View {
                             Spacer()
                         }
                     }
-                }.onDisappear(perform: {
+                }
+                .onDisappear {
                     self.isVisible = false
-                }).onAppear(perform: {
+                }
+                .onAppear {
                     self.isVisible = true
-                }).navigationBarTitle("Hottest").onReceive(didReselect) { _ in
+                }
+                .navigationBarTitle("Hottest")
+                .onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {

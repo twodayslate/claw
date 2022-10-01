@@ -1,49 +1,64 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class TagFetcher: ObservableObject {
     @Published var tags = TagFetcher.cachedTags
     
-    static var cachedTags = [Tag]()
+    static var userDefaults = UserDefaults.standard
+    static private var userDefaultCacheKey = "TagFetcher.cachedTags"
+
+    /// Tag's don't change that often so we can cache them on the device
+    static var cachedTags: [Tag] = {
+        if let data = userDefaults.object(forKey: userDefaultCacheKey) as? Data, let saved = try? PropertyListDecoder().decode([Tag].self, from: data) {
+            return saved
+        }
+        return [Tag]()
+    }() {
+        didSet {
+            if let encodedTags = try? PropertyListEncoder().encode(cachedTags) {
+                userDefaults.set(encodedTags, forKey: userDefaultCacheKey)
+            }
+        }
+    }
         
     static var shared = TagFetcher()
     
     init() {
-        self.load()
-    }
-    
-    deinit {
-        self.session?.cancel()
-    }
-    
-    private var session: URLSessionTask? = nil
-    private var moreSession: URLSessionTask? = nil
-    
-    func loadIfEmpty() {
-        if self.tags.count <= 0 {
-            load()
+        Task {
+            // refresh our tag list once per app instance. Since we really only use this as .shared this is once per app load
+            try? await self.load()
         }
     }
     
-    func load() {
+    @Published var isLoading = false
+    
+    func loadIfEmpty() async throws {
+        if self.tags.count <= 0 {
+            try await load()
+        }
+    }
+    
+    private func load() async throws {
+        if isLoading {
+            return
+        }
+        
+        isLoading = true
+        defer {
+            isLoading = false
+        }
         let url = URL(string: "https://lobste.rs/tags.json")!
         
-        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode([Tag].self, from: d)
-                            DispatchQueue.main.async {
-                                let sorted = decodedLists.sorted(by: {$0.tag < $1.tag})
-                                TagFetcher.cachedTags = sorted
-                                self.tags = sorted
-                            }
-                        }else {
-                            print("No Data for tag")
-                        }
-                    } catch {
-                        print ("Error fetching tag \(error)")
-                    }
-                }
-        self.session?.resume()
+        var request = URLRequest(url: url)
+        request.setUserAgent()
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        
+        let decodedLists = try JSONDecoder().decode([Tag].self, from: data)
+        
+        let sorted = decodedLists.sorted(by: {$0.tag < $1.tag})
+        TagFetcher.cachedTags = sorted
+        self.tags = sorted
     }
 }

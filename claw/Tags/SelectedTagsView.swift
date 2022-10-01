@@ -133,9 +133,14 @@ struct SelectTagsView: View {
                 for p in preferences {
                     self.destinations[p.destination] = p.frame
                 }
-            }.onAppear(perform: {
-                self.fetcher.loadIfEmpty()
-            })
+            }
+            .task {
+                do {
+                    try await self.fetcher.loadIfEmpty()
+                } catch {
+                    // todo: set and use error
+                }
+            }
         }
     }
     
@@ -148,7 +153,9 @@ struct SelectTagsView: View {
                 listSection(letter: letter, items: filtered)
             }
             bottom_list_item
-        }.listStyle(PlainListStyle()).add(self.searchBar)
+        }
+        .listStyle(PlainListStyle())
+        .add(self.searchBar)
     }
     
     @ViewBuilder

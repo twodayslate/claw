@@ -44,8 +44,8 @@ struct StoryCell: View {
                         SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                             Text("via ").foregroundColor(Color.secondary) +
                             Text(story.submitter_user.username).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
-                                Text(" " +
-                                        story.time_ago).foregroundColor(Color.secondary)
+                            Text(" " +
+                                 story.time_ago).foregroundColor(Color.secondary)
                         }.font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
                         Spacer()
                         SGNavigationLink(destination: StoryView(story), withChevron: false) {
@@ -65,7 +65,11 @@ struct StoryCell: View {
 struct StoryCell_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["ios", "programming"])).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
-        }.previewLayout(.sizeThatFits)
+            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: NewestUser(username: "twodayslate", created_at: "2020-09-17T08:35:19.000-05:00", is_admin: false, about: "About me", is_moderator: false, karma: 20, avatar_url: "", invited_by_user: "woho", github_username: "github", twitter_username: "twodayslate", keybase_signatures: nil), tags: ["ios", "programming"]))
+        }
+        .previewLayout(.sizeThatFits)
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .environmentObject(ObservableURL())
     }
 }

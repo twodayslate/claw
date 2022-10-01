@@ -27,9 +27,7 @@ struct UserView: View {
             if let user = self.user ?? self.userFetcher.user {
                 HStack(alignment: .center) {
                     Spacer()
-                    UserAvatarLoader(user: user).overlay(
-                        Circle()                        .stroke(Color(UIColor.separator), lineWidth: 3.0)
-                    ).clipShape(Circle()).shadow(radius: 5.0)
+                    UserAvatarLoader(user: user)
                     Spacer()
                 }
                 if let karma = user.karma {
@@ -103,13 +101,15 @@ struct UserView: View {
                     }
                 }
             }
-        }.navigationBarTitle(self.username ?? "").onReceive(didReselect) { _ in
+        }
+        .navigationBarTitle(self.username ?? "").onReceive(didReselect) { _ in
             DispatchQueue.main.async {
                 self.presentationMode.wrappedValue.dismiss()
             }
-        }.onAppear(perform: {
+        }
+        .task {
             self.userFetcher.load()
-        })
+        }
         // this is necessary until multiple sheets can be displayed at one time. See #22
         .safariView(item: $urlToOpen.url, content: { url in
             SafariView(
@@ -127,7 +127,9 @@ struct UserView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             UserView(NewestUser(username: "twodayslate", created_at: "2020-01-05T18:25:23.000-06:00", is_admin: false, about: "", is_moderator: false, karma: 64, avatar_url: "/avatars/twodayslate-100.png", invited_by_user: "kimjon", github_username: "twodayslate", twitter_username: "twodayslate", keybase_signatures: nil))
-        }.previewLayout(.sizeThatFits)
-        
+        }
+        .previewLayout(.sizeThatFits)
+        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .environmentObject(ObservableURL())
     }
 }

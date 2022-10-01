@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F6010B9828E90B4E009A759C /* URLRequest+UA.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6010B9728E90B4E009A759C /* URLRequest+UA.swift */; };
+		F6010B9928EA4AB0009A759C /* URLRequest+UA.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6010B9728E90B4E009A759C /* URLRequest+UA.swift */; };
 		F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */; };
 		F61CC1BE253676FC00CC7785 /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1BD253676FC00CC7785 /* Font.swift */; };
 		F61CC1C4253A876D00CC7785 /* SettingsTextSizeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */; };
@@ -75,7 +77,6 @@
 		F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDCB251EE005005E2B1C /* NewestView.swift */; };
 		F6E9EDDB251EE081005E2B1C /* UserFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDDA251EE081005E2B1C /* UserFetcher.swift */; };
 		F6E9EDE1251EE0B2005E2B1C /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDE0251EE0B2005E2B1C /* UserView.swift */; };
-		F6E9EDE7251EE0E1005E2B1C /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDE6251EE0E1005E2B1C /* ImageLoader.swift */; };
 		F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */; };
 		F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */; };
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
@@ -133,6 +134,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F6010B9728E90B4E009A759C /* URLRequest+UA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+UA.swift"; sourceTree = "<group>"; };
 		F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericArrayFetcher.swift; sourceTree = "<group>"; };
 		F61CC1BD253676FC00CC7785 /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTextSizeSlider.swift; sourceTree = "<group>"; };
@@ -204,7 +206,6 @@
 		F6E9EDCB251EE005005E2B1C /* NewestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewestView.swift; path = claw/Stories/Newest/NewestView.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EDDA251EE081005E2B1C /* UserFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserFetcher.swift; path = claw/User/UserFetcher.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EDE0251EE0B2005E2B1C /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserView.swift; path = claw/User/UserView.swift; sourceTree = SOURCE_ROOT; };
-		F6E9EDE6251EE0E1005E2B1C /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsLinkView.swift; path = claw/Settings/SettingsLinkView.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZZLabel.swift; sourceTree = "<group>"; };
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
@@ -264,6 +265,7 @@
 			children = (
 				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F61CC1BD253676FC00CC7785 /* Font.swift */,
+				F6010B9728E90B4E009A759C /* URLRequest+UA.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -398,7 +400,6 @@
 				F6876706251A82FE003090D2 /* ShareSheet.swift */,
 				F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */,
 				F6F2013425D5CCD6008BA024 /* ObservableURL.swift */,
-				F6E9EDE6251EE0E1005E2B1C /* ImageLoader.swift */,
 				F6F2015925D63C04008BA024 /* ActiveSheet.swift */,
 				F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */,
 				F669C933250C5DDE00B1FF42 /* Assets.xcassets */,
@@ -682,6 +683,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6010B9928EA4AB0009A759C /* URLRequest+UA.swift in Sources */,
 				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
 				F6E9EDC6251EDFB9005E2B1C /* HottestFetcher.swift in Sources */,
 				F629118C25105A440065C3E9 /* NewestUser.swift in Sources */,
@@ -702,11 +704,11 @@
 				F6F2015A25D63C04008BA024 /* ActiveSheet.swift in Sources */,
 				F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */,
 				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,
-				F6E9EDE7251EE0E1005E2B1C /* ImageLoader.swift in Sources */,
 				F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */,
 				F656F67C25268709006FFAFD /* SelectedTagsView.swift in Sources */,
 				F6E9EDB7251EDF98005E2B1C /* NewestStory.swift in Sources */,
 				F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */,
+				F6010B9828E90B4E009A759C /* URLRequest+UA.swift in Sources */,
 				F687667325141A27003090D2 /* MailView.swift in Sources */,
 				F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */,
 				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
@@ -814,7 +816,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -822,7 +824,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -838,7 +840,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -846,7 +848,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.hottest-widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -979,7 +981,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -989,7 +991,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
@@ -1007,7 +1009,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1017,7 +1019,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twodayslate.claw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
@@ -1117,7 +1119,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -1126,7 +1128,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.opener-action";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1141,7 +1143,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -1150,7 +1152,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twodayslate.claw.opener-action";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

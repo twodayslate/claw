@@ -19,11 +19,11 @@ struct NewestView: View {
                         }
                     }
                     ForEach(newest.stories) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).onAppear(perform: {
+                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
                             withAnimation(.easeIn, {
                                 newest.more(story)
                             })
-                        })
+                        }
                         Divider().padding(0).padding([.leading])
                     }
                     if newest.isLoadingMore {
@@ -33,11 +33,14 @@ struct NewestView: View {
                             Spacer()
                         }
                     }
-                }.onDisappear(perform: {
+                }
+                .onDisappear {
                     self.isVisible = false
-                }).onAppear(perform: {
+                }
+                .onAppear {
                     self.isVisible = true
-                }).navigationBarTitle("Newest").onReceive(didReselect) { _ in
+                }
+                .navigationBarTitle("Newest").onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {

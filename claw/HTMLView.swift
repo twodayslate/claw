@@ -59,7 +59,7 @@ struct NodesView: View {
         
         for n in nodes {
             if let textNode = n as? TextNode {
-                if !textNode.text().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if !textNode.text().isEmpty {
                     combined = combined + Text(textNode.text())
                     hasAddedText = true
                 }
@@ -134,8 +134,6 @@ struct NodesView: View {
                 else {
                     clearText()
                     ans.append(AnyView(NodesView(nodes: element.getChildNodes())))
-
-                    
                 }
             }
         }
@@ -148,7 +146,7 @@ struct NodesView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8.0){
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(combinedNodes.enumerated()), id: \.offset) { (ind, view) in
                 view
             }
@@ -247,10 +245,16 @@ struct HTMLView_Previews: PreviewProvider {
 """)
             }
             
+            ScrollView {
+                HTMLView(html: """
+                <p>Hey folks,</p>\n<p>Lobsters launched 10 years ago today.</p>\n<p>In that time our community of 15,013 users\nhave submitted 87,530 stories,\nwritten 381,460 comments,\nand cast 2,536,117 votes.\nThere are some nice graphs over at <a href=\"https://lobste.rs/stats\" rel=\"ugc\">/stats</a>.</p>\n<p>Previously:\n<a href=\"https://lobste.rs/s/rxmopc/lobsters_is_1_year_old_today\" rel=\"ugc\">2013</a>\n<a href=\"https://lobste.rs/s/9fcuzc/happy_birthday_lobste_rs\" rel=\"ugc\">2016</a>\n<a href=\"https://lobste.rs/s/mazaum/happy_5th_anniversary_lobsters\" rel=\"ugc\">2017</a>\n<a href=\"https://lobste.rs/s/cgtc2w/happy_7th_anniversary_lobsters\" rel=\"ugc\">2019</a>\n<a href=\"https://lobste.rs/s/orrpdv/lobsters_launched_8_years_ago_today\" rel=\"ugc\">2020</a>\n<a href=\"https://lobste.rs/s/idj3tm/lobsters_is_nine_today\" rel=\"ugc\">2021</a></p>\n<p>For the occasion you might look back at the <a href=\"https://lobste.rs/top/1y\" rel=\"ugc\">top stories</a> of the year or <a href=\"https://lobste.rs/top/10y\" rel=\"ugc\">decade</a>,\nor review the <a href=\"https://lobste.rs/upvoted/comments\" rel=\"ugc\">comments</a>\nand <a href=\"https://lobste.rs/upvoted/stories\" rel=\"ugc\">stories</a> you’ve upvoted. What were your favorites?</p>\n
+                """)
+            }
+            
             // https://lobste.rs/s/f5dt41/pip_has_dropped_support_for_python_2#c_ke2hvl
             ScrollView {
                 HTMLView(html: """
-            <p>Python 2 support has been dropped by <del>pip</del> the Python Packaging Authority (PyPA) at the Python Packaging Index (PyPI), which is the default configuration for every distribution of pip I’m aware of. If you have critical dependencies on Python 2 packages and are unwilling to migrate to Python 3, set up your own package index <del>or pull the libraries you depend on directly into the vcs for your legacy project</del> (which is definitely more work than migrating to Python 3, but <em>is</em> a choice you have).</p>\n<p>Another easier alternative would be to pull the libraries you depend on directly into the vcs for your legacy project.</p>\n
+<p>Python 2 support has been dropped by <del>pip</del> the Python Packaging Authority (PyPA) at the Python Packaging Index (PyPI), which is the default configuration for every distribution of pip I’m aware of. If you have critical dependencies on Python 2 packages and are unwilling to migrate to Python 3, set up your own package index <del>or pull the libraries you depend on directly into the vcs for your legacy project</del> (which is definitely more work than migrating to Python 3, but <em>is</em> a choice you have).</p>\n<p>Another easier alternative would be to pull the libraries you depend on directly into the vcs for your legacy project.</p>\n
 """)
             }
             
@@ -286,7 +290,15 @@ struct HTMLView_Previews: PreviewProvider {
                         <p>And the nice thing about being interactive is that you don’t have to think up the entire command at once. You can simply do it progressively and see that your selections are narrowing down to exactly what you want to change.</p>
     """)
             }
-            " ".join([Text("Hello"), Text("link").foregroundColor(.blue), Text("world!"), Text("**[bold](https://site.com)**")])
-        }.previewLayout(.sizeThatFits).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        }
+        .previewLayout(.sizeThatFits)
+        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        
+        " ".join([
+            Text("Hello"), Text("link").foregroundColor(.blue), Text("world!"), Text("**[bold](https://site.com)**"),
+                Text("_[italic](https://site.com)_"),
+                Text("*[italic2](https://site.com)*"),
+                Text("~[stikethrough](https://site.com)~")
+        ]).previewLayout(.sizeThatFits)
     }
 }

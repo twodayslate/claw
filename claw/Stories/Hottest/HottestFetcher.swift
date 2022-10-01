@@ -49,7 +49,7 @@ class HottestFetcher: ObservableObject {
                                 self.page += 1
                                 completion?(nil)
                             }
-                        }else {
+                        } else {
                             print("No Data for hottest")
                             completion?(nil) // todo: actually throw an error
                         }
