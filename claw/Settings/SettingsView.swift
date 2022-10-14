@@ -8,38 +8,6 @@
 import SwiftUI
 import MessageUI
 
-struct AppIcon: Codable {
-    var alternateIconName: String?
-    var name: String
-    var assetName: String
-    var subtitle: String?
-}
-
-struct AppIconView: View {
-    var icon: AppIcon
-    
-    @EnvironmentObject var settings: Settings
-    
-    var body: some View {
-        let path = Bundle.main.resourcePath! + "/" + icon.assetName
-        HStack {
-            Image(uiImage: UIImage(contentsOfFile: path)!).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
-            VStack(alignment: .leading) {
-                Text("\(icon.name)").foregroundColor(Color(UIColor.label))
-                if let subtitle = icon.subtitle {
-                    Text("\(subtitle)").foregroundColor(.gray)
-                        .font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
-                }
-            }
-            
-            if settings.alternateIconName == icon.alternateIconName {
-                Spacer()
-                Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
-            }
-        }
-    }
-}
-
 struct ColorIconView: View {
     var color: UIColor
     
@@ -74,43 +42,7 @@ struct AccentColorChooserView: View {
         }.navigationTitle("Accent Color").listStyle(GroupedListStyle())
     }
 }
-struct AppIconChooserView: View {
-    @EnvironmentObject var settings: Settings
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
-    
-    @State var showAlert = false
-    var body: some View {
-        List {
-            Button(action: {
-                UIApplication.shared.setAlternateIconName(nil, completionHandler: {error in
-                    guard error == nil else {
-                        // show error
-                        return
-                    }
-                    settings.alternateIconName = nil
-                    try? settings.managedObjectContext?.save()
-                    self.presentationMode.wrappedValue.dismiss()
-                })
-            }, label: {
-                AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
-            })
-            VStack(alignment: .leading) {
-                HStack(alignment: .center) {
-                    Spacer()
-                    Text("More coming soon!").bold().font(.callout)
-                    Spacer()
-                }
-                HStack(alignment: .bottom) {
-                    Spacer()
-                    Text("Thank you for the support!").font(.subheadline)
-                    Spacer()
-                }
-            }
-        }.listStyle(GroupedListStyle()).navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
-            Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
-        })
-    }
-}
+
 
 struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
@@ -132,6 +64,13 @@ struct SettingsView: View {
         "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
     }
     
+    var alternativeIconNameMap = [
+        "claw": "claw",
+        "Classic": "Classic",
+        "akhmad437_lobster_light": "Light Lobster",
+        "akhmad437_lobster_dark": "Dark Lobster"
+    ]
+    
     @EnvironmentObject var settings: Settings
     @Environment(\.sizeCategory) var sizeCategory
     
@@ -143,14 +82,25 @@ struct SettingsView: View {
                         HStack {
                             Label(
                                 title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
-                                icon: { ZStack {
-                                    Image(systemName: "app.fill").resizable().aspectRatio( contentMode: .fit).foregroundColor(.accentColor)
-                                    Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png")!).resizable().aspectRatio( contentMode: .fit).mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
-                                } }
-                            ).labelStyle(HorizontallyAlignedLabelStyle())
+                                icon: {
+                                    ZStack {
+                                        Image(systemName: "app.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .foregroundColor(.accentColor)
+                                        Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png") ?? UIImage(named: settings.alternateIconName ?? "claw")!)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .mask(Image(systemName: "app.fill")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit))
+                                    }
+                                }
+                            )
+                            .labelStyle(HorizontallyAlignedLabelStyle())
                             //ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, imageFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png", text: "App Icon", iconScale: 1.0)
                             Spacer()
-                            Text("\(settings.alternateIconName ?? "Default")").foregroundColor(.gray)
+                            Text("\(alternativeIconNameMap[settings.alternateIconName ?? "Default"] ?? "Default")").foregroundColor(.gray)
                         }
                     })
                 }

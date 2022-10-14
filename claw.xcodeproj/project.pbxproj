@@ -10,6 +10,8 @@
 		F6010B9828E90B4E009A759C /* URLRequest+UA.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6010B9728E90B4E009A759C /* URLRequest+UA.swift */; };
 		F6010B9928EA4AB0009A759C /* URLRequest+UA.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6010B9728E90B4E009A759C /* URLRequest+UA.swift */; };
 		F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */; };
+		F615B8B128F8E9C800FC4730 /* AppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B028F8E9C800FC4730 /* AppIconView.swift */; };
+		F615B8B328F8EE3500FC4730 /* AppIconChooserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B228F8EE3500FC4730 /* AppIconChooserView.swift */; };
 		F61CC1BE253676FC00CC7785 /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1BD253676FC00CC7785 /* Font.swift */; };
 		F61CC1C4253A876D00CC7785 /* SettingsTextSizeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */; };
 		F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291163251038810065C3E9 /* CommentHierarchy.swift */; };
@@ -136,6 +138,8 @@
 /* Begin PBXFileReference section */
 		F6010B9728E90B4E009A759C /* URLRequest+UA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+UA.swift"; sourceTree = "<group>"; };
 		F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericArrayFetcher.swift; sourceTree = "<group>"; };
+		F615B8B028F8E9C800FC4730 /* AppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconView.swift; sourceTree = "<group>"; };
+		F615B8B228F8EE3500FC4730 /* AppIconChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconChooserView.swift; sourceTree = "<group>"; };
 		F61CC1BD253676FC00CC7785 /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTextSizeSlider.swift; sourceTree = "<group>"; };
 		F6291163251038810065C3E9 /* CommentHierarchy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentHierarchy.swift; sourceTree = "<group>"; };
@@ -468,6 +472,8 @@
 			isa = PBXGroup;
 			children = (
 				F687666C2513FAAC003090D2 /* SettingsView.swift */,
+				F615B8B228F8EE3500FC4730 /* AppIconChooserView.swift */,
+				F615B8B028F8E9C800FC4730 /* AppIconView.swift */,
 				F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */,
 				F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */,
 				F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */,
@@ -712,6 +718,7 @@
 				F687667325141A27003090D2 /* MailView.swift in Sources */,
 				F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */,
 				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
+				F615B8B328F8EE3500FC4730 /* AppIconChooserView.swift in Sources */,
 				F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */,
 				F6E9EDDB251EE081005E2B1C /* UserFetcher.swift in Sources */,
 				F669C964250C711E00B1FF42 /* Story.swift in Sources */,
@@ -739,6 +746,7 @@
 				F61CC1BE253676FC00CC7785 /* Font.swift in Sources */,
 				F656F682252BEF42006FFAFD /* SearchBar.swift in Sources */,
 				F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */,
+				F615B8B128F8E9C800FC4730 /* AppIconView.swift in Sources */,
 				F669C962250C61F100B1FF42 /* StoryCell.swift in Sources */,
 				F61CC1C4253A876D00CC7785 /* SettingsTextSizeSlider.swift in Sources */,
 				F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */,
@@ -979,6 +987,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
@@ -1007,6 +1016,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
