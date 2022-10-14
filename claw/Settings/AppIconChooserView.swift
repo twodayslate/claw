@@ -19,37 +19,37 @@ struct AppIconChooserView: View {
                         self.presentationMode.wrappedValue.dismiss()
                     })
                 }, label: {
-                    AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "claw@2x.png", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
+                    AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "AppIcon-thumb", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
                 })
             }
             Section {
                 Button(action: {
-                    UIApplication.shared.setAlternateIconName("akhmad437_lobster_dark", completionHandler: {error in
+                    UIApplication.shared.setAlternateIconName("Akhmad437LobsterDarkIcon", completionHandler: {error in
                         guard error == nil else {
                             // show error
                             return
                         }
-                        settings.alternateIconName = "akhmad437_lobster_dark"
+                        settings.alternateIconName = "Akhmad437LobsterDarkIcon"
                         try? settings.managedObjectContext?.save()
                         self.presentationMode.wrappedValue.dismiss()
                     })
                 }, label: {
-                    AppIconView(icon: AppIcon(alternateIconName: "akhmad437_lobster_dark", name: "Dark Lobster", assetName: "akhmad437_lobster_dark", subtitle: "akhmad437"))
+                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterDarkIcon", name: "Dark Lobster", assetName: "Akhmad437LobsterDarkIcon-thumb", subtitle: "akhmad437"))
                         .environmentObject(settings)
                 })
                 
                 Button(action: {
-                    UIApplication.shared.setAlternateIconName("akhmad437_lobster_light", completionHandler: {error in
+                    UIApplication.shared.setAlternateIconName("Akhmad437LobsterLightIcon", completionHandler: {error in
                         guard error == nil else {
                             // show error
                             return
                         }
-                        settings.alternateIconName = "akhmad437_lobster_light"
+                        settings.alternateIconName = "Akhmad437LobsterLightIcon"
                         try? settings.managedObjectContext?.save()
                         self.presentationMode.wrappedValue.dismiss()
                     })
                 }, label: {
-                    AppIconView(icon: AppIcon(alternateIconName: "akhmad437_lobster_light", name: "Light Lobster", assetName: "akhmad437_lobster_light", subtitle: "akhmad437"))
+                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterLightIcon", name: "Light Lobster", assetName: "Akhmad437LobsterLightIcon-thumb", subtitle: "akhmad437"))
                         .environmentObject(settings)
                 })
             }
@@ -60,7 +60,10 @@ struct AppIconChooserView: View {
                     Spacer()
                 }
             }
-        }.listStyle(GroupedListStyle()).navigationTitle("App Icon").alert(isPresented: $showAlert, content: {
+        }
+        .listStyle(GroupedListStyle())
+        .navigationTitle("App Icon")
+        .alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
     }

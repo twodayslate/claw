@@ -10,24 +10,24 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-            <key>akhmad437_lobster_dark</key>
-            <dict>
-                <key>CFBundleIconFiles</key>
-                <array>
-                    <string>akhmad437_lobster_dark</string>
-                </array>
-                <key>UIPrerenderedIcon</key>
-                <false/>
-            </dict>
-            <key>akhmad437_lobster_light</key>
-            <dict>
-                <key>CFBundleIconFiles</key>
-                <array>
-                    <string>akhmad437_lobster_light</string>
-                </array>
-                <key>UIPrerenderedIcon</key>
-                <false/>
-            </dict>
+			<key>Akhmad437LobsterDarkIcon</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>Akhmad437LobsterDarkIcon</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>Akhmad437LobsterLightIcon</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>Akhmad437LobsterLightIcon</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
 			<key>Classic</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
@@ -42,10 +42,10 @@
 		<dict>
 			<key>CFBundleIconFiles</key>
 			<array>
-				<string>claw</string>
+				<string>AppIcon</string>
 			</array>
 			<key>CFBundleIconName</key>
-			<string>claw</string>
+			<string>AppIcon</string>
 			<key>UIPrerenderedIcon</key>
 			<false/>
 		</dict>

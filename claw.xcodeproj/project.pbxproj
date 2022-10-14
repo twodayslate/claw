@@ -12,6 +12,8 @@
 		F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */; };
 		F615B8B128F8E9C800FC4730 /* AppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B028F8E9C800FC4730 /* AppIconView.swift */; };
 		F615B8B328F8EE3500FC4730 /* AppIconChooserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B228F8EE3500FC4730 /* AppIconChooserView.swift */; };
+		F615B8B528F9C39200FC4730 /* Bundle+version.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B428F9C39200FC4730 /* Bundle+version.swift */; };
+		F615B8B628F9C5AF00FC4730 /* Bundle+version.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B428F9C39200FC4730 /* Bundle+version.swift */; };
 		F61CC1BE253676FC00CC7785 /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1BD253676FC00CC7785 /* Font.swift */; };
 		F61CC1C4253A876D00CC7785 /* SettingsTextSizeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */; };
 		F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291163251038810065C3E9 /* CommentHierarchy.swift */; };
@@ -19,7 +21,7 @@
 		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
 		F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291170251057E70065C3E9 /* hottest_widget.swift */; };
 		F6291174251057E80065C3E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6291173251057E80065C3E9 /* Assets.xcassets */; };
-		F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F6291185251059E60065C3E9 /* GenericStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericStory.swift */; };
 		F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
 		F629118C25105A440065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
@@ -54,20 +56,16 @@
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
 		F687667325141A27003090D2 /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687667225141A27003090D2 /* MailView.swift */; };
 		F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DA25196C9B003090D2 /* Classic@3x.png */; };
-		F68766DF25196C9B003090D2 /* claw@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DB25196C9B003090D2 /* claw@2x.png */; };
-		F68766E025196C9B003090D2 /* claw@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DC25196C9B003090D2 /* claw@3x.png */; };
 		F68766E125196C9B003090D2 /* Classic@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DD25196C9B003090D2 /* Classic@2x.png */; };
 		F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876706251A82FE003090D2 /* ShareSheet.swift */; };
 		F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687670C251A9501003090D2 /* StoryListCellView.swift */; };
 		F6876713251AF800003090D2 /* SafariActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876712251AF800003090D2 /* SafariActivity.swift */; };
 		F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876750251E853F003090D2 /* Classic@2x~ipad.png */; };
 		F6876753251E8540003090D2 /* Classic~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876751251E853F003090D2 /* Classic~ipad.png */; };
-		F687676A251E8677003090D2 /* claw@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876768251E8677003090D2 /* claw@2x~ipad.png */; };
-		F687676B251E8677003090D2 /* claw~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876769251E8677003090D2 /* claw~ipad.png */; };
 		F6E01E6E2546193000AADFBC /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E01E6D2546193000AADFBC /* Media.xcassets */; };
 		F6E01E702546193000AADFBC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E01E6F2546193000AADFBC /* ActionViewController.swift */; };
 		F6E01E732546193000AADFBC /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F6E01E712546193000AADFBC /* MainInterface.storyboard */; };
-		F6E01E772546193000AADFBC /* opener-action.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F6E01E6B2546193000AADFBC /* opener-action.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F6E01E772546193000AADFBC /* opener-action.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F6E01E6B2546193000AADFBC /* opener-action.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F6E01E912548C00C00AADFBC /* EZPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E01E902548C00C00AADFBC /* EZPanel.swift */; };
 		F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
 		F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */; };
@@ -121,16 +119,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F629117E251057E80065C3E9 /* Embed App Extensions */ = {
+		F629117E251057E80065C3E9 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				F6E01E772546193000AADFBC /* opener-action.appex in Embed App Extensions */,
-				F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed App Extensions */,
+				F6E01E772546193000AADFBC /* opener-action.appex in Embed Foundation Extensions */,
+				F629117A251057E80065C3E9 /* hottest.widgetExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -140,6 +138,7 @@
 		F608CD1A26BF598E00F98817 /* GenericArrayFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericArrayFetcher.swift; sourceTree = "<group>"; };
 		F615B8B028F8E9C800FC4730 /* AppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconView.swift; sourceTree = "<group>"; };
 		F615B8B228F8EE3500FC4730 /* AppIconChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconChooserView.swift; sourceTree = "<group>"; };
+		F615B8B428F9C39200FC4730 /* Bundle+version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+version.swift"; sourceTree = "<group>"; };
 		F61CC1BD253676FC00CC7785 /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTextSizeSlider.swift; sourceTree = "<group>"; };
 		F6291163251038810065C3E9 /* CommentHierarchy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentHierarchy.swift; sourceTree = "<group>"; };
@@ -191,16 +190,12 @@
 		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F687667225141A27003090D2 /* MailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailView.swift; sourceTree = "<group>"; };
 		F68766DA25196C9B003090D2 /* Classic@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@3x.png"; sourceTree = "<group>"; };
-		F68766DB25196C9B003090D2 /* claw@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@2x.png"; sourceTree = "<group>"; };
-		F68766DC25196C9B003090D2 /* claw@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@3x.png"; sourceTree = "<group>"; };
 		F68766DD25196C9B003090D2 /* Classic@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x.png"; sourceTree = "<group>"; };
 		F6876706251A82FE003090D2 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		F687670C251A9501003090D2 /* StoryListCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListCellView.swift; path = claw/Stories/StoryListCellView.swift; sourceTree = SOURCE_ROOT; };
 		F6876712251AF800003090D2 /* SafariActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariActivity.swift; sourceTree = "<group>"; };
 		F6876750251E853F003090D2 /* Classic@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x~ipad.png"; sourceTree = "<group>"; };
 		F6876751251E853F003090D2 /* Classic~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic~ipad.png"; sourceTree = "<group>"; };
-		F6876768251E8677003090D2 /* claw@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw@2x~ipad.png"; sourceTree = "<group>"; };
-		F6876769251E8677003090D2 /* claw~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claw~ipad.png"; sourceTree = "<group>"; };
 		F6E01E6B2546193000AADFBC /* opener-action.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "opener-action.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6E01E6D2546193000AADFBC /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Media.xcassets; sourceTree = "<group>"; };
 		F6E01E6F2546193000AADFBC /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
@@ -270,6 +265,7 @@
 				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F61CC1BD253676FC00CC7785 /* Font.swift */,
 				F6010B9728E90B4E009A759C /* URLRequest+UA.swift */,
+				F615B8B428F9C39200FC4730 /* Bundle+version.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -448,10 +444,6 @@
 				F6876750251E853F003090D2 /* Classic@2x~ipad.png */,
 				F6876751251E853F003090D2 /* Classic~ipad.png */,
 				F68766DA25196C9B003090D2 /* Classic@3x.png */,
-				F6876768251E8677003090D2 /* claw@2x~ipad.png */,
-				F6876769251E8677003090D2 /* claw~ipad.png */,
-				F68766DB25196C9B003090D2 /* claw@2x.png */,
-				F68766DC25196C9B003090D2 /* claw@3x.png */,
 			);
 			path = icons;
 			sourceTree = "<group>";
@@ -508,7 +500,7 @@
 				F669C928250C5DD400B1FF42 /* Sources */,
 				F669C929250C5DD400B1FF42 /* Frameworks */,
 				F669C92A250C5DD400B1FF42 /* Resources */,
-				F629117E251057E80065C3E9 /* Embed App Extensions */,
+				F629117E251057E80065C3E9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -585,7 +577,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1210;
-				LastUpgradeCheck = 1200;
+				LastUpgradeCheck = 1400;
 				TargetAttributes = {
 					F6291168251057E70065C3E9 = {
 						CreatedOnToolsVersion = 12.0;
@@ -645,15 +637,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F687676A251E8677003090D2 /* claw@2x~ipad.png in Resources */,
 				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
 				F68766E125196C9B003090D2 /* Classic@2x.png in Resources */,
-				F68766E025196C9B003090D2 /* claw@3x.png in Resources */,
 				F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */,
-				F68766DF25196C9B003090D2 /* claw@2x.png in Resources */,
 				F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */,
-				F687676B251E8677003090D2 /* claw~ipad.png in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
 				F6876753251E8540003090D2 /* Classic~ipad.png in Resources */,
 			);
@@ -691,6 +679,7 @@
 			files = (
 				F6010B9928EA4AB0009A759C /* URLRequest+UA.swift in Sources */,
 				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
+				F615B8B628F9C5AF00FC4730 /* Bundle+version.swift in Sources */,
 				F6E9EDC6251EDFB9005E2B1C /* HottestFetcher.swift in Sources */,
 				F629118C25105A440065C3E9 /* NewestUser.swift in Sources */,
 				F6E9EDC1251EDFAA005E2B1C /* GenericStory.swift in Sources */,
@@ -717,6 +706,7 @@
 				F6010B9828E90B4E009A759C /* URLRequest+UA.swift in Sources */,
 				F687667325141A27003090D2 /* MailView.swift in Sources */,
 				F608CD1B26BF598E00F98817 /* GenericArrayFetcher.swift in Sources */,
+				F615B8B528F9C39200FC4730 /* Bundle+version.swift in Sources */,
 				F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */,
 				F615B8B328F8EE3500FC4730 /* AppIconChooserView.swift in Sources */,
 				F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */,
@@ -821,10 +811,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -845,10 +836,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -985,12 +977,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Akhmad437LobsterLightIcon Akhmad437LobsterDarkIcon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1014,12 +1007,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Akhmad437LobsterLightIcon Akhmad437LobsterDarkIcon";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1127,9 +1121,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -1151,9 +1146,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;

@@ -60,15 +60,19 @@ struct SettingsView: View {
     }
     
     var emailSubject: String {
-        return
-        "claw v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
+        "\(Bundle.main.name) v\(Bundle.main.shortVersion)"
     }
     
+    var longVersion: String {
+        "\(Bundle.main.name) v\(Bundle.main.longVersion)"
+    }
+    
+    @State var showingShortVersion = true
+    
     var alternativeIconNameMap = [
-        "claw": "claw",
         "Classic": "Classic",
-        "akhmad437_lobster_light": "Light Lobster",
-        "akhmad437_lobster_dark": "Dark Lobster"
+        "Akhmad437LobsterLightIcon": "Light Lobster",
+        "Akhmad437LobsterDarkIcon": "Dark Lobster"
     ]
     
     @EnvironmentObject var settings: Settings
@@ -88,17 +92,18 @@ struct SettingsView: View {
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .foregroundColor(.accentColor)
-                                        Image(uiImage: UIImage(contentsOfFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png") ?? UIImage(named: settings.alternateIconName ?? "claw")!)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .mask(Image(systemName: "app.fill")
+                                        if let image =  UIImage(named: (settings.alternateIconName ?? "AppIcon") + "-thumb") {
+                                            Image(uiImage: image)
                                                 .resizable()
-                                                .aspectRatio(contentMode: .fit))
+                                                .aspectRatio(contentMode: .fit)
+                                                .mask(Image(systemName: "app.fill")
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit))
+                                        }
                                     }
                                 }
                             )
                             .labelStyle(HorizontallyAlignedLabelStyle())
-                            //ZZLabel(iconBackgroundColor: Color(UIColor.lobstersRed), iconColor: .white, imageFile: Bundle.main.resourcePath! + "/" + (settings.alternateIconName ?? "claw") + "@2x.png", text: "App Icon", iconScale: 1.0)
                             Spacer()
                             Text("\(alternativeIconNameMap[settings.alternateIconName ?? "Default"] ?? "Default")").foregroundColor(.gray)
                         }
@@ -158,10 +163,13 @@ struct SettingsView: View {
             Section(
                 header: Text("Legal")
                     .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))),
-                footer: Text(emailSubject)
+                footer: Text(showingShortVersion ? emailSubject : longVersion)
                     .font(Font(.caption2, sizeModifier: CGFloat(settings.textSizeModifier)))
                     .opacity(0.4)
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .onTapGesture {
+                        showingShortVersion.toggle()
+                    }
             ) {
                 SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
                 SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)

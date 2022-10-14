@@ -23,8 +23,8 @@ public extension URLRequest {
     mutating func setUserAgent() {
         // per @pushcx
         // $APP_NAME/$VERSION ($ARCH; $OS; +https://contact.link/for/the/app)
-        let app_name = "claw"
-        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)
+        let app_name = Bundle.main.name
+        let version = Bundle.main.shortVersion
         let help_url = "https://zac.gorak.us/ios"
         
         let ua = "\(app_name)/\(version) (\(UIDevice.current.modelIdentifier); \(UIDevice.current.systemName) \(UIDevice.current.systemVersion); +\(help_url))"

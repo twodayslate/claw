@@ -28,7 +28,6 @@ class ActionViewController: UIViewController {
                         itemProvider.loadItem(forTypeIdentifier: kUTTypeURL as String, options: nil, completionHandler: { result, _  in
                             if let url = result as? URL {
                                 print("got an url", url)
-                                //context.open(URL(string: "claw://url=\(url.absoluteString)")!, completionHandler: nil)
                                 self.openUrl(url: URL(string: "claw://open?url=\(url.absoluteString)")!)
                                 return
                             }

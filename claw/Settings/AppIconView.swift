@@ -21,13 +21,18 @@ struct AppIconView: View {
     @EnvironmentObject var settings: Settings
     
     var body: some View {
-        let path = Bundle.main.resourcePath! + "/" + icon.assetName
-        let image = UIImage(contentsOfFile: path) ?? UIImage(named: icon.assetName)!
         HStack {
-            Image(uiImage: image)
-                .resizable()
-                .frame(width: 60, height: 60)
-                .mask(Image(systemName: "app.fill").resizable().aspectRatio(contentMode: .fit))
+            let path = Bundle.main.resourcePath?.appending(icon.assetName) ?? icon.assetName
+            if let image = UIImage(contentsOfFile: path) ?? UIImage(named: icon.assetName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .frame(width: 60, height: 60)
+                    .mask(
+                        Image(systemName: "app.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                    )
+            }
             VStack(alignment: .leading) {
                 Text("\(icon.name)").foregroundColor(Color(UIColor.label))
                 if let subtitle = icon.subtitle {
