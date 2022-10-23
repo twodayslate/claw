@@ -34,7 +34,7 @@ struct AppIconChooserView: View {
                         self.presentationMode.wrappedValue.dismiss()
                     })
                 }, label: {
-                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterDarkIcon", name: "Dark Lobster", assetName: "Akhmad437LobsterDarkIcon-thumb", subtitle: "akhmad437"))
+                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterDarkIcon", name: "Dark Lobster", assetName: "Akhmad437LobsterDarkIcon-thumb", subtitle: "@akhmadmaulidi"))
                         .environmentObject(settings)
                 })
                 
@@ -49,7 +49,7 @@ struct AppIconChooserView: View {
                         self.presentationMode.wrappedValue.dismiss()
                     })
                 }, label: {
-                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterLightIcon", name: "Light Lobster", assetName: "Akhmad437LobsterLightIcon-thumb", subtitle: "akhmad437"))
+                    AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterLightIcon", name: "Light Lobster", assetName: "Akhmad437LobsterLightIcon-thumb", subtitle: "@akhmadmaulidi"))
                         .environmentObject(settings)
                 })
             }
