@@ -1,5 +1,7 @@
 import SwiftUI
+
 import BetterSafariView
+import SimpleCommon
 
 struct StoryView: View {
     var short_id: String

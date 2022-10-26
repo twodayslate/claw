@@ -31,7 +31,6 @@
 		F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65725252563006FFAFD /* TagStoryFetcher.swift */; };
 		F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65D252525DC006FFAFD /* TagStoryView.swift */; };
 		F656F66425252A18006FFAFD /* ScrollOffsetPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */; };
-		F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F66925252A34006FFAFD /* TrackableScrollView.swift */; };
 		F656F67C25268709006FFAFD /* SelectedTagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F67B25268709006FFAFD /* SelectedTagsView.swift */; };
 		F656F682252BEF42006FFAFD /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F681252BEF42006FFAFD /* SearchBar.swift */; };
 		F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C92F250C5DD400B1FF42 /* clawApp.swift */; };
@@ -155,7 +154,6 @@
 		F656F65725252563006FFAFD /* TagStoryFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagStoryFetcher.swift; sourceTree = "<group>"; };
 		F656F65D252525DC006FFAFD /* TagStoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagStoryView.swift; sourceTree = "<group>"; };
 		F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollOffsetPreferenceKey.swift; sourceTree = "<group>"; };
-		F656F66925252A34006FFAFD /* TrackableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableScrollView.swift; sourceTree = "<group>"; };
 		F656F67B25268709006FFAFD /* SelectedTagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedTagsView.swift; sourceTree = "<group>"; };
 		F656F681252BEF42006FFAFD /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		F669C92C250C5DD400B1FF42 /* claw.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = claw.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -385,7 +383,6 @@
 				F656F681252BEF42006FFAFD /* SearchBar.swift */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
 				F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */,
-				F656F66925252A34006FFAFD /* TrackableScrollView.swift */,
 				F656F646252523B6006FFAFD /* Tags */,
 				F617B551251EDDDF0060B21A /* Stories */,
 				F617B553251EDE0A0060B21A /* User */,
@@ -722,7 +719,6 @@
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
 				F669C974250EA28700B1FF42 /* UserAvatarLoader.swift in Sources */,
-				F656F66A25252A34006FFAFD /* TrackableScrollView.swift in Sources */,
 				F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */,
 				F669C970250E74CB00B1FF42 /* HottestView.swift in Sources */,
 				F61CC1BE253676FC00CC7785 /* Font.swift in Sources */,

@@ -1,6 +1,8 @@
 import Foundation
 import SwiftUI
 
+import SimpleCommon
+
 struct TagStoryView: View {
     @ObservedObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
