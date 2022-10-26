@@ -25,7 +25,7 @@ struct SettingsLinkView: View {
                     iconBackgroundColor: iconColor,
                     iconColor: .white,
                     systemImage: systemImage ?? "xmark.square",
-                    image: image,
+                    imageName: image,
                     text: text
                 )
         })
