@@ -8,6 +8,8 @@
 import Foundation
 import SwiftUI
 
+import SimpleCommon
+
 struct SettingsTextSizeSlider: View {
     @EnvironmentObject var settings: Settings
     @Environment(\.sizeCategory) var sizeCategory
@@ -15,7 +17,7 @@ struct SettingsTextSizeSlider: View {
     var body: some View {
         VStack {
             HStack {
-                ZZLabel(iconBackgroundColor: Color(UIColor.darkGray), systemImage: "textformat.size", text: "Text Size")
+                IconLabel(iconBackgroundColor: Color(UIColor.darkGray), systemImage: "textformat.size", text: "Text Size")
                 Spacer()
                 if settings.textSizeModifier == 0 {
                     Text("System Size").foregroundColor(.gray)

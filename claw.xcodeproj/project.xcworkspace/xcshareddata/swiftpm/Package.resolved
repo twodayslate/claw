@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "simplecommon",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/twodayslate/SimpleCommon",
+      "state" : {
+        "branch" : "main",
+        "revision" : "36926d3e826018f6be774c5e37d6b6dd657d2934"
+      }
+    },
+    {
       "identity" : "swiftsoup",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",

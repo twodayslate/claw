@@ -1,12 +1,7 @@
-//
-//  SettingsView.swift
-//  claw
-//
-//  Created by Zachary Gorak on 9/17/20.
-//
-
 import SwiftUI
 import MessageUI
+
+import SimpleCommon
 
 struct ColorIconView: View {
     var color: UIColor
@@ -36,10 +31,12 @@ struct AccentColorChooserView: View {
     
     var body: some View {
         List {
-            ForEach([settings.defaultAccentColor, UIColor.black, UIColor.white, UIColor.systemRed, UIColor.systemBlue, UIColor.systemGreen, UIColor.systemGray, UIColor.systemYellow, UIColor.systemTeal, UIColor.systemOrange, UIColor.systemPurple, UIColor.systemIndigo], id: \.self) { color in
+            ForEach([settings.defaultAccentColor, UIColor.label, UIColor.systemRed, UIColor.systemBlue, UIColor.systemGreen, UIColor.systemGray, UIColor.systemYellow, UIColor.systemTeal, UIColor.systemOrange, UIColor.systemPurple, UIColor.systemIndigo, UIColor.systemMint], id: \.self) { color in
                 ColorIconView(color: color)
             }
-        }.navigationTitle("Accent Color").listStyle(GroupedListStyle())
+        }
+        .navigationTitle("Accent Color")
+        .listStyle(GroupedListStyle())
     }
 }
 
@@ -80,55 +77,58 @@ struct SettingsView: View {
     
     var body: some View {
         List {
-            Section(header: Text("Appearance").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                if UIApplication.shared.supportsAlternateIcons {
-                    NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
-                        HStack {
-                            Label(
-                                title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
-                                icon: {
-                                    ZStack {
-                                        Image(systemName: "app.fill")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .foregroundColor(.accentColor)
-                                        if let image =  UIImage(named: (settings.alternateIconName ?? "AppIcon") + "-thumb") {
-                                            Image(uiImage: image)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .mask(Image(systemName: "app.fill")
+            Section(
+                header:
+                    Text("Appearance")
+                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+                        if UIApplication.shared.supportsAlternateIcons {
+                            NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
+                                HStack {
+                                    Label(
+                                        title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
+                                        icon: {
+                                            ZStack {
+                                                Image(systemName: "app.fill")
                                                     .resizable()
-                                                    .aspectRatio(contentMode: .fit))
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .foregroundColor(.accentColor)
+                                                if let image =  UIImage(named: (settings.alternateIconName ?? "AppIcon") + "-thumb") {
+                                                    Image(uiImage: image)
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .mask(Image(systemName: "app.fill")
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fit))
+                                                }
+                                            }
                                         }
-                                    }
+                                    )
+                                    .labelStyle(HorizontallyAlignedLabelStyle())
+                                    Spacer()
+                                    Text("\(alternativeIconNameMap[settings.alternateIconName ?? "Default"] ?? "Default")").foregroundColor(.gray)
                                 }
-                            )
-                            .labelStyle(HorizontallyAlignedLabelStyle())
-                            Spacer()
-                            Text("\(alternativeIconNameMap[settings.alternateIconName ?? "Default"] ?? "Default")").foregroundColor(.gray)
+                            })
                         }
-                    })
-                }
-                NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
-                    HStack {
-                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
-                        Spacer()
-                        Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                        NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
+                            HStack {
+                                IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                                Spacer()
+                                Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                            }
+                        })
+
+                        HStack {
+                            SettingsTextSizeSlider()
+                        }
+
                     }
-                })
-                
-                HStack {
-                    SettingsTextSizeSlider()
-                }
-                
-            }
             Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                 SettingsLayoutSlider().environmentObject(settings)
             }
             Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                 
                 Picker(selection: $settings.browser, label:
-                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
+                        IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
                        , content: {
                     Text("In-App Safari").tag(Browser.inAppSafari)
                     Text("Default Browser").tag(Browser.defaultBrowser)
@@ -136,7 +136,7 @@ struct SettingsView: View {
                 
                 if settings.browser == Browser.inAppSafari {
                     Toggle(isOn: $settings.readerModeEnabled, label: {
-                        ZZLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
+                        IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
                 }
             }
@@ -147,13 +147,13 @@ struct SettingsView: View {
                     Button(action: {
                         self.isShowingMailView.toggle()
                     }, label: {
-                        ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                        IconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                     })
                 } else {
                     Button(action: {
                         self.isShowingMailViewAlert.toggle()
                     }, label: {
-                        ZZLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                        IconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                     }).alert(isPresented: $isShowingMailViewAlert, content: {
                         Alert(title: Text("Email"), message: Text("zac+claw@gorak.us"), dismissButton: .default(Text("Okay")))
                     })
@@ -179,7 +179,8 @@ struct SettingsView: View {
             MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
         }
         .listStyle(GroupedListStyle())
-        .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

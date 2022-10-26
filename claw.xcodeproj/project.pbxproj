@@ -25,6 +25,7 @@
 		F6291185251059E60065C3E9 /* GenericStory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291184251059E60065C3E9 /* GenericStory.swift */; };
 		F629118B25105A3E0065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
 		F629118C25105A440065C3E9 /* NewestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F629118A25105A3E0065C3E9 /* NewestUser.swift */; };
+		F63BFF4F2909A7DC00E18B62 /* SimpleCommon in Frameworks */ = {isa = PBXBuildFile; productRef = F63BFF4E2909A7DC00E18B62 /* SimpleCommon */; };
 		F656F64C252523C6006FFAFD /* TagFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F64B252523C6006FFAFD /* TagFetcher.swift */; };
 		F656F65225252405006FFAFD /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65125252405006FFAFD /* Tag.swift */; };
 		F656F65825252563006FFAFD /* TagStoryFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F656F65725252563006FFAFD /* TagStoryFetcher.swift */; };
@@ -51,7 +52,6 @@
 		F669C974250EA28700B1FF42 /* UserAvatarLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C973250EA28700B1FF42 /* UserAvatarLoader.swift */; };
 		F669C976250EA56400B1FF42 /* URLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C975250EA56400B1FF42 /* URLView.swift */; };
 		F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */; };
-		F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C99C250EE5AA00B1FF42 /* UIColor.swift */; };
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
 		F687667325141A27003090D2 /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687667225141A27003090D2 /* MailView.swift */; };
@@ -66,7 +66,6 @@
 		F6E01E702546193000AADFBC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E01E6F2546193000AADFBC /* ActionViewController.swift */; };
 		F6E01E732546193000AADFBC /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F6E01E712546193000AADFBC /* MainInterface.storyboard */; };
 		F6E01E772546193000AADFBC /* opener-action.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F6E01E6B2546193000AADFBC /* opener-action.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		F6E01E912548C00C00AADFBC /* EZPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E01E902548C00C00AADFBC /* EZPanel.swift */; };
 		F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62911812510599A0065C3E9 /* HottestFetcher.swift */; };
 		F6E9EDAD251EDF8E005E2B1C /* NewestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */; };
 		F6E9EDAE251EDF90005E2B1C /* NewestFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C95F250C5DF000B1FF42 /* NewestFetcher.swift */; };
@@ -78,7 +77,6 @@
 		F6E9EDDB251EE081005E2B1C /* UserFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDDA251EE081005E2B1C /* UserFetcher.swift */; };
 		F6E9EDE1251EE0B2005E2B1C /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EDE0251EE0B2005E2B1C /* UserView.swift */; };
 		F6E9EE16251EE548005E2B1C /* SettingsLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */; };
-		F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */; };
 		F6E9EE26251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */; };
 		F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */; };
 		F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */; };
@@ -184,7 +182,6 @@
 		F669C973250EA28700B1FF42 /* UserAvatarLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserAvatarLoader.swift; path = claw/User/UserAvatarLoader.swift; sourceTree = SOURCE_ROOT; };
 		F669C975250EA56400B1FF42 /* URLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLView.swift; sourceTree = "<group>"; };
 		F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SGNavigationLink.swift; sourceTree = "<group>"; };
-		F669C99C250EE5AA00B1FF42 /* UIColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UIColor.swift; path = claw/Extensions/UIColor.swift; sourceTree = SOURCE_ROOT; };
 		F669C99E250EE89900B1FF42 /* claw.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = claw.entitlements; sourceTree = "<group>"; };
 		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -201,12 +198,10 @@
 		F6E01E6F2546193000AADFBC /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		F6E01E722546193000AADFBC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		F6E01E742546193000AADFBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F6E01E902548C00C00AADFBC /* EZPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EZPanel.swift; sourceTree = "<group>"; };
 		F6E9EDCB251EE005005E2B1C /* NewestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewestView.swift; path = claw/Stories/Newest/NewestView.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EDDA251EE081005E2B1C /* UserFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserFetcher.swift; path = claw/User/UserFetcher.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EDE0251EE0B2005E2B1C /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserView.swift; path = claw/User/UserView.swift; sourceTree = SOURCE_ROOT; };
 		F6E9EE15251EE548005E2B1C /* SettingsLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsLinkView.swift; path = claw/Settings/SettingsLinkView.swift; sourceTree = SOURCE_ROOT; };
-		F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZZLabel.swift; sourceTree = "<group>"; };
 		F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontallyAlignedLayoutStyle.swift; sourceTree = "<group>"; };
 		F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeaderView.swift; sourceTree = "<group>"; };
 		F6E9EE312522CAFF005E2B1C /* SettingsLayoutSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLayoutSlider.swift; sourceTree = "<group>"; };
@@ -230,6 +225,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F63BFF4F2909A7DC00E18B62 /* SimpleCommon in Frameworks */,
 				F6F2012425D5C130008BA024 /* BetterSafariView in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
@@ -262,7 +258,6 @@
 		F617B54C251EDDD10060B21A /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				F669C99C250EE5AA00B1FF42 /* UIColor.swift */,
 				F61CC1BD253676FC00CC7785 /* Font.swift */,
 				F6010B9728E90B4E009A759C /* URLRequest+UA.swift */,
 				F615B8B428F9C39200FC4730 /* Bundle+version.swift */,
@@ -385,10 +380,8 @@
 				F6E9EE25251EE675005E2B1C /* HorizontallyAlignedLayoutStyle.swift */,
 				F669C96B250C847000B1FF42 /* HTMLView.swift */,
 				F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */,
-				F6E9EE1F251EE5EB005E2B1C /* ZZLabel.swift */,
 				F6876712251AF800003090D2 /* SafariActivity.swift */,
 				F6291163251038810065C3E9 /* CommentHierarchy.swift */,
-				F6E01E902548C00C00AADFBC /* EZPanel.swift */,
 				F656F681252BEF42006FFAFD /* SearchBar.swift */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
 				F656F66325252A18006FFAFD /* ScrollOffsetPreferenceKey.swift */,
@@ -512,6 +505,7 @@
 			packageProductDependencies = (
 				F669C969250C846200B1FF42 /* SwiftSoup */,
 				F6F2012325D5C130008BA024 /* BetterSafariView */,
+				F63BFF4E2909A7DC00E18B62 /* SimpleCommon */,
 			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
@@ -610,6 +604,7 @@
 			packageReferences = (
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */,
+				F63BFF4D2909A7DC00E18B62 /* XCRemoteSwiftPackageReference "SimpleCommon" */,
 			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
@@ -698,7 +693,6 @@
 				F669C972250E750200B1FF42 /* StoryView.swift in Sources */,
 				F6F2015A25D63C04008BA024 /* ActiveSheet.swift in Sources */,
 				F6E9EDCC251EE005005E2B1C /* NewestView.swift in Sources */,
-				F6E9EE20251EE5EB005E2B1C /* ZZLabel.swift in Sources */,
 				F656F65E252525DC006FFAFD /* TagStoryView.swift in Sources */,
 				F656F67C25268709006FFAFD /* SelectedTagsView.swift in Sources */,
 				F6E9EDB7251EDF98005E2B1C /* NewestStory.swift in Sources */,
@@ -718,14 +712,12 @@
 				F669C93C250C5DDE00B1FF42 /* claw.xcdatamodeld in Sources */,
 				F6E9EE2C251F9140005E2B1C /* StoryHeaderView.swift in Sources */,
 				F6E9EE322522CAFF005E2B1C /* SettingsLayoutSlider.swift in Sources */,
-				F669C99D250EE5AA00B1FF42 /* UIColor.swift in Sources */,
 				F656F66425252A18006FFAFD /* ScrollOffsetPreferenceKey.swift in Sources */,
 				F6876713251AF800003090D2 /* SafariActivity.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
 				F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,
 				F656F65225252405006FFAFD /* Tag.swift in Sources */,
-				F6E01E912548C00C00AADFBC /* EZPanel.swift in Sources */,
 				F6F2013525D5CCD6008BA024 /* ObservableURL.swift in Sources */,
 				F669C932250C5DD400B1FF42 /* ContentView.swift in Sources */,
 				F669C930250C5DD400B1FF42 /* clawApp.swift in Sources */,
@@ -1227,6 +1219,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F63BFF4D2909A7DC00E18B62 /* XCRemoteSwiftPackageReference "SimpleCommon" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/twodayslate/SimpleCommon";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
@@ -1246,6 +1246,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F63BFF4E2909A7DC00E18B62 /* SimpleCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63BFF4D2909A7DC00E18B62 /* XCRemoteSwiftPackageReference "SimpleCommon" */;
+			productName = SimpleCommon;
+		};
 		F669C969250C846200B1FF42 /* SwiftSoup */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;

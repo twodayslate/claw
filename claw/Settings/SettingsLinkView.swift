@@ -1,6 +1,7 @@
-import Foundation
 import SwiftUI
+
 import BetterSafariView
+import SimpleCommon
 
 struct SettingsLinkView: View {
     var systemImage: String? = nil
@@ -20,7 +21,13 @@ struct SettingsLinkView: View {
                     UIApplication.shared.open(URL(string: url)!)
                 }
             }, label: {
-                ZZLabel(iconBackgroundColor: iconColor, iconColor: .white, systemImage: systemImage, image: image, text: text)
+                IconLabel(
+                    iconBackgroundColor: iconColor,
+                    iconColor: .white,
+                    systemImage: systemImage ?? "xmark.square",
+                    image: image,
+                    text: text
+                )
         })
         // this is necessary until multiple sheets can be displayed at one time. See #22
             .safariView(item: $urlToOpen.url, content: { url in

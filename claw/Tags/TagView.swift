@@ -1,5 +1,7 @@
 import SwiftUI
 
+import SimpleCommon
+
 struct TagView: View {
     var tag: String
     
@@ -39,24 +41,6 @@ struct TagView: View {
                             .fill(color.opacity(0.9), strokeBorder: Color(UIColor.opaqueSeparator), lineWidth: 1)
                     }
             }
-    }
-}
-
-/// https://www.hackingwithswift.com/quick-start/swiftui/how-to-fill-and-stroke-shapes-at-the-same-time
-extension Shape {
-    func fill<Fill: ShapeStyle, Stroke: ShapeStyle>(_ fillStyle: Fill, strokeBorder strokeStyle: Stroke, lineWidth: Double = 1) -> some View {
-        self
-            .stroke(strokeStyle, lineWidth: lineWidth)
-            .background(self.fill(fillStyle))
-    }
-}
-
-/// https://www.hackingwithswift.com/quick-start/swiftui/how-to-fill-and-stroke-shapes-at-the-same-time
-extension InsettableShape {
-    func fill<Fill: ShapeStyle, Stroke: ShapeStyle>(_ fillStyle: Fill, strokeBorder strokeStyle: Stroke, lineWidth: Double = 1) -> some View {
-        self
-            .strokeBorder(strokeStyle, lineWidth: lineWidth)
-            .background(self.fill(fillStyle))
     }
 }
 

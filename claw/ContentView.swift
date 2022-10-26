@@ -1,7 +1,9 @@
 import SwiftUI
 import CoreData
 import Combine
+
 import BetterSafariView
+import SimpleCommon
 
 struct DidReselectKey: EnvironmentKey {
     static let defaultValue = PassthroughSubject<TabSelection, Never>().eraseToAnyPublisher()
@@ -164,7 +166,7 @@ struct ContentView: View {
         .sheet(item: self.$observableSheet.sheet, content: { item in
             switch item {
             case .story(let id):
-                EZPanel{
+                SimplePanel{
                     StoryView(id).id(id)
                 }.id(id)
                 .environmentObject(urlToOpen)
@@ -179,7 +181,7 @@ struct ContentView: View {
                     return .systemAction
                 })
             case .user(let username):
-                EZPanel{
+                SimplePanel{
                     UserView(username).id(username)
                 }.id(username)
                 .environmentObject(urlToOpen)
@@ -194,7 +196,7 @@ struct ContentView: View {
                     return .systemAction
                 })
             case .url(let url):
-                EZPanel {
+                SimplePanel {
                     VStack {
                         Text("Unknown URL").bold()
                         Text("\(url)").foregroundColor(Color.accentColor).underline()
@@ -214,7 +216,7 @@ struct ContentView: View {
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
-                EZPanel {
+                SimplePanel {
                     Text("Error: \(item.debugDescription)")
                 }
                 .environmentObject(settings)
