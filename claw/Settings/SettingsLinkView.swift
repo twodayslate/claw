@@ -21,7 +21,7 @@ struct SettingsLinkView: View {
                     UIApplication.shared.open(URL(string: url)!)
                 }
             }, label: {
-                IconLabel(
+                SimpleIconLabel(
                     iconBackgroundColor: iconColor,
                     iconColor: .white,
                     systemImage: systemImage ?? "xmark.square",

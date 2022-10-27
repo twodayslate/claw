@@ -111,7 +111,7 @@ struct SettingsView: View {
                         }
                         NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
                             HStack {
-                                IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                                SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
                                 Spacer()
                                 Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
                             }
@@ -128,7 +128,7 @@ struct SettingsView: View {
             Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                 
                 Picker(selection: $settings.browser, label:
-                        IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
+                        SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
                        , content: {
                     Text("In-App Safari").tag(Browser.inAppSafari)
                     Text("Default Browser").tag(Browser.defaultBrowser)
@@ -136,7 +136,7 @@ struct SettingsView: View {
                 
                 if settings.browser == Browser.inAppSafari {
                     Toggle(isOn: $settings.readerModeEnabled, label: {
-                        IconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
+                        SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
                 }
             }
@@ -147,13 +147,13 @@ struct SettingsView: View {
                     Button(action: {
                         self.isShowingMailView.toggle()
                     }, label: {
-                        IconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                        SimpleIconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                     })
                 } else {
                     Button(action: {
                         self.isShowingMailViewAlert.toggle()
                     }, label: {
-                        IconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
+                        SimpleIconLabel(iconBackgroundColor: .red, iconColor: .white, systemImage: "at", text: "Contact")
                     }).alert(isPresented: $isShowingMailViewAlert, content: {
                         Alert(title: Text("Email"), message: Text("zac+claw@gorak.us"), dismissButton: .default(Text("Okay")))
                     })

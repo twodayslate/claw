@@ -19,7 +19,7 @@ struct TagStoryView: View {
     
     var body: some View {
         ScrollViewReader { scrollProxy in
-            TrackableScrollView(contentOffset: $scrollViewContentOffset) {
+            SimpleScrollView(contentOffset: $scrollViewContentOffset) {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     if self.stories.tags.count == 1, let tag = tags.tags.first(where: {$0.tag == self.stories.tags.first }) {
                         Text("\(tag.description)").id(0).padding().foregroundColor(.gray)

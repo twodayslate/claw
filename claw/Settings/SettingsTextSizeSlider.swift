@@ -17,7 +17,7 @@ struct SettingsTextSizeSlider: View {
     var body: some View {
         VStack {
             HStack {
-                IconLabel(iconBackgroundColor: Color(UIColor.darkGray), systemImage: "textformat.size", text: "Text Size")
+                SimpleIconLabel(iconBackgroundColor: Color(UIColor.darkGray), systemImage: "textformat.size", text: "Text Size")
                 Spacer()
                 if settings.textSizeModifier == 0 {
                     Text("System Size").foregroundColor(.gray)

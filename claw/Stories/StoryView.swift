@@ -54,7 +54,7 @@ struct StoryView: View {
     var body: some View {
         ScrollViewReader { scrollReader in
             
-            TrackableScrollView(contentOffset: $scrollViewContentOffset) {
+            SimpleScrollView(contentOffset: $scrollViewContentOffset) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let story = story.story {
                         StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen).environmentObject(observableSheet)
