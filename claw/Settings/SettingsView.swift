@@ -84,26 +84,12 @@ struct SettingsView: View {
                         if UIApplication.shared.supportsAlternateIcons {
                             NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
                                 HStack {
-                                    Label(
-                                        title: { Text("App Icon").foregroundColor(Color(UIColor.label)) },
-                                        icon: {
-                                            ZStack {
-                                                Image(systemName: "app.fill")
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .foregroundColor(.accentColor)
-                                                if let image =  UIImage(named: (settings.alternateIconName ?? "AppIcon") + "-thumb") {
-                                                    Image(uiImage: image)
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fit)
-                                                        .mask(Image(systemName: "app.fill")
-                                                            .resizable()
-                                                            .aspectRatio(contentMode: .fit))
-                                                }
-                                            }
-                                        }
+                                    SimpleIconLabel(
+                                        iconBackgroundColor: .clear,
+                                        imageName: (settings.alternateIconName ?? "AppIcon") + "-thumb",
+                                        text: "App Icon",
+                                        iconScale: 1.0
                                     )
-                                    .labelStyle(HorizontallyAlignedLabelStyle())
                                     Spacer()
                                     Text("\(alternativeIconNameMap[settings.alternateIconName ?? "Default"] ?? "Default")").foregroundColor(.gray)
                                 }
@@ -176,7 +162,7 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $isShowingMailView) {
-            MailView(isShowing: self.$isShowingMailView, result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
+            SimpleMailView(result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
         }
         .listStyle(GroupedListStyle())
         .navigationTitle("Settings")
