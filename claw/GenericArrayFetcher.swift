@@ -23,14 +23,12 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
         }
     }
     
-    
     func reload() {
         self.session?.cancel()
         self.moreSession?.cancel()
         self.isReloading = true
         self.load()
     }
-
     
     func load() {
         self.page = 1

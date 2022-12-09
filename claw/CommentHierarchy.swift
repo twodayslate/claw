@@ -108,7 +108,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                 withAnimation(.easeIn) {
                     isExpanded.toggle()
                 }
-            }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: "rectangle.expand.vertical")})
+            }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")})
         }).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
             withAnimation(.easeIn) {
                 backgroundColorState = Color(UIColor.systemGray4)

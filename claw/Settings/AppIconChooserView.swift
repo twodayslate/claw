@@ -53,6 +53,23 @@ struct AppIconChooserView: View {
                         .environmentObject(settings)
                 })
             }
+            Section {
+                Button(action: {
+                    UIApplication.shared.setAlternateIconName("KnuxIcon", completionHandler: {error in
+                        guard error == nil else {
+                            // show error
+                            return
+                        }
+                        settings.alternateIconName = "KnuxIcon"
+                        try? settings.managedObjectContext?.save()
+                        self.presentationMode.wrappedValue.dismiss()
+                    })
+                }, label: {
+                    AppIconView(icon: AppIcon(alternateIconName: "KnuxIcon", name: "Pixel Lobster", assetName: "KnuxIcon-thumb", subtitle: "Knux 400"))
+                        .environmentObject(settings)
+                })
+            }
+
             VStack(alignment: .leading) {
                 HStack(alignment: .bottom) {
                     Spacer()
