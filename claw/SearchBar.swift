@@ -72,7 +72,7 @@ import SwiftUI
 
 import SwiftUI
 
-final class ViewControllerResolver: UIViewControllerRepresentable {
+struct ViewControllerResolver: UIViewControllerRepresentable {
     
     let onResolve: (UIViewController) -> Void
         
