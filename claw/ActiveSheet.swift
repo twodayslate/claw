@@ -1,11 +1,16 @@
 import Foundation
 
 enum ActiveSheet: Identifiable, Equatable {
+    static func == (lhs: ActiveSheet, rhs: ActiveSheet) -> Bool {
+        lhs.id == rhs.id
+    }
+
     case share(URL)
     case safari(URL)
     case story(id:String)
     case user(username:String)
     case url(URL)
+    case error(Error)
     
     var id: String {
         switch self {
@@ -14,6 +19,7 @@ enum ActiveSheet: Identifiable, Equatable {
         case .user(let username): return "user:\(username)"
         case .story(let id): return "id:\(id)"
         case .url(let url): return "url\(url.absoluteString)"
+        case .error(let error): return "error: \(error)"
         }
     }
 }

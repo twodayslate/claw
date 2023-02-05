@@ -17,10 +17,14 @@ struct StoryHeaderView<T: GenericStory>: View {
                     Text(story.title).font(Font(.title2, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
                         Button(action: {
-                            if settings.browser == .inAppSafari {
-                                urlToOpen.url = URL(string: story.url)
+                            guard let url = URL(string: story.url) else {
+                                // show error
+                                return
+                            }
+                            if settings.browser == .inAppSafari, (url.scheme == "http" || url.scheme == "https") {
+                                urlToOpen.url = url
                             } else {
-                                UIApplication.shared.open(URL(string: story.url)!)
+                                UIApplication.shared.open(url)
                             }
                         }, label: {
                             Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
@@ -91,15 +95,19 @@ struct StoryHeaderView<T: GenericStory>: View {
             }
         }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
             if !story.url.isEmpty {
+                guard let url = URL(string: story.url) else {
+                    // show error
+                    return
+                }
                 withAnimation(.easeIn) {
                     backgroundColorState = Color(UIColor.systemGray4)
                     withAnimation(.easeOut) {
                         backgroundColorState = Color(UIColor.systemBackground)
                     }
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = URL(string: story.url)
+                    if settings.browser == .inAppSafari, (url.scheme == "https" || url.scheme == "http") {
+                        urlToOpen.url = url
                     } else {
-                        UIApplication.shared.open(URL(string: story.url)!)
+                        UIApplication.shared.open(url)
                     }
                 }
             }

@@ -174,11 +174,7 @@ struct ContentView: View {
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = url
-                        return .handled
-                    }
-                    return .systemAction
+                    return handleUrl(url)
                 })
             case .user(let username):
                 SimplePanel{
@@ -189,11 +185,7 @@ struct ContentView: View {
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = url
-                        return .handled
-                    }
-                    return .systemAction
+                    return handleUrl(url)
                 })
             case .url(let url):
                 SimplePanel {
@@ -207,11 +199,7 @@ struct ContentView: View {
                 .environmentObject(self.observableSheet)
                 .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = url
-                        return .handled
-                    }
-                    return .systemAction
+                    return handleUrl(url)
                 })
             case .share(let url):
                 ShareSheet(activityItems: [url])
@@ -224,11 +212,7 @@ struct ContentView: View {
                 .environmentObject(self.observableSheet)
                 .environmentObject(urlToOpen)
                 .environment(\.openURL, OpenURLAction { url in
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = url
-                        return .handled
-                    }
-                    return .systemAction
+                    return handleUrl(url)
                 })
             }
         })
@@ -239,12 +223,26 @@ struct ContentView: View {
         .accentColor(settings.accentColor)
         .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
         .environment(\.openURL, OpenURLAction { url in
-            if settings.browser == .inAppSafari {
-                urlToOpen.url = url
-                return .handled
-            }
-            return .systemAction
+            return handleUrl(url)
         })
+    }
+
+    func handleUrl(_ url: URL) -> OpenURLAction.Result {
+        if settings.browser == .inAppSafari, (url.scheme == "https" || url.scheme == nil || url.scheme == "http") {
+            if url.scheme == nil {
+                var comps = URLComponents(url: url, resolvingAgainstBaseURL: true)
+                comps?.scheme = "https"
+                if let newUrl = comps?.url {
+                    urlToOpen.url = newUrl
+                    return .handled
+                }
+                return .systemAction
+            }
+            urlToOpen.url = url
+            return .handled
+        } else {
+            return .systemAction
+        }
     }
 }
 
