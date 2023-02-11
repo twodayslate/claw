@@ -15,7 +15,7 @@ struct SettingsLinkView: View {
     
     var body: some View {
             Button(action: {
-                if settings.browser == .inAppSafari {
+                if settings.browser == .inAppSafari, url.starts(with: "http") {
                     urlToOpen.url = URL(string: url)
                 } else {
                     UIApplication.shared.open(URL(string: url)!)
