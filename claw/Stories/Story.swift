@@ -28,26 +28,27 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var comments: [Comment]
     
     var sorted_comments: [CommentStructure] {
-        func add_children(indentLevel: Int, comments: [Comment], stopWhenLess: Bool = true) -> [CommentStructure] {
-            var ans = [CommentStructure]()
-            for (i, comment) in comments.enumerated() {
-                if comment.indent_level == indentLevel {
-                    let slice = Array(comments.suffix(from: i+1))
-                    let children = add_children(indentLevel: indentLevel+1, comments: slice)
-                    if children.count > 0 {
-                        ans.append(CommentStructure(comment: comment, children: children))
-                    } else {
-                        ans.append(CommentStructure(comment: comment, children: nil))
-                    }
-                } else if stopWhenLess {
-                    break
-                }
+        var ans = [CommentStructure]()
+        let rootComments = comments.filter { $0.parent_comment == nil }
+        var subComments = comments.filter { $0.parent_comment != nil }
+
+        func addComments(parent: CommentStructure) -> CommentStructure {
+            var newParent = parent
+            let children = subComments.filter { $0.parent_comment == parent.id }
+            for child in children {
+                var childStruct = addComments(parent: CommentStructure(comment: child))
+                newParent = newParent.addChild(childStruct)
             }
-            return ans
+            subComments.removeAll(where: { $0.parent_comment == parent.id })
+            return newParent
         }
-        
-        let children =  add_children(indentLevel: 1, comments: self.comments, stopWhenLess: false)
-        return children
+
+        for comment in rootComments {
+            var parent = addComments(parent: CommentStructure(comment: comment))
+            ans.append(parent)
+        }
+
+        return ans.sorted(by: { $0.comment.score > $1.comment.score })
     }
 }
 
@@ -56,7 +57,21 @@ struct CommentStructure: Codable, Identifiable {
         return comment.short_id
     }
     var comment: Comment
-    var children: [CommentStructure]?
+    var children: [CommentStructure] = []
+
+    func addChild(_ child: Comment) -> Self {
+        var newChildren = children
+        newChildren.append(CommentStructure(comment: child))
+        newChildren.sort(by: { $0.comment.score > $1.comment.score })
+        return Self(comment: self.comment, children: newChildren)
+    }
+
+    func addChild(_ child: CommentStructure) -> Self {
+        var newChildren = children
+        newChildren.append(child)
+        newChildren.sort(by: { $0.comment.score > $1.comment.score })
+        return Self(comment: self.comment, children: newChildren)
+    }
 }
 
 extension CommentStructure: Equatable {
@@ -79,7 +94,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var flags: Int
     var url: String
     var comment: String
-    var indent_level: Int
+    var parent_comment: String?
     var commenting_user: NewestUser
 }
 

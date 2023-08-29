@@ -80,9 +80,9 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                 content: {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         rowContent(child).padding([.leading])
-                        if let subChildren = child.children {
+                        if !child.children.isEmpty {
                             Divider().padding([.top, .leading])
-                            RecursiveView(data: subChildren, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
+                            RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
                         }
                     }
                 },
