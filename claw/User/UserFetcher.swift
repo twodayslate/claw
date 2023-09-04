@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 class UserFetcher: ObservableObject {
     @Published var user: NewestUser? = nil
     var username: String

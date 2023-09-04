@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class NewestFetcher: ObservableObject {
     @Published var stories = NewestFetcher.cachedStories
     static var cachedStories = [NewestStory]()
@@ -38,28 +39,48 @@ class NewestFetcher: ObservableObject {
             completion?(error)
         })
     }
+
+    func refresh() async throws {
+        self.session?.cancel()
+        self.page = 1
+        self.isReloading = true
+        try await withCheckedThrowingContinuation { continuation in
+            self.load { error in
+                DispatchQueue.main.async {
+                    self.isReloading = false
+                    if error == nil {
+                        continuation.resume()
+                        return
+                    }
+                    if let error {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
     
     func load(completion: ((Error?)->Void)? = nil) {
         let url = URL(string: "https://lobste.rs/newest.json?page=\(self.page)")!
-    self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                do {
-                    if let d = data {
-                        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                        DispatchQueue.main.async {
-                            NewestFetcher.cachedStories = decodedLists
-                            self.stories = decodedLists
-                            self.page += 1
-                            completion?(nil)
-                        }
-                    }else {
-                        print("No Data")
-                        completion?(nil) // todo: throw error
+        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
+            do {
+                if let d = data {
+                    let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
+                    DispatchQueue.main.async {
+                        NewestFetcher.cachedStories = decodedLists
+                        self.stories = decodedLists
+                        self.page += 1
+                        completion?(nil)
                     }
-                } catch {
-                    print ("Error fetching newest \(error)")
-                    completion?(error)
+                }else {
+                    print("No Data")
+                    completion?(nil) // todo: throw error
                 }
+            } catch {
+                print ("Error fetching newest \(error)")
+                completion?(error)
             }
+        }
         self.session?.resume()
     }
     

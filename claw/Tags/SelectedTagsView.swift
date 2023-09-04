@@ -10,25 +10,16 @@ struct SelectedTagsView: View {
     var body: some View {
         let wrapper = TagStoryView(tags: self.tags)
         
-        wrapper.id(self.tags)
-            .navigationBarItems(leading: NavigationLink(
-                                    destination: SelectTagsView(tags: $tags).navigationBarTitle("Selected Tags", displayMode: .inline),
-            label: {
-                Text("Edit").bold()
-            }), trailing: Button(action: {
-                DispatchQueue.main.async {
-                    wrapper.stories.reload()
-                }
-            }, label: {
-                if wrapper.stories.isReloading {
-                    ProgressView().progressViewStyle(CircularProgressViewStyle())
-                } else {
-                    Image(systemName: "arrow.clockwise")
-                }
-            })).onChange(of: tags, perform: { value in
-                wrapper.stories.tags = tags
-                wrapper.stories.load()
-            })
+        wrapper//.id(self.tags)
+            .navigationBarItems(
+                leading: NavigationLink(
+                    destination: SelectTagsView(tags: $tags)
+                        .navigationBarTitle("Selected Tags", displayMode: .inline),
+                    label: {
+                        Text("Edit").bold()
+                    }
+                )
+            )
     }
 }
 
@@ -86,25 +77,25 @@ struct SelectTagsView: View {
                 
                 VStack(alignment: .trailing) {
                     Spacer().background(DestinationDataSetter(destination: "top"))
-                        ForEach(alphabet, id: \.self) { letter in
-                            HStack {
-                                Spacer()
-                                Button(action: {
-                                    print("letter = \(letter)")
-                                    //need to figure out if there is a name in this section before I allow scrollto or it will crash
-                                    if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == letter }) != nil {
-                                        UISelectionFeedbackGenerator().selectionChanged()
-                                        //withAnimation {
-                                        scrollReader.scrollTo(letter, anchor: .top)
-                                       //}
-                                    }
-                                }, label: {
-                                    Text(letter)
+                    ForEach(alphabet, id: \.self) { letter in
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                print("letter = \(letter)")
+                                //need to figure out if there is a name in this section before I allow scrollto or it will crash
+                                if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == letter }) != nil {
+                                    UISelectionFeedbackGenerator().selectionChanged()
+                                    //withAnimation {
+                                    scrollReader.scrollTo(letter, anchor: .top)
+                                    //}
+                                }
+                            }, label: {
+                                Text(letter)
                                     .font(.system(size: 12))
-                                        .padding(.trailing, 7).background(DestinationDataSetter(destination: letter))
-                                })
-                            }
+                                    .padding(.trailing, 7).background(DestinationDataSetter(destination: letter))
+                            })
                         }
+                    }
                     Spacer().background(DestinationDataSetter(destination: "bottom"))
                 }.ignoresSafeArea(.keyboard, edges: .all).zIndex(1.0).simultaneousGesture(DragGesture(minimumDistance: 0.0, coordinateSpace: .global).onChanged({ action in
                     print("drag letter", action, action.location, self.destinations)
@@ -173,7 +164,6 @@ struct SelectTagsView: View {
             Section(header: Text(letter)) {
                 ForEach(filtered) { tag in
                     Button(action: {
-                        
                         if tags.contains(where: {$0 == tag.tag}) {
                             if tags.count > 1 {
                                 tags.removeAll(where: {$0 == tag.tag})

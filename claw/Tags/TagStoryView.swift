@@ -75,6 +75,15 @@ struct TagStoryView: View {
                     }
                 }
             }
+            .refreshable {
+                await Task {
+                    do {
+                        try await stories.refresh()
+                    } catch {
+                        // no-op
+                    }
+                }.value
+            }
         }
     }
 }

@@ -120,6 +120,7 @@ class ParentResolverViewController: UIViewController {
 
 import SwiftUI
 
+@MainActor
 class SearchBar: NSObject, ObservableObject {
     
     @Published var text: String = ""

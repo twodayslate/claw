@@ -74,63 +74,65 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     @State var backgroundColorState = Color(UIColor.systemBackground)
     
     var body: some View {
-        VStack(alignment: .leading) {
-            DisclosureGroup(
-                isExpanded: $isExpanded,
-                content: {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        rowContent(child).padding([.leading])
-                        if !child.children.isEmpty {
-                            Divider().padding([.top, .leading])
-                            RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment).padding([.leading], 4).overlay(RoundedRectangle(cornerRadius: 8.0).foregroundColor(self.commentColor).frame(width: 3, alignment: .leading).padding([.top], 8.0), alignment: .leading).padding([.leading], 16)
-                        }
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                header(child).padding([.leading])
+                Button {
+                    withAnimation {
+                        isExpanded.toggle()
                     }
-                },
-                label: {
-                    header(child).padding([.leading])
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(isExpanded ? .zero : .degrees(-90))
                 }
-            )
-            .padding([.top], 6.0)
-            .padding(indentLevel > 0 ? [.trailing] : [], 4.0)
+            }
+            .padding([.top, .bottom])
+            if isExpanded {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    rowContent(child)
+                        .padding([.leading])
+                        .padding(.bottom, child.children.isEmpty ? nil : 0.0)
+                    if !child.children.isEmpty {
+                        Divider().padding([.top, .leading])
+                        RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment)
+                            .padding([.leading], 4)
+                            .overlay(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 8.0)
+                                    .foregroundColor(self.commentColor)
+                                    .frame(width: 3, alignment: .leading)
+                                    .padding([.top, .bottom], 8.0)
+                            }
+                            .padding([.leading], 16)
+                    }
+                }
+                .padding(indentLevel > 0 ? [.trailing] : [], 4.0)
+            }
             if !last {
                 Divider().padding([.horizontal])
             }
-        }.padding(indentLevel == 0 ? [.trailing] : []).background(backgroundColorState.edgesIgnoringSafeArea(.all)).contextMenu(menuItems: {
-            // for some reason the share sheet won't display if the comment isn't
-            //if indentLevel == 0  {
+        }
+        .padding(indentLevel == 0 ? [.trailing] : [])
+        .background(backgroundColorState.edgesIgnoringSafeArea(.all))
+        .contextMenu(menuItems: {
             Button(action: {
                 sharedComment = child.comment
             }, label: {
                 Label("Share", systemImage: "square.and.arrow.up")
             })
-            //}
             Button(action: {
                 withAnimation(.easeIn) {
                     isExpanded.toggle()
                 }
             }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")})
-        }).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+        })
+        .onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
             withAnimation(.easeIn) {
                 backgroundColorState = Color(UIColor.systemGray4)
                 withAnimation(.easeOut) {
                     backgroundColorState = Color(UIColor.systemBackground)
+                    isExpanded.toggle()
                 }
-                isExpanded.toggle()
             }
         })
-    }
-}
-
-struct FSDisclosureGroup<Label, Content>: View where Label: View, Content: View {
-    @State var isExpanded: Bool = true
-    var content: () -> Content
-    var label: () -> Label
-    
-    var body: some View {
-        DisclosureGroup(
-            isExpanded: $isExpanded,
-            content: content,
-            label: label
-        )
     }
 }

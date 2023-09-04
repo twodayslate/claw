@@ -98,6 +98,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var commenting_user: NewestUser
 }
 
+@MainActor
 class StoryFetcher: ObservableObject {
     @Published var story: Story? = nil
 
@@ -136,29 +137,21 @@ class StoryFetcher: ObservableObject {
             return
         }
         if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
-            await MainActor.run {
-                self.story = cachedStory
-            }
+            self.story = cachedStory
         }
         let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
         
         let (data, _) = try await URLSession.shared.data(from: url)
         
-        await MainActor.run {
-            isReloading = false
-        }
-        
+        isReloading = false
+
         let decodedLists = try JSONDecoder().decode(Story.self, from: data)
-        await MainActor.run {
-            self.story = decodedLists
-        }
-        
-        Self.fetchQueue.async {
-            StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
-            StoryFetcher.cachedStories.append(decodedLists)
-            if StoryFetcher.cachedStories.count > 10 {
-                StoryFetcher.cachedStories.removeFirst()
-            }
+        self.story = decodedLists
+
+        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
+        StoryFetcher.cachedStories.append(decodedLists)
+        if StoryFetcher.cachedStories.count > 10 {
+            StoryFetcher.cachedStories.removeFirst()
         }
         
     }
@@ -187,10 +180,12 @@ class StoryFetcher: ObservableObject {
                         self.story = decodedLists
                     }
                     Self.fetchQueue.async {
-                        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
-                        StoryFetcher.cachedStories.append(decodedLists)
-                        if StoryFetcher.cachedStories.count > 10 {
-                            StoryFetcher.cachedStories.removeFirst()
+                        Task { @MainActor in
+                            StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
+                            StoryFetcher.cachedStories.append(decodedLists)
+                            if StoryFetcher.cachedStories.count > 10 {
+                                StoryFetcher.cachedStories.removeFirst()
+                            }
                         }
                     }
                 } else {

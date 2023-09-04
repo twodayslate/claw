@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class HottestFetcher: ObservableObject {
     @Published var stories = HottestFetcher.cachedStories
     
@@ -35,29 +36,49 @@ class HottestFetcher: ObservableObject {
             }
         })
     }
+
+    func refresh() async throws {
+        self.session?.cancel()
+        self.page = 1
+        self.isReloading = true
+        try await withCheckedThrowingContinuation { continuation in
+            self.load { error in
+                DispatchQueue.main.async {
+                    self.isReloading = false
+                    if error == nil {
+                        continuation.resume()
+                        return
+                    }
+                    if let error {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
     
     func load(completion: ((Error?)->Void)? = nil) {
         let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
         
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                            DispatchQueue.main.async {
-                                HottestFetcher.cachedStories = decodedLists
-                                self.stories = decodedLists
-                                self.page += 1
-                                completion?(nil)
-                            }
-                        } else {
-                            print("No Data for hottest")
-                            completion?(nil) // todo: actually throw an error
-                        }
-                    } catch {
-                        print ("Error fetching hottest \(error)")
-                        completion?(error)
+            do {
+                if let d = data {
+                    let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
+                    DispatchQueue.main.async {
+                        HottestFetcher.cachedStories = decodedLists
+                        self.stories = decodedLists
+                        self.page += 1
+                        completion?(nil)
                     }
+                } else {
+                    print("No Data for hottest")
+                    completion?(nil) // todo: actually throw an error
                 }
+            } catch {
+                print ("Error fetching hottest \(error)")
+                completion?(error)
+            }
+        }
         self.session?.resume()
     }
 

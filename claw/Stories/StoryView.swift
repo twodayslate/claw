@@ -151,13 +151,15 @@ struct StoryView: View {
                     try? viewContext.save()
                 }
             }
-            .navigationBarItems(trailing: Button(action: {self.story.reload() }, label: {
-                if self.story.isReloading {
-                    ProgressView().progressViewStyle(CircularProgressViewStyle())
-                } else {
-                    Image(systemName: "arrow.clockwise")
-                }
-            }))
+            .refreshable {
+                await Task {
+                    do {
+                        try await self.story.awaitLoad()
+                    } catch {
+                        // no-op
+                    }
+                }.value
+            }
         } // scrollviewreader
         .safariView(item: $urlToOpen.url,
         content:

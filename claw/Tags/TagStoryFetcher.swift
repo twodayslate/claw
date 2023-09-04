@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 
+@MainActor
 class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     
     static var cachedStories = [[String]: [NewestStory]]()
@@ -51,6 +52,24 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
                     }
                 }
         self.session?.resume()
+    }
+
+    func refresh() async throws {
+        if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
+            self.items = cachedStories
+        }
+        let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json")!
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+
+        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: data)
+        if TagStoryFetcher.cachedStories.count > 10 {
+            // xxx: I'd like to remove the last used cache but this will do for now
+            TagStoryFetcher.cachedStories.removeAll()
+        }
+        TagStoryFetcher.cachedStories[self.tags] = decodedLists
+        self.items = decodedLists
+        self.page = 2
     }
 
     override func more(_ story: NewestStory? = nil) {

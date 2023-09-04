@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var items = [T]()
     

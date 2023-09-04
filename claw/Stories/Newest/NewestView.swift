@@ -49,13 +49,16 @@ struct NewestView: View {
                         }
                        
                     }
-                }.navigationBarItems(trailing: Button(action: { newest.reload() }, label: {
-                    if self.newest.isReloading {
-                        ProgressView().progressViewStyle(CircularProgressViewStyle())
-                    } else {
-                        Image(systemName: "arrow.clockwise")
+                }
+            }
+            .refreshable {
+                await Task {
+                    do {
+                        try await self.newest.refresh()
+                    } catch {
+                        // no-op
                     }
-                }))
+                }.value
             }
         }
     }

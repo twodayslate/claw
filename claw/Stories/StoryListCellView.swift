@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 public class ObservableActiveSheet: ObservableObject {
     @Published var sheet: ActiveSheet? = nil
 }
