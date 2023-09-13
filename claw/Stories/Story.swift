@@ -36,7 +36,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
             var newParent = parent
             let children = subComments.filter { $0.parent_comment == parent.id }
             for child in children {
-                var childStruct = addComments(parent: CommentStructure(comment: child))
+                let childStruct = addComments(parent: CommentStructure(comment: child))
                 newParent = newParent.addChild(childStruct)
             }
             subComments.removeAll(where: { $0.parent_comment == parent.id })
@@ -44,7 +44,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
         }
 
         for comment in rootComments {
-            var parent = addComments(parent: CommentStructure(comment: comment))
+            let parent = addComments(parent: CommentStructure(comment: comment))
             ans.append(parent)
         }
 
@@ -96,6 +96,10 @@ struct Comment: Codable, Hashable, Identifiable {
     var comment: String
     var parent_comment: String?
     var commenting_user: NewestUser
+
+    static var placeholder: Comment {
+        Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", updated_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: .placeholder)
+    }
 }
 
 @MainActor
@@ -114,7 +118,6 @@ class StoryFetcher: ObservableObject {
 
     static var cachedStories = [Story]()
     static let fetchQueue = DispatchQueue(label: "StoryFetcher")
-    
     
     private var session: URLSessionTask? = nil
     

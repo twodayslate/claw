@@ -20,11 +20,15 @@ extension UIDevice {
 }
 
 public extension URLRequest {
+    @MainActor
     mutating func setUserAgent() {
         // per @pushcx
         // $APP_NAME/$VERSION ($ARCH; $OS; +https://contact.link/for/the/app)
         let app_name = Bundle.main.name
-        let version = Bundle.main.shortVersion
+        var version = Bundle.main.shortVersion
+        #if DEBUG
+        version = version + "-DEBUG"
+        #endif
         let help_url = "https://zac.gorak.us/ios"
         
         let ua = "\(app_name)/\(version) (\(UIDevice.current.modelIdentifier); \(UIDevice.current.systemName) \(UIDevice.current.systemVersion); +\(help_url))"

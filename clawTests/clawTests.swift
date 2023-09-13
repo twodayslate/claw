@@ -19,8 +19,10 @@ class clawTests: XCTestCase {
     }
 
     func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let scheme = Settings.CommentColorScheme.custom(.blue, .link, .black, .black, .black.withAlphaComponent(0.7), .black, .red)
+        let data = try JSONEncoder().encode(scheme)
+        let converted = try JSONDecoder().decode(Settings.CommentColorScheme.self, from: data)
+        XCTAssertEqual(scheme, converted)
     }
 
     func testPerformanceExample() throws {

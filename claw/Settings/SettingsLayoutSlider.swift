@@ -21,8 +21,13 @@ struct SettingsLayoutSlider: View {
                         }
                     }
                 }
-            }.listStyle(PlainListStyle()).frame(height: 175).padding(0).allowsHitTesting(false).overlay(Rectangle().foregroundColor(.clear).opacity(0.0).background(LinearGradient(gradient: Gradient(colors: [Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground)]), startPoint: .top, endPoint: .bottom)))
-            Divider().padding([.bottom], 8.0)
+            }
+            .listStyle(PlainListStyle())
+            .frame(height: 175)
+            .allowsHitTesting(false)
+            .overlay(Rectangle().foregroundColor(.clear).opacity(0.0).background(LinearGradient(gradient: Gradient(colors: [Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground.withAlphaComponent(0.0)), Color(UIColor.secondarySystemGroupedBackground)]), startPoint: .top, endPoint: .bottom)))
+            Divider()
+                .padding([.bottom], 8.0)
             HStack {
                 Image(systemName: "doc.plaintext").renderingMode(.template).foregroundColor(.accentColor)
                 Picker("Story Cell Layout", selection: $settings.layoutValue, content: {

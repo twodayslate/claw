@@ -126,7 +126,7 @@ struct UserView: View {
 struct UserView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            UserView(NewestUser(username: "twodayslate", created_at: "2020-01-05T18:25:23.000-06:00", is_admin: false, about: "", is_moderator: false, karma: 64, avatar_url: "/avatars/twodayslate-100.png", invited_by_user: "kimjon", github_username: "twodayslate", twitter_username: "twodayslate", keybase_signatures: nil))
+            UserView(.placeholder)
         }
         .previewLayout(.sizeThatFits)
         .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))

@@ -77,16 +77,21 @@ struct SmallestHottestWidgetView: View {
             VStack(alignment: .leading) {
                 Spacer(minLength: 0)
                 if let stories = entry.stories, let story = stories.first {
-                    Text(story.title).font(.subheadline)
+                    Text(story.title)
+                        .font(.subheadline)
                     Spacer(minLength: 0)
                     HStack(alignment: .center, spacing: 4.0) {
                         VStack(alignment: .leading) {
                             Text("\(story.submitter_user.username)").font(.caption)
                             Text("\(story.time_ago)").font(.caption2)
-                        }.lineLimit(1).minimumScaleFactor(0.5)
+                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                         Spacer(minLength: 0)
                         Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
-                    }.foregroundColor(.gray)
+                    }
+                    .foregroundColor(.gray)
+                    .widgetURL(URL(string: "claw://open?url=\(story.short_id_url)"))
                 } else {
                     Spacer(minLength: 0)
                     Text("A redacted title goes here").font(.subheadline).redacted(reason: .placeholder)
@@ -100,7 +105,10 @@ struct SmallestHottestWidgetView: View {
                         Text("\(Image(systemName: "arrow.up")) -").font(.footnote)
                     }.foregroundColor(.gray)
                 }
-            }.background(Color(UIColor.systemBackground).blur(radius: 10.0).opacity(0.5))
+            }
+            .background(Color(UIColor.systemBackground)
+            .blur(radius: 10.0)
+            .opacity(0.5))
         }
     }
 }
@@ -115,25 +123,29 @@ struct MediumHottestWidgetView: View {
         
         if let stories = entry.stories, let story = stories.first {
             let story2 = stories[1]
-            Text(story.title).font(.subheadline)
-            HStack(alignment: .center, spacing: 4.0) {
-                Text("via").font(.caption)
-                Text("\(story.submitter_user.username)").font(.caption)
-                Text("\(story.time_ago)").font(.caption)
-                Spacer(minLength: 0)
-                Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
-            }.foregroundColor(.gray)
+            Link(destination: URL(string: "claw://open?url=\(story.short_id_url)") ?? URL(string: "claw://")!) {
+                Text(story.title).font(.subheadline)
+                HStack(alignment: .center, spacing: 4.0) {
+                    Text("via").font(.caption)
+                    Text("\(story.submitter_user.username)").font(.caption)
+                    Text("\(story.time_ago)").font(.caption)
+                    Spacer(minLength: 0)
+                    Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
+                }.foregroundColor(.gray)
+            }
             
             Spacer()
-            
-            Text(story2.title).font(.subheadline)
-            HStack(alignment: .center, spacing: 4.0) {
-                Text("via").font(.caption)
-                Text("\(story2.submitter_user.username)").font(.caption)
-                Text("\(story2.time_ago)").font(.caption)
-                Spacer(minLength: 0)
-                Text("\(Image(systemName: "arrow.up")) \(story2.score)").font(.footnote)
-            }.foregroundColor(.gray)
+
+            Link(destination: URL(string: "claw://open?url=\(story2.short_id_url)") ?? URL(string: "claw://")!){
+                Text(story2.title).font(.subheadline)
+                HStack(alignment: .center, spacing: 4.0) {
+                    Text("via").font(.caption)
+                    Text("\(story2.submitter_user.username)").font(.caption)
+                    Text("\(story2.time_ago)").font(.caption)
+                    Spacer(minLength: 0)
+                    Text("\(Image(systemName: "arrow.up")) \(story2.score)").font(.footnote)
+                }.foregroundColor(.gray)
+            }
         } else {
             Text("The first redacted title").font(.subheadline).redacted(reason: .placeholder)
             HStack(alignment: .center, spacing: 4.0) {
@@ -163,14 +175,16 @@ struct LargeStoryView: View {
     
     var body: some View {
         if let story = story {
-            Text(story.title).font(.subheadline)
-            HStack(alignment: .center, spacing: 4.0) {
-                Text("via").font(.caption)
-                Text("\(story.submitter_user.username)").font(.caption)
-                Text("\(story.time_ago)").font(.caption)
-                Spacer(minLength: 0)
-                Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
-            }.foregroundColor(.gray)
+            Link(destination: URL(string: "claw://open?url=\(story.short_id_url)") ?? URL(string: "claw://")!) {
+                Text(story.title).font(.subheadline)
+                HStack(alignment: .center, spacing: 4.0) {
+                    Text("via").font(.caption)
+                    Text("\(story.submitter_user.username)").font(.caption)
+                    Text("\(story.time_ago)").font(.caption)
+                    Spacer(minLength: 0)
+                    Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
+                }.foregroundColor(.gray)
+            }
         } else {
             Text("A title here but it is redacted...").font(.subheadline).redacted(reason: .placeholder)
             HStack(alignment: .center, spacing: 4.0) {
@@ -192,7 +206,6 @@ struct LargeHottestWidgetView: View {
         Divider()
         Spacer()
         if let stories = entry.stories, stories.count > 3 {
-            
             LargeStoryView(story: stories[0])
             Spacer()
             LargeStoryView(story: stories[1])
@@ -229,7 +242,7 @@ struct hottest_widget: Widget {
 
 struct hottest_widget_Previews: PreviewProvider {
     static var previews: some View {
-        let generic_stories = [NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "The compositor is evil", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: NewestUser(username: "twodayslate", created_at: ".", is_admin: false, about: "about", is_moderator: false, karma: 1, avatar_url: "", invited_by_user: "wa", github_username: "", twitter_username: "", keybase_signatures: nil), tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: NewestUser(username: "twodayslate", created_at: ".", is_admin: false, about: "about", is_moderator: false, karma: 1, avatar_url: "", invited_by_user: "wa", github_username: "", twitter_username: "", keybase_signatures: nil), tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Semantic Import Versioning is unsound ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: NewestUser(username: "twodayslate", created_at: ".", is_admin: false, about: "about", is_moderator: false, karma: 1, avatar_url: "", invited_by_user: "wa", github_username: "", twitter_username: "", keybase_signatures: nil), tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Launching the 2020 State of Rust Survey ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: NewestUser(username: "twodayslate", created_at: ".", is_admin: false, about: "about", is_moderator: false, karma: 1, avatar_url: "", invited_by_user: "wa", github_username: "", twitter_username: "", keybase_signatures: nil), tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: NewestUser(username: "twodayslate", created_at: ".", is_admin: false, about: "about", is_moderator: false, karma: 1, avatar_url: "", invited_by_user: "wa", github_username: "", twitter_username: "", keybase_signatures: nil), tags: ["tag1", "tag2"])]
+        let generic_stories = [NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "The compositor is evil", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Semantic Import Versioning is unsound ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Launching the 2020 State of Rust Survey ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"])]
         Group {
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: []))
                 .previewContext(WidgetPreviewContext(family: .systemSmall))

@@ -97,29 +97,34 @@ struct SelectTagsView: View {
                         }
                     }
                     Spacer().background(DestinationDataSetter(destination: "bottom"))
-                }.ignoresSafeArea(.keyboard, edges: .all).zIndex(1.0).simultaneousGesture(DragGesture(minimumDistance: 0.0, coordinateSpace: .global).onChanged({ action in
-                    print("drag letter", action, action.location, self.destinations)
-                    for (id, frame) in self.destinations {
-                        if frame.insetBy(dx: -20, dy: 0).contains(action.location) {
-                            print("letter", id)
-                            DispatchQueue.main.async {
-                                if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == id }) != nil {
-                                    if lastScrolledId != id {
-                                        UISelectionFeedbackGenerator().selectionChanged()
+                }
+                .ignoresSafeArea(.keyboard, edges: .all)
+                .zIndex(1.0)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0.0, coordinateSpace: .global)
+                        .onChanged({ action in
+                            print("drag letter", action, action.location, self.destinations)
+                            for (id, frame) in self.destinations {
+                                if frame.insetBy(dx: -20, dy: 0).contains(action.location) {
+                                    print("letter", id)
+                                    DispatchQueue.main.async {
+                                        if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == id }) != nil {
+                                            if lastScrolledId != id {
+                                                UISelectionFeedbackGenerator().selectionChanged()
+                                            }
+                                            self.lastScrolledId = id
+                                            scrollReader.scrollTo(id, anchor: .top)
+                                        } else if id == "top" {
+                                            scrollReader.scrollTo(id, anchor: .top)
+                                        } else if id == "bottom" {
+                                            scrollReader.scrollTo("bottom", anchor: .top)
+                                        }
                                     }
-                                    self.lastScrolledId = id
-                                    scrollReader.scrollTo(id, anchor: .top)
-                                } else if id == "top" {
-                                    scrollReader.scrollTo(id, anchor: .top)
-                                } else if id == "bottom" {
-                                    scrollReader.scrollTo("bottom", anchor: .top)
                                 }
                             }
-                        }
-                    }
-                }).onEnded({ action in
-                    self.lastScrolledId = nil
-                }))
+                        }).onEnded({ action in
+                            self.lastScrolledId = nil
+                        }))
             }.onPreferenceChange(DestinationDataKey.self) { preferences in
                 for p in preferences {
                     self.destinations[p.destination] = p.frame

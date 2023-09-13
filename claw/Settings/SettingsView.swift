@@ -3,44 +3,6 @@ import MessageUI
 
 import SimpleCommon
 
-struct ColorIconView: View {
-    var color: UIColor
-    
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
-    @EnvironmentObject var settings: Settings
-    
-    var body: some View {
-        Button(action: {
-            settings.accentColorData = color.data
-            try? settings.managedObjectContext?.save()
-            self.presentationMode.wrappedValue.dismiss()
-        }, label: {
-            HStack {
-                Image(systemName: "app.fill").foregroundColor(Color(color))
-                Text("\(color.name ?? "Unkown")").foregroundColor(Color(UIColor.label))
-                if settings.accentColor == Color(color) {
-                    Spacer()
-                    Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
-                }
-            }
-        })
-    }
-}
-struct AccentColorChooserView: View {
-    @EnvironmentObject var settings: Settings
-    
-    var body: some View {
-        List {
-            ForEach([settings.defaultAccentColor, UIColor.label, UIColor.systemRed, UIColor.systemBlue, UIColor.systemGreen, UIColor.systemGray, UIColor.systemYellow, UIColor.systemTeal, UIColor.systemOrange, UIColor.systemPurple, UIColor.systemIndigo, UIColor.systemMint], id: \.self) { color in
-                ColorIconView(color: color)
-            }
-        }
-        .navigationTitle("Accent Color")
-        .listStyle(GroupedListStyle())
-    }
-}
-
-
 struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
@@ -99,14 +61,21 @@ struct SettingsView: View {
                             HStack {
                                 SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
                                 Spacer()
-                                Text("\(settings.accentUIColor.name ?? "Unknown")").foregroundColor(.gray)
+                                Text("\(settings.accentUIColor.name ?? "Custom")").foregroundColor(.gray)
+                            }
+                        })
+
+                        NavigationLink(destination: CommentColorPicker().environmentObject(settings), label: {
+                            HStack {
+                                SimpleIconLabel(iconBackgroundColor: (settings.commentColorScheme.colors.first ?? Color.accentColor), iconColor: (settings.commentColorScheme.colors.first ?? Color.accentColor) == .white ? .black : .white, systemImage: "list.bullet.indent", text: "Comment Colors")
+                                Spacer()
+                                Text(settings.commentColorScheme.name).foregroundColor(.gray)
                             }
                         })
 
                         HStack {
                             SettingsTextSizeSlider()
                         }
-
                     }
             Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                 SettingsLayoutSlider().environmentObject(settings)
@@ -158,7 +127,7 @@ struct SettingsView: View {
                     }
             ) {
                 SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
-                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
+                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/t<#T##SwiftUI.LocalizedStringKey#>erms", iconColor: .gray)
             }
         }
         .sheet(isPresented: $isShowingMailView) {

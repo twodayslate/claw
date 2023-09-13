@@ -21,7 +21,7 @@ class SafariActivity: UIActivity {
         return "Open in Default Browser"
     }
     
-    override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
+    @MainActor override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
         for item in activityItems {
             if let url = item as? URL, UIApplication.shared.canOpenURL(url) {
                 return true
@@ -32,14 +32,15 @@ class SafariActivity: UIActivity {
     
     var urls = [URL]()
     
-    override func prepare(withActivityItems activityItems: [Any]) {
+    @MainActor override func prepare(withActivityItems activityItems: [Any]) {
         for item in activityItems {
             if let url = item as? URL, UIApplication.shared.canOpenURL(url) {
                 urls.append(url)
             }
         }
     }
-    
+
+    @MainActor
     override func perform() {
         guard let url = urls.first else {
             self.activityDidFinish(false)

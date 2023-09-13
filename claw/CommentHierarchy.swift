@@ -43,6 +43,8 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     let indentLevel: Int
     
     var child: CommentStructure
+
+    @EnvironmentObject var settings: Settings
     
     @Binding var sharedComment: Comment?
     
@@ -51,22 +53,11 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     var last = false
     
     var commentColor: Color {
-        switch(indentLevel % 7) {
-        case 0:
-            return Color.blue.opacity(0.5)
-        case 1:
-            return Color.green.opacity(0.5)
-        case 2:
-            return Color.orange.opacity(0.5)
-        case 3:
-            return Color.pink.opacity(0.5)
-        case 4:
-            return Color.red.opacity(0.5)
-        case 5:
-            return Color.yellow.opacity(0.5)
-        default:
-            return Color.purple.opacity(0.5)
+        let index = indentLevel % 7
+        if settings.commentColorScheme.colors.count < index {
+            return .accentColor
         }
+        return settings.commentColorScheme.colors[index]
     }
     
     @State var isExpanded: Bool = true

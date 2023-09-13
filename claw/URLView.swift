@@ -28,7 +28,7 @@ struct URLView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 8.0))
         .onTapGesture {
-            guard var url = fixedUpUrl else{
+            guard let url = fixedUpUrl else{
                 observableSheet.sheet = .error(URLError(.badURL))
                 return
             }
