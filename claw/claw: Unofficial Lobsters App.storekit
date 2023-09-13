@@ -1,0 +1,79 @@
+{
+  "identifier" : "5FE81367",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "1531645542",
+    "_developerTeamID" : "C6L3992RFB",
+    "_lastSynchronizedDate" : 716107967.17415297
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "20688536",
+      "localizations" : [
+
+      ],
+      "name" : "Cosmetics",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "1532753140",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Support development and get cosmetic upgrades",
+              "displayName" : "Cosmetic Upgrades (Monthly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "claw.cosmetics.monthly.renew",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Cosmetics (Monthly)",
+          "subscriptionGroupID" : "20688536",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6465894583",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Support development and get cosmetic upgrades",
+              "displayName" : "Cosmetic Upgrades (Yearly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "claw.cosmetics.yearly.renew",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Cosmetics (Yearly)",
+          "subscriptionGroupID" : "20688536",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}
