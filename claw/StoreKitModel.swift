@@ -3,18 +3,20 @@ import SwiftUI
 
 @MainActor
 class StoreKitModel: NSObject, ObservableObject {
-    public var defaultPurchaseIdentifier: String
-    public var purchaseIdentifiers: [String]
+    public let defaultPurchaseIdentifier: String
+    public let purchaseIdentifiers: [String]
 
-    private var productSet: Set<String> {
+    private lazy var productSet: Set<String> = {
         var ans = [String]()
         ans.append(defaultPurchaseIdentifier)
         ans.append(contentsOf: purchaseIdentifiers)
         return Set(ans)
-    }
+    }()
 
     @Published public private(set) var products: [Product]?
     @Published public private(set) var defaultProduct: Product?
+    /// A Boolean value indicating that the products have been fetched and initial transactions have been checked
+    @Published public private(set) var hasInitialized = false
 
     @Published private(set) var purchasedIdentifiers = Set<String>()
     var updateListenerTask: Task<Void, Error>?
@@ -37,6 +39,7 @@ class StoreKitModel: NSObject, ObservableObject {
     }
 
     deinit {
+        updateListenerTask?.cancel()
         SKPaymentQueue.default().remove(self)
     }
 
@@ -44,6 +47,7 @@ class StoreKitModel: NSObject, ObservableObject {
         Task.detached {
             // Iterate through any transactions which didn't come from a direct call to `purchase()`.
             for await result in Transaction.updates {
+                try Task.checkCancellation()
                 do {
                     let transaction = try await self.checkVerified(result)
 
@@ -82,6 +86,7 @@ class StoreKitModel: NSObject, ObservableObject {
                 purchasedIdentifiers.remove(product.id)
             }
         }
+        hasInitialized = true
     }
 
     @discardableResult
@@ -109,7 +114,7 @@ class StoreKitModel: NSObject, ObservableObject {
         }
     }
 
-    func retrieve(completion block: (([Product]) -> Void)? = nil) async throws {
+    private func retrieve(completion block: (([Product]) -> Void)? = nil) async throws {
         let products = try await Product.products(for: productSet)
         self.products = products
         for product in products {
@@ -121,6 +126,7 @@ class StoreKitModel: NSObject, ObservableObject {
                 try await updatePurchasedIdentifiers(transaction.payloadValue)
             }
         }
+        hasInitialized = true
         block?(products)
     }
 

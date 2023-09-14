@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
     @State var isShowingMailViewAlert = false
+    @StateObject var storeModel = StoreKitModel.pro
     
     var twitterURL: URL {
         let twitter = URL(string: "twitter://user?screen_name=twodayslate")!
@@ -96,6 +97,15 @@ struct SettingsView: View {
                 }
             }
             Section {
+                if storeModel.owned {
+                    SimpleIconLabel(systemImage: "heart.fill", text: "Thank you for the support!")
+                } else {
+                    NavigationLink(destination: Pro(), label: {
+                        SimpleIconLabel(systemImage: "heart.text.square", text: "Additional Support")
+                    })
+                }
+            }
+            Section {
                 SettingsLinkView(image: "github", text: "GitHub", url: "https://github.com/twodayslate/claw", iconColor: .black)
                 SettingsLinkView(image: "twitter", text: "Twitter", url: twitterURL.absoluteString, iconColor: .blue)
                 if MFMailComposeViewController.canSendMail() {
@@ -127,7 +137,7 @@ struct SettingsView: View {
                     }
             ) {
                 SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
-                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/t<#T##SwiftUI.LocalizedStringKey#>erms", iconColor: .gray)
+                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
             }
         }
         .sheet(isPresented: $isShowingMailView) {
@@ -136,13 +146,22 @@ struct SettingsView: View {
         .listStyle(GroupedListStyle())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            do {
+                if !storeModel.hasInitialized {
+                    try await storeModel.update()
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
     }
 }
 
 struct SettingsView_Previews: PreviewProvider {
     
     static var previews: some View {
-        Group {
+        NavigationStack {
             SettingsView()
         }
         .previewLayout(.sizeThatFits)

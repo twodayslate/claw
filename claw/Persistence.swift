@@ -137,7 +137,7 @@ public class Settings: NSManagedObject, Identifiable {
         var colors: [Color] {
             switch self {
             case .default:
-                return [Color.blue, Color.green, Color.orange, Color.pink, Color.red, Color.yellow, Color.purple].map { $0.opacity(0.5) }
+                return [Color.blue, Color.red, Color.green, Color.orange, Color.pink, Color.yellow, Color.purple].map { $0.opacity(0.5) }
             case .red:
                 return [Color.red.opacity(1.0), Color.red.opacity(0.9), Color.red.opacity(0.8), Color.red.opacity(0.7), Color.red.opacity(0.6), Color.red.opacity(0.5), Color.red.opacity(0.4)]
             case .blue:

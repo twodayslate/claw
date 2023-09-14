@@ -25,14 +25,14 @@ struct Pro: View {
                         Grid {
                             row(image: "paintbrush.fill", heading: "Accent Colors", subheading: "Unlock unlimited accent colors and personalize the app with a color picker!")
                             row(image: "list.bullet.indent", heading: "Comment Indent Colors", subheading: "Easily distinguish comment depths with customizable indent colors.")
-                            row(image: "cup.and.saucer", heading: "Future Features", subheading: "Support development and help prioritize future features and development.")
+                            row(image: "cup.and.saucer", heading: "Future Features", subheading: "Support indie development and help prioritize future features and development.")
                         }
                         .frame(maxWidth: max(reader.size.width/2, 400))
                         Spacer()
                     }
                     .font(.headline)
                     HStack {
-                        Text("I just wanted to say a big 'thank you' for your awesome support! Your enthusiasm and backing mean the world to me. It's your support that keeps me going and excited about what I do. With your help, I can keep improving and adding cool stuff to make your experience even better. You're a key part of this journey, and I'm thrilled to have you on board. Thanks for being awesome!")
+                        Text("Although this application is open source and you can compile/run it for free, I just wanted to say a big 'thank you' for your awesome support! Your enthusiasm and backing mean the world to me. It's your support that keeps me going and excited about what I do. With your help, I can keep improving and adding cool stuff to make your experience even better. You're a key part of this journey, and I'm thrilled to have you on board. Thanks for being awesome!")
                             .font(.callout)
                             .italic()
                     }
@@ -177,8 +177,17 @@ struct Pro: View {
                     .opacity(isLoading ? 1.0 : 0.0)
             }
         } else {
-            ProgressView()
-                .progressViewStyle(.circular)
+            VStack {
+                Text("Subscribe for -")
+                HStack {
+                    Text("yearly")
+                }
+            }
+            .foregroundColor(.white)
+            .padding()
+            .background(Color.accentColor)
+            .cornerRadius(8)
+            .redacted(reason: .placeholder)
         }
     }
 

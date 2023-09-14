@@ -67,6 +67,7 @@
 		F6DAA6632AB181FC009F458F /* StoreKitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6622AB181FC009F458F /* StoreKitModel.swift */; };
 		F6DAA6652AB1834F009F458F /* Pro.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6642AB1834F009F458F /* Pro.swift */; };
 		F6DAA6672AB1841B009F458F /* Size.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6662AB1841B009F458F /* Size.swift */; };
+		F6DAA66A2AB2D78D009F458F /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F6DAA6692AB2D78D009F458F /* ConfettiSwiftUI */; };
 		F6E01E6E2546193000AADFBC /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E01E6D2546193000AADFBC /* Media.xcassets */; };
 		F6E01E702546193000AADFBC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E01E6F2546193000AADFBC /* ActionViewController.swift */; };
 		F6E01E732546193000AADFBC /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F6E01E712546193000AADFBC /* MainInterface.storyboard */; };
@@ -236,6 +237,7 @@
 			files = (
 				F63BFF4F2909A7DC00E18B62 /* SimpleCommon in Frameworks */,
 				F6F2012425D5C130008BA024 /* BetterSafariView in Frameworks */,
+				F6DAA66A2AB2D78D009F458F /* ConfettiSwiftUI in Frameworks */,
 				F669C96A250C846200B1FF42 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -520,6 +522,7 @@
 				F669C969250C846200B1FF42 /* SwiftSoup */,
 				F6F2012325D5C130008BA024 /* BetterSafariView */,
 				F63BFF4E2909A7DC00E18B62 /* SimpleCommon */,
+				F6DAA6692AB2D78D009F458F /* ConfettiSwiftUI */,
 			);
 			productName = claw;
 			productReference = F669C92C250C5DD400B1FF42 /* claw.app */;
@@ -619,6 +622,7 @@
 				F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */,
 				F63BFF4D2909A7DC00E18B62 /* XCRemoteSwiftPackageReference "SimpleCommon" */,
+				F6DAA6682AB2D78D009F458F /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 			);
 			productRefGroup = F669C92D250C5DD400B1FF42 /* Products */;
 			projectDirPath = "";
@@ -825,7 +829,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -850,7 +854,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = hottest.widgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = hottest.widget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -993,7 +997,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1024,7 +1028,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1136,7 +1140,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -1161,7 +1165,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "opener-action/opener-action.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				INFOPLIST_FILE = "opener-action/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -1255,6 +1259,14 @@
 				minimumVersion = 2.4.3;
 			};
 		};
+		F6DAA6682AB2D78D009F458F /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 		F6F2012225D5C130008BA024 /* XCRemoteSwiftPackageReference "BetterSafariView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/stleamist/BetterSafariView.git";
@@ -1275,6 +1287,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F669C968250C846200B1FF42 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		F6DAA6692AB2D78D009F458F /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6DAA6682AB2D78D009F458F /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
 		};
 		F6F2012325D5C130008BA024 /* BetterSafariView */ = {
 			isa = XCSwiftPackageProductDependency;
