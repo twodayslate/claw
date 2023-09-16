@@ -8,6 +8,28 @@
 import SwiftUI
 import SimpleCommon
 
+struct RedactedCommentColorPickerPreview: View {
+    var body: some View {
+        ScrollViewReader { reader in
+            ScrollView {
+                HierarchyList(data: [CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder))))))))], header: { comment in
+                    HStack {
+                        Text(comment.comment.commenting_user.username)
+                        Spacer()
+                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                    }
+                    .foregroundColor(.gray)
+                    .redacted(reason: .placeholder)
+                }, rowContent: { comment in
+                    Text(comment.comment.comment)
+                        .redacted(reason: .placeholder)
+                })
+                .disabled(true)
+            }
+        }
+    }
+}
+
 struct CommentColorPicker: View {
     @EnvironmentObject var settings: Settings
 
@@ -154,21 +176,7 @@ struct CommentColorPicker: View {
     }
 
     func preview(reader: GeometryProxy) -> some View {
-        ScrollView {
-            HierarchyList(data: [CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder))))))))], header: { comment in
-                HStack {
-                    Text(comment.comment.commenting_user.username)
-                    Spacer()
-                    Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
-                }
-                .foregroundColor(.gray)
-                .redacted(reason: .placeholder)
-            }, rowContent: { comment in
-                Text(comment.comment.comment)
-                    .redacted(reason: .placeholder)
-            })
-            .disabled(true)
-        }
+        RedactedCommentColorPickerPreview()
     }
 
     @ViewBuilder
