@@ -3,6 +3,7 @@ import SwiftUI
 struct AppIconChooserView: View {
     @EnvironmentObject var settings: Settings
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @StateObject var storeModel: StoreKitModel = .pro
     
     @State var showAlert = false
     var body: some View {
@@ -70,11 +71,35 @@ struct AppIconChooserView: View {
                 })
             }
 
-            VStack(alignment: .leading) {
-                HStack(alignment: .bottom) {
-                    Spacer()
-                    Text("Thank you for the support!").font(.subheadline)
-                    Spacer()
+            ZStack(alignment: .leading) {
+                Button {
+                    UIApplication.shared.setAlternateIconName("ClawHeart", completionHandler: {error in
+                        guard error == nil else {
+                            // show error
+                            return
+                        }
+                        settings.alternateIconName = "ClawHeart"
+                        try? settings.managedObjectContext?.save()
+                        self.presentationMode.wrappedValue.dismiss()
+                    })
+                } label: {
+                    AppIconView(icon: AppIcon(alternateIconName: "ClawHeart", name: "clawve", assetName: "ClawHeart-thumb", subtitle: "Maria Garcia (mariajgarcia.com)"))
+                        .environmentObject(settings)
+                }
+                .disabled(!storeModel.owned)
+                .blur(radius: storeModel.owned ? 0.0 : 5.0)
+                if !storeModel.owned {
+                    NavigationLink(destination: Pro()) {
+                        HStack {
+                            Spacer()
+                            Text("Unlock Supporter Icons")
+                                .font(.headline)
+                                .foregroundColor(.accentColor)
+                                .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
+                            Spacer()
+                        }
+
+                    }
                 }
             }
         }

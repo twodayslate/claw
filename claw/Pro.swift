@@ -29,8 +29,8 @@ struct Pro: View {
                         HStack {
                             Spacer()
                             Grid {
-                                row(heading: "Accent Colors", subheading: "Unlock unlimited accent colors and personalize the app with a color picker!") {
-                                    ColorPicker("Accent Color", selection: .constant(Color(UIColor.tintColor)))
+                                row(heading: "Custom Colors", subheading: "Unlock unlimited colors and personalize the app with a color picker!") {
+                                    ColorPicker("Custom Color", selection: .constant(Color(UIColor.tintColor)))
                                         .labelsHidden()
                                         .saveSize(in: $pickerSize)
                                         .scaleEffect(iconSize/pickerSize.width)
@@ -38,8 +38,31 @@ struct Pro: View {
                                         .frame(maxWidth: iconSize, maxHeight: iconSize)
                                         .clipped()
                                 }
-                                indentColorRow
-                                row(image: "cup.and.saucer", heading: "Future Features", subheading: "Support indie development and help prioritize future features and development.")
+                                supportIconsRow
+                                row(heading: "Support Indie Development", subheading: "Back independent innovation and fund creativity.") {
+                                    rowImage(systemName: "xmark")
+                                        .opacity(0.0)
+                                        .overlay {
+                                            Text("🍻")
+                                                .font(Font(.largeTitle, sizeModifier: iconSize, weight: nil, design: .default))
+                                                .minimumScaleFactor(0.01)
+                                                .scaleEffect(1.25)
+                                        }
+                                }
+                                row(heading: "Future Features", subheading: "Access new feautres and help prioritize future work.") {
+                                    rowImage(systemName: "xmark")
+                                        .opacity(0.0)
+                                        .overlay {
+                                            Text("📆")
+                                                .font(Font(.largeTitle, sizeModifier: iconSize, weight: nil, design: .default))
+                                                .minimumScaleFactor(0.01)
+                                                .overlay(alignment: .bottomTrailing) {
+                                                    Text("🚀")
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .minimumScaleFactor(0.01)
+                                                }
+                                        }
+                                }
                             }
                             Spacer()
                         }
@@ -47,7 +70,7 @@ struct Pro: View {
                         developerMessage
                         reviews
                         Group {
-                            Text("Payment will be charged to your Apple ID account at the confirmation of purchase. The subscription automatically renews unless it is canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase. ") + privacyAndTerms()
+                            Text("Reviews have been anonymized. Payment will be charged to your Apple ID account at the confirmation of purchase. The subscription automatically renews unless it is canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase. ") + privacyAndTerms()
                         }
                         .font(.caption2)
                         .foregroundColor(Color(UIColor.tertiaryLabel))
@@ -108,40 +131,42 @@ struct Pro: View {
     @ViewBuilder
     var reviews: some View {
         let titles = [
-            "Excellent!",
             "Beautiful!",
-            "Amazing!"
-        ].shuffled()
+            "Amazing!",
+            "Impressive and Easy UI",
+            "Better than Hacker News"
+        ]
 
         let authors = [
             "George",
             "Jason",
-            "Susan"
-        ].shuffled()
+            "Susan",
+            "John"
+        ]
 
         let texts = [
-            "This app makes lobsters a joy to use on my phone. It's super smooth. Love dark mode.",
-            "So much better than hacker news - glad there is finally a native application.",
-            "This community is amazing. Full of great people and excellent content."
-        ].shuffled()
+            "Infinite info at your fingertips. Great reader for a great site.",
+            "The super customizable UI makes this app super easy to use and satisfying.",
+            "Lots of customization and lots of interesting articles to read. Amazing overall reader.",
+            "The stories and comments are so much better than Hacker News. I like how simple this app is with the stock look."
+        ]
 
         ZStack {
-            // left
-            review(title: titles[0], author: authors[0], text: texts[0])
-                .offset(x: -100)
-                .scaleEffect(0.9)
-                .opacity(0.7)	
-                .blur(radius: 2)
-            // right
-            review(title: titles[1], author: authors[1], text: texts[1])
-                .offset(x: 100)
-                .scaleEffect(0.9)
-                .opacity(0.8)
-                .blur(radius: 2)
+                // left
+                review(title: titles[0], author: authors[0], text: texts[0])
+                    .scaleEffect(0.9)
+                    .offset(x: -120)
+                    .opacity(0.7)
+                    .blur(radius: 2)
+                // right
+                review(title: titles[1], author: authors[1], text: texts[1])
+                    .scaleEffect(0.9)
+                    .offset(x: 120)
+                    .opacity(0.8)
+                    .blur(radius: 2)
 
-            // top
-            review(title: titles[2], author: authors[2], text: texts[2])
-
+                // top
+                review(title: titles[2], author: authors[2], text: texts[2])
         }
     }
 
@@ -187,7 +212,7 @@ struct Pro: View {
                 Text("Message from the Developer")
             }
             .padding(.bottom, 2)
-            Text("Although this application is open source and you can compile/run it for free, I just wanted to say a big 'thank you' for your awesome support! Your enthusiasm and backing mean the world to me. It's your support that keeps me going and excited about what I do. With your help, I can keep improving and adding cool stuff to make your experience even better. You're a key part of this journey, and I'm thrilled to have you on board. Thanks for being awesome!")
+            Text("Although this application is open source and you can compile/run it for free, I want to thank you all for your awesome support! Your enthusiasm and support mean the world to me - it's what keeps me motivated and excited about what I do. With your help, I can keep improving and adding cool features that make your experience even better. You're a key part of this journey, and I'm thrilled to have you on board. Thanks for being awesome!")
                 .font(.subheadline)
                 .opacity(0.9)
                 .italic()
@@ -224,12 +249,13 @@ struct Pro: View {
                                         Text("Best Value!")
                                             .minimumScaleFactor(0.7)
                                             .multilineTextAlignment(.center)
-                                            .padding()
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
                                             .background {
-                                                RoundedRectangle(cornerRadius: 8)
+                                                Capsule()
                                                     .foregroundColor(.yellow)
                                             }
-                                            .offset(y: -26)
+                                            .offset(y: -16)
                                             .foregroundColor(Color.black.opacity(0.8))
                                             .frame(height: iconSize/2)
 
@@ -397,6 +423,75 @@ struct Pro: View {
 
                     }
                 }
+        }
+    }
+
+    var supportIconsRow: some View {
+        row(heading: "Supporter Only Icons", subheading: "Get access to supporter-only icons and personalize your homescreen!") {
+            rowImage(systemName: "appicon")
+                .opacity(0.0)
+                .overlay {
+                    ZStack {
+                        Image("KnuxIcon-thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .mask {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                            .shadow(color: Color.black, radius: 2.0)
+                            .scaleEffect(0.9)
+                            .offset(x: 13, y: 11)
+                        Image("AppIcon-thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .mask {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                            .shadow(color: Color.black, radius: 2.0)
+                            .scaleEffect(0.7)
+                            .offset(x: -13, y: 13)
+
+                        Image("Akhmad437LobsterDarkIcon-thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .mask {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                            .shadow(color: Color.black, radius: 2.0)
+                            .scaleEffect(0.8)
+                            .offset(x: 12, y: -13)
+
+                        Image("Akhmad437LobsterLightIcon-thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .mask {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                            .scaleEffect(0.6)
+                            .offset(x: -16, y: -15)
+                            .shadow(color: Color.black, radius: 2.0)
+
+                        Image("ClawHeart-thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .mask {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                            .shadow(color: Color.black, radius: 3.0)
+                    }
+                    .scaleEffect(0.85)
+                }
+
         }
     }
 }
