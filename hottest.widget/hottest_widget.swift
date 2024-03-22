@@ -82,7 +82,7 @@ struct SmallestHottestWidgetView: View {
                     Spacer(minLength: 0)
                     HStack(alignment: .center, spacing: 4.0) {
                         VStack(alignment: .leading) {
-                            Text("\(story.submitter_user.username)").font(.caption)
+                            Text("\(story.submitter_user)").font(.caption)
                             Text("\(story.time_ago)").font(.caption2)
                         }
                         .lineLimit(1)
@@ -127,7 +127,7 @@ struct MediumHottestWidgetView: View {
                 Text(story.title).font(.subheadline)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
-                    Text("\(story.submitter_user.username)").font(.caption)
+                    Text("\(story.submitter_user)").font(.caption)
                     Text("\(story.time_ago)").font(.caption)
                     Spacer(minLength: 0)
                     Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
@@ -140,7 +140,7 @@ struct MediumHottestWidgetView: View {
                 Text(story2.title).font(.subheadline)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
-                    Text("\(story2.submitter_user.username)").font(.caption)
+                    Text("\(story2.submitter_user)").font(.caption)
                     Text("\(story2.time_ago)").font(.caption)
                     Spacer(minLength: 0)
                     Text("\(Image(systemName: "arrow.up")) \(story2.score)").font(.footnote)
@@ -179,7 +179,7 @@ struct LargeStoryView: View {
                 Text(story.title).font(.subheadline)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
-                    Text("\(story.submitter_user.username)").font(.caption)
+                    Text("\(story.submitter_user)").font(.caption)
                     Text("\(story.time_ago)").font(.caption)
                     Spacer(minLength: 0)
                     Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
@@ -242,7 +242,7 @@ struct hottest_widget: Widget {
 
 struct hottest_widget_Previews: PreviewProvider {
     static var previews: some View {
-        let generic_stories = [NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "The compositor is evil", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Semantic Import Versioning is unsound ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Launching the 2020 State of Rust Survey ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: .placeholder, tags: ["tag1", "tag2"])]
+        let generic_stories = [NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "The compositor is evil", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: "placeholder", tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: "placeholder", tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Semantic Import Versioning is unsound ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: "placeholder", tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "Launching the 2020 State of Rust Survey ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: "placeholder", tags: ["tag1", "tag2"]), NewestStory(short_id: "whatever", short_id_url: ".", created_at: ".", title: "spawnfest/bakeware - Compile Elixir applications into single, easily distributed executable binaries ", url: ".", score: 45, flags: 0, comment_count: 4, description: "", comments_url: ".", submitter_user: "placeholder", tags: ["tag1", "tag2"])]
         Group {
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: []))
                 .previewContext(WidgetPreviewContext(family: .systemSmall))

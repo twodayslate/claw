@@ -14,7 +14,7 @@ struct RedactedCommentColorPickerPreview: View {
             ScrollView {
                 HierarchyList(data: [CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder))))))))], header: { comment in
                     HStack {
-                        Text(comment.comment.commenting_user.username)
+                        Text(comment.comment.commenting_user)
                         Spacer()
                         Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
                     }

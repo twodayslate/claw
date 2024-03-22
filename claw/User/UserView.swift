@@ -2,7 +2,7 @@ import SwiftUI
 import BetterSafariView
 
 struct UserView: View {
-    var user: NewestUser?
+    @State var user: NewestUser?
     @ObservedObject var userFetcher: UserFetcher
     var username: String?
     @Environment(\.didReselect) var didReselect
@@ -12,9 +12,9 @@ struct UserView: View {
     @EnvironmentObject var urlToOpen: ObservableURL
     
     init(_ user: NewestUser) {
-        self.user = user
-        self.username = self.user?.username
         self.userFetcher = UserFetcher(self.username ?? "")
+        self.user = user
+        self.username = user.username
     }
     
     init(_ username: String) {
@@ -24,7 +24,7 @@ struct UserView: View {
     
     var body: some View {
         List {
-            if let user = self.user ?? self.userFetcher.user {
+            if let user = self.user {
                 HStack(alignment: .center) {
                     Spacer()
                     UserAvatarLoader(user: user)
@@ -108,7 +108,15 @@ struct UserView: View {
             }
         }
         .task {
-            self.userFetcher.load()
+            do {
+                guard self.user == nil else {
+                    return
+                }
+                self.user = try await self.userFetcher.load()
+            } catch {
+                // todo: handle error
+                print(error)
+            }
         }
         // this is necessary until multiple sheets can be displayed at one time. See #22
         .safariView(item: $urlToOpen.url, content: { url in

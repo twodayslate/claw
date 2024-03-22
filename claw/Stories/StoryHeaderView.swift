@@ -40,7 +40,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                             TagList(tags: story.tags)
                             SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                                 Text("via ").foregroundColor(Color.secondary) +
-                                Text(story.submitter_user.username).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(story.submitter_user.is_admin ? Color.red : (story.submitter_user.is_moderator ? Color.green : Color.gray)) +
+                                Text(story.submitter_user).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier))) +
                                     Text(" " + story.time_ago).foregroundColor(Color.secondary)
                             }.font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                         }
@@ -119,7 +119,7 @@ struct StoryHeaderView<T: GenericStory>: View {
 struct StoryHeaderView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryHeaderView(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: .placeholder, tags: ["ios", "programming"]))
+            StoryHeaderView(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: "placeholder", tags: ["ios", "programming"]))
         }.previewLayout(.sizeThatFits)
     }
 }

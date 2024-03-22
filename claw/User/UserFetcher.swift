@@ -3,7 +3,6 @@ import Combine
 
 @MainActor
 class UserFetcher: ObservableObject {
-    @Published var user: NewestUser? = nil
     var username: String
     
     init(_ username: String) {
@@ -16,23 +15,10 @@ class UserFetcher: ObservableObject {
     
     private var session: URLSessionTask? = nil
     
-    func load() {
-        let url = URL(string: "https://lobste.rs/u/" + self.username + ".json")!
-            
-        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-                    do {
-                        if let d = data {
-                            let decodedLists = try JSONDecoder().decode(NewestUser.self, from: d)
-                            DispatchQueue.main.async {
-                                self.user = decodedLists
-                            }
-                        }else {
-                            print("No Data")
-                        }
-                    } catch {
-                        print ("Error fetching user \(error)")
-                    }
-                }
-        self.session?.resume()
+    func load() async throws -> NewestUser {
+        let url = URL(string: "https://lobste.rs/~" + self.username + ".json")!
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(NewestUser.self, from: data)
     }
 }

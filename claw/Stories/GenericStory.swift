@@ -19,7 +19,7 @@ protocol GenericStory: Codable, Hashable, Identifiable {
     var comment_count: Int { get }
     var description: String { get }
     var comments_url: String { get }
-    var submitter_user: NewestUser { get }
+    var submitter_user: String { get }
     var tags: [String] { get }
 }
 

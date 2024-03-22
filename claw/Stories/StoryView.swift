@@ -71,7 +71,7 @@ struct StoryView: View {
                             HierarchyList(data: my_story.sorted_comments, header: { comment in
                                 HStack(alignment: .center) {
                                     SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
-                                        Text(comment.comment.commenting_user.username).foregroundColor(.gray)
+                                        Text(comment.comment.commenting_user).foregroundColor(.gray)
                                     }
                                     Spacer()
                                     Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
@@ -101,7 +101,7 @@ struct StoryView: View {
                                 ForEach(1..<(story.comment_count+1)) { count in
                                     VStack(alignment: .leading) {
                                         HStack(alignment: .center) {
-                                            SGNavigationLink(destination: UserView(story.submitter_user.id), withChevron: false) {
+                                            SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                                                 Text(String(repeating: " ", count: Int.random(in: 3..<8))).foregroundColor(.gray)
                                             }
                                             Spacer()

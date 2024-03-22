@@ -23,7 +23,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var comment_count: Int
     var description: String
     var comments_url: String
-    var submitter_user: NewestUser
+    var submitter_user: String
     var tags: [String]
     var comments: [Comment]
     
@@ -95,10 +95,10 @@ struct Comment: Codable, Hashable, Identifiable {
     var url: String
     var comment: String
     var parent_comment: String?
-    var commenting_user: NewestUser
+    var commenting_user: String
 
     static var placeholder: Comment {
-        Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", updated_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: .placeholder)
+        Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", updated_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: "user")
     }
 }
 
