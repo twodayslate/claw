@@ -57,13 +57,9 @@
 		F669C998250ECD6200B1FF42 /* SGNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F669C997250ECD6200B1FF42 /* SGNavigationLink.swift */; };
 		F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */; };
 		F687666D2513FAAC003090D2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687666C2513FAAC003090D2 /* SettingsView.swift */; };
-		F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DA25196C9B003090D2 /* Classic@3x.png */; };
-		F68766E125196C9B003090D2 /* Classic@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F68766DD25196C9B003090D2 /* Classic@2x.png */; };
 		F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876706251A82FE003090D2 /* ShareSheet.swift */; };
 		F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687670C251A9501003090D2 /* StoryListCellView.swift */; };
 		F6876713251AF800003090D2 /* SafariActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876712251AF800003090D2 /* SafariActivity.swift */; };
-		F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876750251E853F003090D2 /* Classic@2x~ipad.png */; };
-		F6876753251E8540003090D2 /* Classic~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = F6876751251E853F003090D2 /* Classic~ipad.png */; };
 		F6DAA6632AB181FC009F458F /* StoreKitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6622AB181FC009F458F /* StoreKitModel.swift */; };
 		F6DAA6652AB1834F009F458F /* Pro.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6642AB1834F009F458F /* Pro.swift */; };
 		F6DAA6672AB1841B009F458F /* Size.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6662AB1841B009F458F /* Size.swift */; };
@@ -194,13 +190,9 @@
 		F669C99E250EE89900B1FF42 /* claw.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = claw.entitlements; sourceTree = "<group>"; };
 		F669C99F250EEB9B00B1FF42 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		F687666C2513FAAC003090D2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		F68766DA25196C9B003090D2 /* Classic@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@3x.png"; sourceTree = "<group>"; };
-		F68766DD25196C9B003090D2 /* Classic@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x.png"; sourceTree = "<group>"; };
 		F6876706251A82FE003090D2 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		F687670C251A9501003090D2 /* StoryListCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListCellView.swift; path = claw/Stories/StoryListCellView.swift; sourceTree = SOURCE_ROOT; };
 		F6876712251AF800003090D2 /* SafariActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariActivity.swift; sourceTree = "<group>"; };
-		F6876750251E853F003090D2 /* Classic@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic@2x~ipad.png"; sourceTree = "<group>"; };
-		F6876751251E853F003090D2 /* Classic~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Classic~ipad.png"; sourceTree = "<group>"; };
 		F6DAA6622AB181FC009F458F /* StoreKitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitModel.swift; sourceTree = "<group>"; };
 		F6DAA6642AB1834F009F458F /* Pro.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pro.swift; sourceTree = "<group>"; };
 		F6DAA6662AB1841B009F458F /* Size.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Size.swift; sourceTree = "<group>"; };
@@ -385,7 +377,6 @@
 			isa = PBXGroup;
 			children = (
 				F66573A22AAEEFD30043B0C6 /* claw: Unofficial Lobsters App.storekit */,
-				F68766D925196BD4003090D2 /* icons */,
 				F669C99E250EE89900B1FF42 /* claw.entitlements */,
 				F669C92F250C5DD400B1FF42 /* clawApp.swift */,
 				F669C931250C5DD400B1FF42 /* ContentView.swift */,
@@ -441,17 +432,6 @@
 				F669C953250C5DDE00B1FF42 /* Info.plist */,
 			);
 			path = clawUITests;
-			sourceTree = "<group>";
-		};
-		F68766D925196BD4003090D2 /* icons */ = {
-			isa = PBXGroup;
-			children = (
-				F68766DD25196C9B003090D2 /* Classic@2x.png */,
-				F6876750251E853F003090D2 /* Classic@2x~ipad.png */,
-				F6876751251E853F003090D2 /* Classic~ipad.png */,
-				F68766DA25196C9B003090D2 /* Classic@3x.png */,
-			);
-			path = icons;
 			sourceTree = "<group>";
 		};
 		F6E01E6C2546193000AADFBC /* opener-action */ = {
@@ -652,11 +632,7 @@
 			files = (
 				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
-				F68766E125196C9B003090D2 /* Classic@2x.png in Resources */,
-				F68766DE25196C9B003090D2 /* Classic@3x.png in Resources */,
-				F6876752251E8540003090D2 /* Classic@2x~ipad.png in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
-				F6876753251E8540003090D2 /* Classic~ipad.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -997,7 +973,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
@@ -1028,7 +1004,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = claw/claw.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;

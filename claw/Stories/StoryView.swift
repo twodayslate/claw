@@ -71,7 +71,8 @@ struct StoryView: View {
                             HierarchyList(data: my_story.sorted_comments, header: { comment in
                                 HStack(alignment: .center) {
                                     SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
-                                        Text(comment.comment.commenting_user).foregroundColor(.gray)
+                                        Text(comment.comment.commenting_user)
+                                            .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
                                     }
                                     Spacer()
                                     Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)

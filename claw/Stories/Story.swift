@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 
 struct Story: GenericStory, Codable, Hashable, Identifiable {
+
     var id: String {
         return short_id
     }
@@ -24,6 +25,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var description: String
     var comments_url: String
     var submitter_user: String
+    var user_is_author: Bool
     var tags: [String]
     var comments: [Comment]
     

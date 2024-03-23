@@ -43,7 +43,8 @@ struct StoryCell: View {
                     HStack {
                         SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                             Text("via ").foregroundColor(Color.secondary) +
-                            Text(story.submitter_user) +
+                            Text(story.submitter_user)
+                                .foregroundColor(story.user_is_author == true ? .blue : .gray) +
                             Text(" " +
                                  story.time_ago).foregroundColor(Color.secondary)
                         }.font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
@@ -65,7 +66,7 @@ struct StoryCell: View {
 struct StoryCell_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: "placeholder", tags: ["ios", "programming"]))
+            StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: "placeholder", user_is_author: false, tags: ["ios", "programming"]))
         }
         .previewLayout(.sizeThatFits)
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)

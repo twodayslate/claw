@@ -21,6 +21,7 @@ protocol GenericStory: Codable, Hashable, Identifiable {
     var comments_url: String { get }
     var submitter_user: String { get }
     var tags: [String] { get }
+    var user_is_author: Bool { get }
 }
 
 extension GenericStory {
