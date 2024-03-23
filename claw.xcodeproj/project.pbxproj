@@ -193,6 +193,7 @@
 		F6876706251A82FE003090D2 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		F687670C251A9501003090D2 /* StoryListCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListCellView.swift; path = claw/Stories/StoryListCellView.swift; sourceTree = SOURCE_ROOT; };
 		F6876712251AF800003090D2 /* SafariActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariActivity.swift; sourceTree = "<group>"; };
+		F690C7DF2BAE70A3007621E7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F6DAA6622AB181FC009F458F /* StoreKitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitModel.swift; sourceTree = "<group>"; };
 		F6DAA6642AB1834F009F458F /* Pro.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pro.swift; sourceTree = "<group>"; };
 		F6DAA6662AB1841B009F458F /* Size.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Size.swift; sourceTree = "<group>"; };
@@ -387,6 +388,7 @@
 				F6876712251AF800003090D2 /* SafariActivity.swift */,
 				F6291163251038810065C3E9 /* CommentHierarchy.swift */,
 				F656F681252BEF42006FFAFD /* SearchBar.swift */,
+				F690C7DF2BAE70A3007621E7 /* PrivacyInfo.xcprivacy */,
 				F669C975250EA56400B1FF42 /* URLView.swift */,
 				F656F646252523B6006FFAFD /* Tags */,
 				F617B551251EDDDF0060B21A /* Stories */,
