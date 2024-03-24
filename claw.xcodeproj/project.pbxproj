@@ -60,6 +60,7 @@
 		F6876707251A82FE003090D2 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876706251A82FE003090D2 /* ShareSheet.swift */; };
 		F687670D251A9501003090D2 /* StoryListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F687670C251A9501003090D2 /* StoryListCellView.swift */; };
 		F6876713251AF800003090D2 /* SafariActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6876712251AF800003090D2 /* SafariActivity.swift */; };
+		F690C7E02BAFBDF2007621E7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F690C7DF2BAE70A3007621E7 /* PrivacyInfo.xcprivacy */; };
 		F6DAA6632AB181FC009F458F /* StoreKitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6622AB181FC009F458F /* StoreKitModel.swift */; };
 		F6DAA6652AB1834F009F458F /* Pro.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6642AB1834F009F458F /* Pro.swift */; };
 		F6DAA6672AB1841B009F458F /* Size.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DAA6662AB1841B009F458F /* Size.swift */; };
@@ -634,6 +635,7 @@
 			files = (
 				F669C9A0250EEB9B00B1FF42 /* Launch Screen.storyboard in Resources */,
 				F669C937250C5DDE00B1FF42 /* Preview Assets.xcassets in Resources */,
+				F690C7E02BAFBDF2007621E7 /* PrivacyInfo.xcprivacy in Resources */,
 				F669C934250C5DDE00B1FF42 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
