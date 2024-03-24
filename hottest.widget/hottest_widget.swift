@@ -47,6 +47,20 @@ struct SimpleEntry: TimelineEntry {
     let stories: [NewestStory]?
 }
 
+extension View {
+    func fixupContainerBackgroundWidget<V>(@ViewBuilder content: () -> V) -> some View where V: View {
+        if #available(iOS 17, *) {
+            return self.containerBackground(for: .widget, alignment: .center, content: {
+                content()
+            })
+        } else {
+            return self.background {
+                content()
+            }
+        }
+    }
+}
+
 struct hottest_widgetEntryView : View {
     var entry: Provider.Entry
     
@@ -64,7 +78,14 @@ struct hottest_widgetEntryView : View {
             } else {
                 Text(entry.date, style: .time)
             }
-        }.padding()
+        }
+        .padding()
+        .fixupContainerBackgroundWidget {
+            Color(UIColor.systemBackground)
+                .opacity(0.5)
+                .ignoresSafeArea()
+        }
+
     }
 }
 
@@ -73,12 +94,18 @@ struct SmallestHottestWidgetView: View {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Text("\(Image(systemName: "flame"))").font(Font.system(size: 125)).foregroundColor(.red).opacity(0.4).padding([.top, .leading], -25)
+            Image(systemName: "flame")
+                .ignoresSafeArea()
+                .font(Font.system(size: 125))
+                .foregroundColor(.red)
+                .opacity(0.4)
+                .padding([.top, .leading], -25)
             VStack(alignment: .leading) {
                 Spacer(minLength: 0)
                 if let stories = entry.stories, let story = stories.first {
                     Text(story.title)
                         .font(.subheadline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer(minLength: 0)
                     HStack(alignment: .center, spacing: 4.0) {
                         VStack(alignment: .leading) {
@@ -94,7 +121,10 @@ struct SmallestHottestWidgetView: View {
                     .widgetURL(URL(string: "claw://open?url=\(story.short_id_url)"))
                 } else {
                     Spacer(minLength: 0)
-                    Text("A redacted title goes here").font(.subheadline).redacted(reason: .placeholder)
+                    Text("A redacted title goes here")
+                        .font(.subheadline)
+                        .redacted(reason: .placeholder)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer(minLength: 0)
                     HStack(alignment: .center, spacing: 4.0) {
                         VStack(alignment: .leading) {
@@ -106,9 +136,6 @@ struct SmallestHottestWidgetView: View {
                     }.foregroundColor(.gray)
                 }
             }
-            .background(Color(UIColor.systemBackground)
-            .blur(radius: 10.0)
-            .opacity(0.5))
         }
     }
 }
@@ -124,7 +151,9 @@ struct MediumHottestWidgetView: View {
         if let stories = entry.stories, let story = stories.first {
             let story2 = stories[1]
             Link(destination: URL(string: "claw://open?url=\(story.short_id_url)") ?? URL(string: "claw://")!) {
-                Text(story.title).font(.subheadline)
+                Text(story.title)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
                     Text("\(story.submitter_user)").font(.caption)
@@ -137,7 +166,9 @@ struct MediumHottestWidgetView: View {
             Spacer()
 
             Link(destination: URL(string: "claw://open?url=\(story2.short_id_url)") ?? URL(string: "claw://")!){
-                Text(story2.title).font(.subheadline)
+                Text(story2.title)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
                     Text("\(story2.submitter_user)").font(.caption)
@@ -147,7 +178,10 @@ struct MediumHottestWidgetView: View {
                 }.foregroundColor(.gray)
             }
         } else {
-            Text("The first redacted title").font(.subheadline).redacted(reason: .placeholder)
+            Text("The first redacted title")
+                .font(.subheadline)
+                .redacted(reason: .placeholder)
+                .frame(maxWidth: .infinity, alignment: .leading)
             HStack(alignment: .center, spacing: 4.0) {
                 Text("via").font(.caption)
                 Text("username").font(.caption).redacted(reason: .placeholder)
@@ -158,7 +192,10 @@ struct MediumHottestWidgetView: View {
             
             Spacer()
             
-            Text("A second redacted title goes here").font(.subheadline).redacted(reason: .placeholder)
+            Text("A second redacted title goes here")
+                .font(.subheadline)
+                .redacted(reason: .placeholder)
+                .frame(maxWidth: .infinity, alignment: .leading)
             HStack(alignment: .center, spacing: 4.0) {
                 Text("via").font(.caption)
                 Text("username").font(.caption).redacted(reason: .placeholder)
@@ -176,7 +213,9 @@ struct LargeStoryView: View {
     var body: some View {
         if let story = story {
             Link(destination: URL(string: "claw://open?url=\(story.short_id_url)") ?? URL(string: "claw://")!) {
-                Text(story.title).font(.subheadline)
+                Text(story.title)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(alignment: .center, spacing: 4.0) {
                     Text("via").font(.caption)
                     Text("\(story.submitter_user)").font(.caption)
@@ -186,7 +225,10 @@ struct LargeStoryView: View {
                 }.foregroundColor(.gray)
             }
         } else {
-            Text("A title here but it is redacted...").font(.subheadline).redacted(reason: .placeholder)
+            Text("A title here but it is redacted...")
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .redacted(reason: .placeholder)
             HStack(alignment: .center, spacing: 4.0) {
                 Text("via").font(.caption)
                 Text("username").font(.caption).redacted(reason: .placeholder)
@@ -249,7 +291,8 @@ struct hottest_widget_Previews: PreviewProvider {
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: generic_stories))
                 .previewContext(WidgetPreviewContext(family: .systemSmall))
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: generic_stories))
-                .previewContext(WidgetPreviewContext(family: .systemSmall)).background(Color(UIColor.systemBackground)).environment(\.colorScheme, .dark)
+                .previewContext(WidgetPreviewContext(family: .systemSmall))
+                .environment(\.colorScheme, .dark)
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: generic_stories))
                 .previewContext(WidgetPreviewContext(family: .systemMedium))
             hottest_widgetEntryView(entry: SimpleEntry(date: Date(), stories: []))
