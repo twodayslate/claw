@@ -1,12 +1,22 @@
 {
+  "originHash" : "adc3cfdf7b34a50c8b76f12f317b858b90662a939a44eac70dab4e9e4ea46e6d",
   "pins" : [
     {
       "identity" : "bettersafariview",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/stleamist/BetterSafariView.git",
       "state" : {
-        "revision" : "be7248720af18c57c7a1348b20f6212379b28c6b",
-        "version" : "2.4.0"
+        "revision" : "884533749e55949b2566030948c6fdbe2873ed0c",
+        "version" : "2.4.2"
+      }
+    },
+    {
+      "identity" : "cloudkitsyncmonitor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ggruen/CloudKitSyncMonitor.git",
+      "state" : {
+        "revision" : "f84f9c074b2c55adc7dc364a4437cfe7249ae529",
+        "version" : "1.4.1"
       }
     },
     {
@@ -24,7 +34,7 @@
       "location" : "https://github.com/twodayslate/SimpleCommon",
       "state" : {
         "branch" : "main",
-        "revision" : "11053d21da683e29b439c03cf0a9edf9a01ff450"
+        "revision" : "d5b1d23d97d0cc1d2531736d698c5ec91e227329"
       }
     },
     {
@@ -32,10 +42,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
       "state" : {
-        "revision" : "6778575285177365cbad3e5b8a72f2a20583cfec",
-        "version" : "2.4.3"
+        "revision" : "3c2c7e1e72b8abd96eafbae80323c5c1e5317437",
+        "version" : "2.7.5"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

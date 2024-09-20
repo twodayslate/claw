@@ -14,7 +14,8 @@ struct clawApp: App {
     let persistenceController = PersistenceController.shared
     @StateObject var storeModel = StoreKitModel.pro
     @State var confetti = 0
-    
+    @AppStorage("owned-confetti") var owned = false
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -23,15 +24,11 @@ struct clawApp: App {
                     // this should go in the app/scene delegate if we had one
                     UIColor.additionalNameMapping[UIColor.lobsterRed] = "Lobsters Red"
                 }
-                .onChange(of: storeModel.products) { products in
-                    Task {
-                        try await Task.sleep(for: .seconds(5))
-                    }
-                }
                 .onChange(of: storeModel.owned) { isOwned in
-                    if isOwned, storeModel.hasInitialized {
+                    if isOwned, storeModel.hasInitialized, owned != isOwned {
                         confetti = confetti + 1
                     }
+                    owned = isOwned
                 }
                 .confettiCannon(counter: $confetti, num: 100)
 
