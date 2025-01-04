@@ -39,13 +39,27 @@ class ActionViewController: UIViewController {
     }
     
     func openUrl(url: URL?) {
-        let selector = sel_registerName("openURL:")
-        var responder: UIResponder? = self
-        while let r = responder, !r.responds(to: selector) {
-            responder = r.next
+        defer {
+            self.done()
         }
-        _ = responder?.perform(selector, with: url)
-        self.done()
+        guard let url else {
+            return
+        }
+
+        var responder: UIResponder? = self
+                while responder != nil {
+                    if let application = responder as? UIApplication {
+                        application.open(url, options: [:]) { success in
+                            if success {
+                                print("App opened successfully")
+                            } else {
+                                print("Failed to open app")
+                            }
+                        }
+                        break
+                    }
+                    responder = responder?.next
+                }
     }
 
     func canOpenUrl(url: URL?) -> Bool {

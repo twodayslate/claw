@@ -86,7 +86,7 @@ class NewestFetcher: ObservableObject {
     
     func more(_ story: NewestStory? = nil, completion: ((Error?)->Void)? = nil) {
         if self.stories.last == story && !isLoadingMore {
-            let url = URL(string: "https://lobste.rs/newest.json?page=\(self.page)")!
+            let url = URL(string: "https://lobste.rs/newest/page/\(self.page).json")!
             self.isLoadingMore = true
 
             self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
