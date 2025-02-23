@@ -89,7 +89,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var short_id: String
     var short_id_url: String
     var created_at: String
-    var updated_at: String
+    var last_edited_at: String
     var is_deleted: Bool
     var is_moderated: Bool
     var score: Int
@@ -100,7 +100,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var commenting_user: String
 
     static var placeholder: Comment {
-        Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", updated_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: "user")
+        Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", last_edited_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: "user")
     }
 }
 
