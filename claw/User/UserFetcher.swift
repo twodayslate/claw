@@ -16,7 +16,7 @@ class UserFetcher: ObservableObject {
     private var session: URLSessionTask? = nil
     
     func load() async throws -> NewestUser {
-        let url = URL(string: "https://lobste.rs/~" + self.username + ".json")!
+        let url = APIConfiguration.shared.userURL(username: self.username)
 
         let (data, _) = try await URLSession.shared.data(from: url)
         return try JSONDecoder().decode(NewestUser.self, from: data)

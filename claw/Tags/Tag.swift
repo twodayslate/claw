@@ -10,7 +10,7 @@ import Foundation
 struct Tag: Codable, Identifiable, Hashable {
     var id: Int
     var tag: String
-    var description: String
+    var description: String?
     var privileged: Bool
     var is_media: Bool
     var active: Bool

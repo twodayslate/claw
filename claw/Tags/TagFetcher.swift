@@ -27,7 +27,11 @@ class TagFetcher: ObservableObject {
     init() {
         Task {
             // refresh our tag list once per app instance. Since we really only use this as .shared this is once per app load
-            try? await self.load()
+            do {
+                try await self.load()
+            } catch {
+                print("Unable to fetch tags", error)
+            }
         }
     }
     
@@ -48,7 +52,7 @@ class TagFetcher: ObservableObject {
         defer {
             isLoading = false
         }
-        let url = URL(string: "https://lobste.rs/tags.json")!
+        let url = APIConfiguration.shared.tagsURL()
         
         var request = URLRequest(url: url)
         request.setUserAgent()

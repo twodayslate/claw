@@ -144,7 +144,7 @@ class StoryFetcher: ObservableObject {
         if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
-        let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
+        let url = APIConfiguration.shared.storyURL(shortId: short_id)
         
         let (data, _) = try await URLSession.shared.data(from: url)
         
@@ -170,7 +170,7 @@ class StoryFetcher: ObservableObject {
                 self.story = cachedStory
             }
         }
-        let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
+        let url = APIConfiguration.shared.storyURL(shortId: short_id)
 
         self.session?.cancel()
 
