@@ -16,6 +16,8 @@
 		F615B8B628F9C5AF00FC4730 /* Bundle+version.swift in Sources */ = {isa = PBXBuildFile; fileRef = F615B8B428F9C39200FC4730 /* Bundle+version.swift */; };
 		F61CC1BE253676FC00CC7785 /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1BD253676FC00CC7785 /* Font.swift */; };
 		F61CC1C4253A876D00CC7785 /* SettingsTextSizeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */; };
+		F621BB4E2E1F487C00F00B9C /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F621BB4D2E1F487C00F00B9C /* APIConfiguration.swift */; };
+		F621BB4F2E1F487C00F00B9C /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F621BB4D2E1F487C00F00B9C /* APIConfiguration.swift */; };
 		F6291164251038810065C3E9 /* CommentHierarchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291163251038810065C3E9 /* CommentHierarchy.swift */; };
 		F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116B251057E70065C3E9 /* WidgetKit.framework */; };
 		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
@@ -141,6 +143,7 @@
 		F615B8B428F9C39200FC4730 /* Bundle+version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+version.swift"; sourceTree = "<group>"; };
 		F61CC1BD253676FC00CC7785 /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		F61CC1C3253A876D00CC7785 /* SettingsTextSizeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTextSizeSlider.swift; sourceTree = "<group>"; };
+		F621BB4D2E1F487C00F00B9C /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
 		F6291163251038810065C3E9 /* CommentHierarchy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentHierarchy.swift; sourceTree = "<group>"; };
 		F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = hottest.widgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -277,6 +280,7 @@
 			children = (
 				F669C971250E750200B1FF42 /* StoryView.swift */,
 				F6E9EE2B251F9140005E2B1C /* StoryHeaderView.swift */,
+				F621BB4D2E1F487C00F00B9C /* APIConfiguration.swift */,
 				F669C961250C61F000B1FF42 /* StoryCell.swift */,
 				F687670C251A9501003090D2 /* StoryListCellView.swift */,
 				F669C963250C711E00B1FF42 /* Story.swift */,
@@ -674,6 +678,7 @@
 				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
 				F615B8B628F9C5AF00FC4730 /* Bundle+version.swift in Sources */,
 				F6E9EDC6251EDFB9005E2B1C /* HottestFetcher.swift in Sources */,
+				F621BB4E2E1F487C00F00B9C /* APIConfiguration.swift in Sources */,
 				F629118C25105A440065C3E9 /* NewestUser.swift in Sources */,
 				F6E9EDC1251EDFAA005E2B1C /* GenericStory.swift in Sources */,
 				F6E9EDAE251EDF90005E2B1C /* NewestFetcher.swift in Sources */,
@@ -715,6 +720,7 @@
 				F6876713251AF800003090D2 /* SafariActivity.swift in Sources */,
 				F669C976250EA56400B1FF42 /* URLView.swift in Sources */,
 				F6E9ED98251EDF4A005E2B1C /* HottestFetcher.swift in Sources */,
+				F621BB4F2E1F487C00F00B9C /* APIConfiguration.swift in Sources */,
 				F66573992AAE7DC60043B0C6 /* CommentColorPicker.swift in Sources */,
 				F66573A12AAEC83B0043B0C6 /* String+Identifiable.swift in Sources */,
 				F669C939250C5DDE00B1FF42 /* Persistence.swift in Sources */,

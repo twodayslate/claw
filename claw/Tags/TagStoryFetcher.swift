@@ -29,7 +29,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             self.items = cachedStories
         }
 
-        let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
+        let url = APIConfiguration.shared.tagStoryURL(tags: self.tags, page: self.page)
                 
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
                     do {
@@ -58,7 +58,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
             self.items = cachedStories
         }
-        let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json")!
+        let url = APIConfiguration.shared.tagStoryURL(tags: self.tags)
 
         let (data, _) = try await URLSession.shared.data(from: url)
 
@@ -75,7 +75,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     override func more(_ story: NewestStory? = nil) {
         if self.items.last == story && !isLoadingMore {
             self.isLoadingMore = true
-            let url = URL(string: "https://lobste.rs/t/\(self.tags.joined(separator: ",")).json?page=\(self.page)")!
+            let url = APIConfiguration.shared.tagStoryURL(tags: self.tags, page: self.page)
 
             self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
                 do {

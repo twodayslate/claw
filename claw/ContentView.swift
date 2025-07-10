@@ -131,7 +131,7 @@ struct ContentView: View {
         .onOpenURL(perform: { url in
             let _ = print(url)
             let openAction = {
-                if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), lobsters_url.host == "lobste.rs" {
+                if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), APIConfiguration.shared.isLobstersHost(lobsters_url.host) {
                     if lobsters_url.pathComponents.count > 2 {
                         if lobsters_url.pathComponents[1] == "s" {
                             self.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])

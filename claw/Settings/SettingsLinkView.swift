@@ -37,7 +37,8 @@ struct SettingsLinkView: View {
                     entersReaderIfAvailable: settings.readerModeEnabled,
                     barCollapsingEnabled: true
                 )
-            ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
+            )
+            .preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
         })
     }
 }

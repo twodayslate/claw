@@ -58,7 +58,7 @@ class HottestFetcher: ObservableObject {
     }
     
     func load(completion: ((Error?)->Void)? = nil) {
-        let url = URL(string: "https://lobste.rs/hottest.json?page=\(self.page)")!
+        let url = APIConfiguration.shared.hottestURL(page: self.page)
         
         self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
             do {
@@ -87,7 +87,7 @@ class HottestFetcher: ObservableObject {
     func more(_ story: NewestStory? = nil, completion: ((Error?)->Void)? = nil) {
         if self.stories.last == story && !isLoadingMore {
             self.isLoadingMore = true
-            let url = URL(string: "https://lobste.rs/page/\(self.page).json")!
+            let url = APIConfiguration.shared.hottestPageURL(page: self.page)
 
             self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
                 do {
