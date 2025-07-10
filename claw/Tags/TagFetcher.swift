@@ -27,7 +27,11 @@ class TagFetcher: ObservableObject {
     init() {
         Task {
             // refresh our tag list once per app instance. Since we really only use this as .shared this is once per app load
-            try? await self.load()
+            do {
+                try await self.load()
+            } catch {
+                print("unable to load tags", error)
+            }
         }
     }
     
