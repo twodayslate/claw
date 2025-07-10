@@ -25,125 +25,17 @@ struct SelectedTagsView: View {
 
 let alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
-/// https://stackoverflow.com/a/58901508/193772
-struct DestinationDataKey: PreferenceKey {
-    typealias Value = [DestinationData]
-
-    static var defaultValue: [DestinationData] = []
-
-    static func reduce(value: inout [DestinationData], nextValue: () -> [DestinationData]) {
-        value.append(contentsOf: nextValue())
-    }
-}
-
-struct DestinationData: Equatable {
-    let destination: String
-    let frame: CGRect
-}
-
-struct DestinationDataSetter: View {
-    let destination: String
-
-    var body: some View {
-        GeometryReader { geometry in
-            Rectangle()
-                .fill(Color.clear)
-                .preference(key: DestinationDataKey.self,
-                            value: [DestinationData(destination: self.destination, frame: geometry.frame(in: .global))])
-        }
-    }
-}
-
-/// https://stackoverflow.com/questions/58809357/swiftui-list-with-section-index-on-right-hand-side
 struct SelectTagsView: View {
     @Binding var tags: [String]
     
     @ObservedObject var fetcher = TagFetcher.shared
     
-    @GestureState var longPressGestureState = false
-    
-    @State var destinations: [String: CGRect] = [:]
-    
     @ObservedObject var searchBar = SearchBar()
-    
-    @State var lastScrolledId: String? = nil
     
     @EnvironmentObject var settings: Settings
     
     var body: some View {
-        ScrollViewReader { scrollReader in
-            ZStack(alignment: .topTrailing) {
-                body_list
-                
-                VStack(alignment: .trailing) {
-                    Spacer().background(DestinationDataSetter(destination: "top"))
-                    ForEach(alphabet, id: \.self) { letter in
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                print("letter = \(letter)")
-                                //need to figure out if there is a name in this section before I allow scrollto or it will crash
-                                if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == letter }) != nil {
-                                    UISelectionFeedbackGenerator().selectionChanged()
-                                    //withAnimation {
-                                    scrollReader.scrollTo(letter, anchor: .top)
-                                    //}
-                                }
-                            }, label: {
-                                Text(letter)
-                                    .font(.system(size: 12))
-                                    .padding(.trailing, 7).background(DestinationDataSetter(destination: letter))
-                            })
-                        }
-                    }
-                    Spacer().background(DestinationDataSetter(destination: "bottom"))
-                }
-                .ignoresSafeArea(.keyboard, edges: .all)
-                .zIndex(1.0)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0.0, coordinateSpace: .global)
-                        .onChanged({ action in
-                            print("drag letter", action, action.location, self.destinations)
-                            for (id, frame) in self.destinations {
-                                if frame.insetBy(dx: -20, dy: 0).contains(action.location) {
-                                    print("letter", id)
-                                    DispatchQueue.main.async {
-                                        if fetcher.tags.first(where: { $0.tag.prefix(1).uppercased() == id }) != nil {
-                                            if lastScrolledId != id {
-                                                UISelectionFeedbackGenerator().selectionChanged()
-                                            }
-                                            self.lastScrolledId = id
-                                            scrollReader.scrollTo(id, anchor: .top)
-                                        } else if id == "top" {
-                                            scrollReader.scrollTo(id, anchor: .top)
-                                        } else if id == "bottom" {
-                                            scrollReader.scrollTo("bottom", anchor: .top)
-                                        }
-                                    }
-                                }
-                            }
-                        }).onEnded({ action in
-                            self.lastScrolledId = nil
-                        }))
-            }.onPreferenceChange(DestinationDataKey.self) { preferences in
-                for p in preferences {
-                    self.destinations[p.destination] = p.frame
-                }
-            }
-            .task {
-                do {
-                    try await self.fetcher.loadIfEmpty()
-                } catch {
-                    // todo: set and use error
-                }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    var body_list: some View {
         List {
-            EmptyView().id("top")
             ForEach(alphabet, id: \.self) { letter in
                 let filtered = fetcher.tags.filter({$0.tag.prefix(1).uppercased() == letter && (self.searchBar.text.isEmpty ||  $0.tag.lowercased().contains(self.searchBar.text.lowercased())) })
                 listSection(letter: letter, items: filtered)
@@ -151,16 +43,23 @@ struct SelectTagsView: View {
             bottom_list_item
         }
         .listStyle(PlainListStyle())
+        .listSectionIndexVisibility(.visible)
         .add(self.searchBar)
+        .task {
+            do {
+                try await self.fetcher.loadIfEmpty()
+            } catch {
+                // todo: set and use error
+            }
+        }
     }
     
     @ViewBuilder
     var bottom_list_item: some View {
-        HStack {
-            Spacer()
-            Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
-            Spacer()
-        }.id("bottom")
+        Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .listSectionSeparator(.hidden)
+
     }
     
     @ViewBuilder
@@ -181,7 +80,9 @@ struct SelectTagsView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text("\(tag.tag)").bold()
-                                Text("\(tag.description)").foregroundColor(.gray)
+                                if let description = tag.description, !description.isEmpty {
+                                    Text(description).foregroundColor(.gray)
+                                }
                             }
                             Spacer()
                             if tags.contains(where: {$0 == tag.tag}) {
@@ -191,7 +92,7 @@ struct SelectTagsView: View {
                     })
                 }
             }
-            .id(letter)
+            .sectionIndexLabel(letter)
         }
     }
 }
