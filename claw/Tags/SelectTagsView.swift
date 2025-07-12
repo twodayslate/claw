@@ -20,13 +20,20 @@ struct SelectTagsView: View {
 
     private var groupedTags: [(String, [Tag])] {
         let filteredTags = fetcher.tags.filter { tag in
-            searchText.isEmpty || tag.tag.lowercased().contains(searchText.lowercased())
+            if searchText.isEmpty {
+                return true
+            }
+            
+            let searchLower = searchText.lowercased()
+            let tagMatches = tag.tag.lowercased().contains(searchLower)
+            let descriptionMatches = tag.description?.lowercased().contains(searchLower) ?? false
+            
+            return tagMatches || descriptionMatches
         }
         
         let grouped = Dictionary(grouping: filteredTags) { tag in
             String(tag.tag.prefix(1).uppercased())
         }
-        
         return grouped.sorted { $0.key < $1.key }.compactMap { ($0.key, $0.value) }
     }
 
