@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-
-let alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
-
 struct SelectTagsView: View {
     @Binding var tags: [String]
     
@@ -22,16 +18,27 @@ struct SelectTagsView: View {
 
     @State var error: Error?
 
+    private var groupedTags: [(String, [Tag])] {
+        let filteredTags = fetcher.tags.filter { tag in
+            searchText.isEmpty || tag.tag.lowercased().contains(searchText.lowercased())
+        }
+        
+        let grouped = Dictionary(grouping: filteredTags) { tag in
+            String(tag.tag.prefix(1).uppercased())
+        }
+        
+        return grouped.sorted { $0.key < $1.key }.compactMap { ($0.key, $0.value) }
+    }
+
     var body: some View {
         List {
-            ForEach(alphabet, id: \.self) { letter in
-                let filtered = fetcher.tags.filter({$0.tag.prefix(1).uppercased() == letter && (searchText.isEmpty ||  $0.tag.lowercased().contains(searchText.lowercased())) })
-                listSection(letter: letter, items: filtered)
+            ForEach(groupedTags, id: \.0) { letter, tagList in
+                listSection(letter: letter, items: tagList)
             }
-            bottom_list_item
+            tagCount
         }
         .listStyle(PlainListStyle())
-        .listSectionIndexVisibility(.visible)
+        .listSectionIndexVisibility(.automatic)
         .searchable(text: $searchText, prompt: "Search tags...")
         .task {
             do {
@@ -50,7 +57,7 @@ struct SelectTagsView: View {
     }
     
     @ViewBuilder
-    var bottom_list_item: some View {
+    var tagCount: some View {
         Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
             .frame(maxWidth: .infinity, alignment: .center)
             .listSectionSeparator(.hidden)
