@@ -43,7 +43,7 @@ class TagFetcher: ObservableObject {
         }
     }
     
-    private func load() async throws {
+    func load() async throws {
         if isLoading {
             return
         }
