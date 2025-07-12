@@ -51,7 +51,7 @@ struct SelectTagsView: View {
             do {
                 try await self.fetcher.loadIfEmpty()
             } catch {
-                // todo: set and use error
+                self.error = error
             }
         }
         .refreshable {
@@ -59,6 +59,15 @@ struct SelectTagsView: View {
                 try await fetcher.load()
             } catch {
                 self.error = error
+            }
+        }
+        .alert("Error", isPresented: .constant(error != nil)) {
+            Button("OK") {
+                error = nil
+            }
+        } message: {
+            if let error = error {
+                Text(error.localizedDescription)
             }
         }
     }
