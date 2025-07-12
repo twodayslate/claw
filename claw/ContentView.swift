@@ -127,7 +127,9 @@ struct ContentView: View {
                 Image(systemName: "gear")
                 Text("Settings")
             }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
-        }.environment(\.didReselect, didReselect.eraseToAnyPublisher())
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .environment(\.didReselect, didReselect.eraseToAnyPublisher())
         .onOpenURL(perform: { url in
             let _ = print(url)
             let openAction = {

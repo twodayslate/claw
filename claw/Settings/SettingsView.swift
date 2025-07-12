@@ -39,7 +39,7 @@ struct SettingsView: View {
     @Environment(\.sizeCategory) var sizeCategory
     
     var body: some View {
-        List {
+        Form {
             Section(
                 header:
                     Text("Appearance")
@@ -140,10 +140,10 @@ struct SettingsView: View {
                 SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
             }
         }
+        .formStyle(.grouped)
         .sheet(isPresented: $isShowingMailView) {
             SimpleMailView(result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
         }
-        .listStyle(GroupedListStyle())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task {
