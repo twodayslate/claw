@@ -12,20 +12,23 @@ struct NewestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if newest.stories.count <= 0 {
+                    if newest.items.count <= 0 {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     }
-                    ForEach(newest.stories) { story in
+                    ForEach(newest.items) { story in
                         StoryListCellView(story: story).id(story).task {
-                            withAnimation(.easeIn, {
-                                newest.more(story)
-                            })
+                            do {
+                                try await newest.more(story)
+                            } catch {
+                                print("error", error)
+                            }
                         }
                         Divider().padding(0).padding([.leading])
                     }
+                    .animation(.default, value: newest.items)
                     if newest.isLoadingMore {
                         HStack {
                             Spacer()
@@ -44,17 +47,24 @@ struct NewestView: View {
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {
-                                scrollProxy.scrollTo(newest.stories.first)
+                                scrollProxy.scrollTo(newest.items.first)
                             }
                         }
                        
                     }
                 }
             }
+            .task {
+                do {
+                    try await newest.loadIfEmpty()
+                } catch {
+                    print("error", error)
+                }
+            }
             .refreshable {
                 await Task {
                     do {
-                        try await self.newest.refresh()
+                        try await self.newest.reload()
                     } catch {
                         // no-op
                     }

@@ -36,7 +36,11 @@ struct TagStoryView: View {
                     }
                     ForEach(stories.items) { story in
                         StoryListCellView(story: story).id(story).task {
-                            self.stories.more(story)
+                            do {
+                                try await self.stories.more(story)
+                            } catch {
+                                print("error", error)
+                            }
                         }
                         Divider().padding(0).padding([.leading])
                     }
@@ -51,13 +55,17 @@ struct TagStoryView: View {
                     self.isVisible = false
                 })
                 .task {
-                    self.stories.loadIfEmpty()
+                    do {
+                        try await self.stories.loadIfEmpty()
+                    } catch {
+                        print("error", error)
+                    }
                 }
                 .task {
                     do {
                         try await self.tags.loadIfEmpty()
                     } catch {
-                        // todo: set and use error
+                        print("error", error)
                     }
                 }
                 .onAppear {
@@ -78,7 +86,7 @@ struct TagStoryView: View {
             .refreshable {
                 await Task {
                     do {
-                        try await stories.refresh()
+                        try await stories.reload()
                     } catch {
                         // no-op
                     }

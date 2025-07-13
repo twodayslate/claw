@@ -11,8 +11,8 @@ struct SettingsLayoutSlider: View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if HottestFetcher.cachedStories.count > 0 {
-                        ForEach(HottestFetcher.cachedStories) { story in
+                    if HottestFetcher.shared.items.count > 0 {
+                        ForEach(HottestFetcher.shared.items) { story in
                             StoryListCellView(story: story).allowsHitTesting(false)
                             Divider().padding(0).padding([.leading])
                         }

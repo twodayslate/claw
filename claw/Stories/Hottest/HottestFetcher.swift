@@ -2,121 +2,47 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class HottestFetcher: ObservableObject {
-    @Published var stories = HottestFetcher.cachedStories
-    
-    static var cachedStories = [NewestStory]()
-    
-    @Published var isLoadingMore = false
-    @Published var isReloading = false
-    
+class HottestFetcher: GenericArrayFetcher<NewestStory> {
+
     // we need a shared object as a not singleton will be deinitialized after about 2
     // navigation views deep
     static var shared = HottestFetcher()
     
-    init() {
-        load()
-    }
-    
-    deinit {
-        self.session?.cancel()
-        self.moreSession?.cancel()
-    }
-    
-    private var session: URLSessionTask? = nil
-    private var moreSession: URLSessionTask? = nil
-    
-    func reload() {
-        self.session?.cancel()
-        self.page = 1
-        self.isReloading = true
-        self.load(completion: { _ in
-            DispatchQueue.main.async {
-                self.isReloading = false
-            }
-        })
-    }
-
-    func refresh() async throws {
-        self.session?.cancel()
-        self.page = 1
-        self.isReloading = true
-        try await withCheckedThrowingContinuation { continuation in
-            self.load { error in
-                DispatchQueue.main.async {
-                    self.isReloading = false
-                    if error == nil {
-                        continuation.resume()
-                        return
-                    }
-                    if let error {
-                        continuation.resume(throwing: error)
-                    }
-                }
-            }
+    override func load() async throws {
+        if isLoading {
+            return
         }
-    }
-    
-    func load(completion: ((Error?)->Void)? = nil) {
+        page = 1
+        isLoading = true
+        defer {
+            isLoading = false
+        }
         let url = APIConfiguration.shared.hottestURL(page: self.page)
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: data)
         
-        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-            do {
-                if let d = data {
-                    let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                    DispatchQueue.main.async {
-                        HottestFetcher.cachedStories = decodedLists
-                        self.stories = decodedLists
-                        self.page += 1
-                        completion?(nil)
-                    }
-                } else {
-                    print("No Data for hottest")
-                    completion?(nil) // todo: actually throw an error
-                }
-            } catch {
-                print ("Error fetching hottest \(error)")
-                completion?(error)
-            }
-        }
-        self.session?.resume()
+        self.items = decodedLists
+        self.page += 1
     }
 
-    var page: Int = 1
-
-    func more(_ story: NewestStory? = nil, completion: ((Error?)->Void)? = nil) {
-        if self.stories.last == story && !isLoadingMore {
-            self.isLoadingMore = true
-            let url = APIConfiguration.shared.hottestPageURL(page: self.page)
-
-            self.moreSession = URLSession.shared.dataTask(with: url) { (data,response,error) in
-                do {
-                    if let d = data {
-                        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                        DispatchQueue.main.async {
-                            let stories = decodedLists
-                            for story in stories {
-                                if !self.stories.contains(story) {
-                                    self.stories.append(story)
-                                }
-                            }
-                            HottestFetcher.cachedStories = self.stories
-                            self.page += 1
-                            completion?(nil)
-                        }
-                    }else {
-                        print("No Data for more hottest")
-                        completion?(nil) // todo: throw actual error
-                    }
-                } catch {
-                    print ("Error fetching hottest more \(error)")
-                    completion?(error)
-                }
-                DispatchQueue.main.async {
-                    self.isLoadingMore = false
-                }
-            }
-            self.moreSession?.resume()
+    override func more(_ story: NewestStory? = nil) async throws {
+        guard self.items.last == story && !isLoadingMore else {
+            return
         }
+        let url = APIConfiguration.shared.hottestPageURL(page: self.page)
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: data)
+
+        let stories = decodedLists
+        for story in stories {
+            if !self.items.contains(story) {
+                self.items.append(story)
+            }
+        }
+        self.page += 1
+
     }
 }
