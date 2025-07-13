@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import StoreKit
 
 struct Pro: View {
@@ -394,7 +395,7 @@ struct Pro: View {
                         .strokeBorder(Color(UIColor.opaqueSeparator), lineWidth: 2)
                         .overlay {
                             HStack(spacing: 4) {
-                                let colors = Settings.CommentColorScheme.default.colors
+                                let colors = CommentColorScheme.default.colors
                                 ForEach(Array(zip(colors.indices, colors)), id: \.0) { index, color in
                                     RoundedRectangle(cornerRadius: 2)
                                         .fill(color)
@@ -500,8 +501,7 @@ struct Pro: View {
 struct ProPreview: PreviewProvider {
     static var previews: some View {
         Pro()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

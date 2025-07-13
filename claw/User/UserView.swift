@@ -8,7 +8,7 @@ struct UserView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     
     init(_ user: NewestUser) {
@@ -137,7 +137,8 @@ struct UserView_Previews: PreviewProvider {
             UserView(.placeholder)
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
     }
 }

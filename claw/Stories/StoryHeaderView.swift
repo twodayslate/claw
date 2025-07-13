@@ -1,9 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T
         
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
     
@@ -91,7 +92,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description.trimmingCharacters(in: .whitespacesAndNewlines))
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)
+                        URLView(link: link).environmentObject(urlToOpen)
                     }
                 }.padding()
             }

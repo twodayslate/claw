@@ -9,7 +9,7 @@ import SwiftUI
 
 struct URLView: View {
     var link: HTMLLink
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     @EnvironmentObject var observableSheet: ObservableActiveSheet
     
@@ -71,7 +71,8 @@ struct URLView_Previews: PreviewProvider {
             .environment(\.colorScheme, .dark)
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
     }
 }

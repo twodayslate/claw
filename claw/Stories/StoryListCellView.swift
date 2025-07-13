@@ -8,7 +8,7 @@ public class ObservableActiveSheet: ObservableObject {
 
 struct StoryListCellView: View {
     var story: NewestStory
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     @State var activeSheet: ActiveSheet?
     @State var backgroundColorState = Color(UIColor.systemBackground)
@@ -21,7 +21,7 @@ struct StoryListCellView: View {
             destination: StoryView(story),
             isActive: $navigationLinkActive,
             label: { EmptyView() })
-            StoryCell(story: story).environmentObject(settings)
+            StoryCell(story: story)
                 .padding([.horizontal]).padding([.vertical], settings.layout > .compact ? 8.0 : 4.0).background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems:{
             if story.url.isEmpty {
                 Button(action: {

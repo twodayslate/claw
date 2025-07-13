@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 import BetterSafariView
 import SimpleCommon
@@ -10,7 +11,7 @@ struct SettingsLinkView: View {
     var url: String
     var iconColor: Color = Color.accentColor
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     
     var body: some View {
@@ -47,11 +48,13 @@ struct SettingsLinkView_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
-            SettingsLinkView(text: "Hello World", url: "https://zac.gorak.us").environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            SettingsLinkView(text: "Hello World", url: "https://zac.gorak.us")
             SettingsLinkView(systemImage: "square",  text: "Hello Square", url: "https://zac.gorak.us", iconColor: .red)
             SettingsLinkView(image: "twitter",  text: "Hello Square", url: "https://zac.gorak.us", iconColor: .blue)
+        }
+        .previewLayout(.sizeThatFits)
+            .environment(SettingsV2())
+            .modelContainer(PersistenceControllerV2.preview.container)
 
-        }.previewLayout(.sizeThatFits)
-        
     }
 }

@@ -1,5 +1,5 @@
 import SwiftUI
-import CoreData
+import SwiftData
 import Combine
 
 import BetterSafariView
@@ -27,7 +27,7 @@ enum TabSelection: String {
 /** https://stackoverflow.com/a/64019877/193772 */
 struct NavigableTabViewItem<Content: View, TabItem: View>: View {
     @Environment(\.didReselect) var didReselect
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.dismiss) private var dismiss
     
     let tabSelection: TabSelection
@@ -46,7 +46,7 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
         }).eraseToAnyPublisher()
 
         NavigationView {
-                self.content.environmentObject(settings).onReceive(didReselect) { _ in
+                self.content.onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         dismiss()
                     }
@@ -61,17 +61,15 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
 }
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-        
-    @FetchRequest(fetchRequest: Settings.fetchAllRequest()) var all_settings: FetchedResults<Settings>
+    @Environment(\.modelContext) private var modelContext
+    @Query(Settings.fetchLatestDescriptor) var allSettings: [Settings]
             
     var settings: Settings {
-        if let first = self.all_settings.first {
+        if let first = self.allSettings.first {
             if UIApplication.shared.alternateIconName != first.alternateIconName {
                 UIApplication.shared.setAlternateIconName(first.alternateIconName, completionHandler: {error in
                     if let _ = error {
                         first.alternateIconName = nil
-                        try? first.managedObjectContext?.save()
                         return
                     }
                 })
@@ -79,7 +77,9 @@ struct ContentView: View {
             return first
         }
 
-        return Settings(context: viewContext)
+        let newSettings = Settings()
+        modelContext.insert(newSettings)
+        return newSettings
     }
 
     @AppStorage("contentViewSelection") private var _selection: TabSelection = .Hottest
@@ -105,28 +105,28 @@ struct ContentView: View {
             }, tabItem: {
                 _selection == .Hottest ? Image(systemName: "flame.fill") : Image(systemName: "flame")
                 Text("Hottest")
-            }).environmentObject(settings)
+            })
             
             NavigableTabViewItem(tabSelection: TabSelection.Newest, content: {
                     NewestView()
             }, tabItem: {
                 _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
                 Text("Newest")
-            }).environmentObject(settings)
+            })
             
             NavigableTabViewItem(tabSelection: TabSelection.Tags, content: {
                     SelectedTagsView()
             }, tabItem: {
                 _selection == .Tags ? Image(systemName: "tag.fill") : Image(systemName: "tag")
                 Text("Tags")
-            }).environmentObject(settings)
+            })
 
             NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
                     SettingsView()
             }, tabItem: {
                 Image(systemName: "gear")
                 Text("Settings")
-            }).environmentObject(settings).environment(\.managedObjectContext, viewContext)
+            })
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .environment(\.didReselect, didReselect.eraseToAnyPublisher())
@@ -172,9 +172,8 @@ struct ContentView: View {
                     StoryView(id).id(id)
                 }.id(id)
                 .environmentObject(urlToOpen)
-                .environmentObject(settings)
+                .environment(settings)
                 .environmentObject(self.observableSheet)
-                .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
                     return handleUrl(url)
                 })
@@ -183,9 +182,8 @@ struct ContentView: View {
                     UserView(username).id(username)
                 }.id(username)
                 .environmentObject(urlToOpen)
-                .environmentObject(settings)
+                .environment(settings)
                 .environmentObject(self.observableSheet)
-                .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
                     return handleUrl(url)
                 })
@@ -197,9 +195,8 @@ struct ContentView: View {
                     }
                 }
                 .environmentObject(urlToOpen)
-                .environmentObject(settings)
+                .environment(self.settings)
                 .environmentObject(self.observableSheet)
-                .environment(\.managedObjectContext, viewContext)
                 .environment(\.openURL, OpenURLAction { url in
                     return handleUrl(url)
                 })
@@ -209,8 +206,7 @@ struct ContentView: View {
                 SimplePanel {
                     Text("Error: \(item.debugDescription)")
                 }
-                .environmentObject(settings)
-                .environment(\.managedObjectContext, viewContext)
+                .environment(self.settings)
                 .environmentObject(self.observableSheet)
                 .environmentObject(urlToOpen)
                 .environment(\.openURL, OpenURLAction { url in
@@ -218,8 +214,7 @@ struct ContentView: View {
                 })
             }
         })
-        .environmentObject(settings)
-        .environment(\.managedObjectContext, viewContext)
+        .environment(settings)
         .environmentObject(self.observableSheet)
         .environmentObject(urlToOpen)
         .tint(settings.accentColor)
@@ -250,6 +245,6 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        ContentView().modelContainer(PersistenceControllerV2.preview.container)
     }
 }

@@ -14,7 +14,7 @@ struct SelectTagsView: View {
     
     @State private var searchText = ""
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
 
     @State var error: Error?
 

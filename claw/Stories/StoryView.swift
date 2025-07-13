@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 import BetterSafariView
 import SimpleCommon
@@ -40,11 +41,11 @@ struct StoryView: View {
         
     @State var activeSheet: ActiveSheet?
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
-    @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
+    @Query(ViewedItem.fetchAllDescriptor) var viewedItems: [ViewedItem]
     
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.modelContext) private var modelContext
     
     @State private var scrollViewContentOffset = CGFloat(0)
     
@@ -57,13 +58,13 @@ struct StoryView: View {
             SimpleScrollView(contentOffset: $scrollViewContentOffset) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let story = story.story {
-                        StoryHeaderView<Story>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen).environmentObject(observableSheet)
+                        StoryHeaderView<Story>(story: story).id(0).environmentObject(urlToOpen).environmentObject(observableSheet)
                     }
                     else if let story = from_newest  {
-                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(settings).environmentObject(urlToOpen)
+                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
                             .environmentObject(observableSheet)
                     } else {
-                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).environmentObject(settings).redacted(reason: .placeholder).allowsHitTesting(false)
+                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
                     }
                     Divider()
                     if let my_story = story.story {
@@ -85,7 +86,7 @@ struct StoryView: View {
                                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                                     }
                                     ForEach(html.links, id: \.self) { link in
-                                        URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)
+                                        URLView(link: link).environmentObject(urlToOpen)
                                     }
                                 }
                             }).padding([.bottom])
@@ -148,8 +149,8 @@ struct StoryView: View {
                     element.short_id == story.short_id && element.isStory
                 }
                 if !contains {
-                    viewContext.insert(ViewedItem(context: viewContext, short_id: story.short_id!, isStory: true, isComment: false))
-                    try? viewContext.save()
+                    let newViewedItem = ViewedItem(short_id: story.short_id!, isStory: true, isComment: false)
+                    modelContext.insert(newViewedItem)
                 }
             }
             .refreshable {
