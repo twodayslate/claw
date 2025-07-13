@@ -24,11 +24,11 @@ struct clawApp: App {
                     // this should go in the app/scene delegate if we had one
                     UIColor.additionalNameMapping[UIColor.lobsterRed] = "Lobsters Red"
                 }
-                .onChange(of: storeModel.owned) { isOwned in
-                    if isOwned, storeModel.hasInitialized, owned != isOwned {
+                .onChange(of: storeModel.owned) {
+                    if storeModel.owned, storeModel.hasInitialized, owned != storeModel.owned {
                         confetti = confetti + 1
                     }
-                    owned = isOwned
+                    owned = storeModel.owned
                 }
                 .confettiCannon(counter: $confetti, num: 100)
 

@@ -95,7 +95,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                     }
                 }.padding()
             }
-        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+        }.onTapGesture(count: 1, perform: {
             if !story.url.isEmpty {
                 guard let url = URL(string: story.url) else {
                     // show error

@@ -7,7 +7,7 @@ struct StoryView: View {
     var short_id: String
     var from_newest: NewestStory?
     @Environment(\.didReselect) var didReselect
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     @StateObject var story = StoryFetcher()
     
     init(_ short_id: String) {
@@ -137,7 +137,7 @@ struct StoryView: View {
                             scrollReader.scrollTo(0)
                         }
                     } else {
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
             }

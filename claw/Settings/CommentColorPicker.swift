@@ -105,37 +105,37 @@ struct CommentColorPicker: View {
                 break
             }
         }
-        .onChange(of: customColorOne) { _ in
+        .onChange(of: customColorOne) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorTwo) { _ in
+        .onChange(of: customColorTwo) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorThree) { _ in
+        .onChange(of: customColorThree) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorFour) { _ in
+        .onChange(of: customColorFour) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorFive) { _ in
+        .onChange(of: customColorFive) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorSix) { _ in
+        .onChange(of: customColorSix) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorSeven) { _ in
+        .onChange(of: customColorSeven) {
             Task {
                 onlySaveIfCustom()
             }
