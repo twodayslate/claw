@@ -18,6 +18,13 @@ struct SelectTagsView: View {
 
     @State var error: Error?
 
+    private var missingTags: [String] {
+        let fetcherTagNames = Set(fetcher.tags.map { $0.tag })
+        return tags.filter { tag in
+            !fetcherTagNames.contains(tag) && (searchText.isEmpty || tag.lowercased().contains(searchText.lowercased()))
+        }
+    }
+
     private var groupedTags: [(String, [Tag])] {
         let filteredTags = fetcher.tags.filter { tag in
             if searchText.isEmpty {
@@ -39,6 +46,11 @@ struct SelectTagsView: View {
 
     var body: some View {
         List {
+            // Show missing tags at the top if any exist
+            if !missingTags.isEmpty {
+                missingTagsSection
+            }
+            
             ForEach(groupedTags, id: \.0) { letter, tagList in
                 listSection(letter: letter, items: tagList)
             }
@@ -61,13 +73,27 @@ struct SelectTagsView: View {
                 self.error = error
             }
         }
-        .alert("Error", isPresented: .constant(error != nil)) {
-            Button("OK") {
-                error = nil
-            }
-        } message: {
-            if let error = error {
-                Text(error.localizedDescription)
+        .errorAlert(error: $error)
+    }
+    
+    @ViewBuilder
+    var missingTagsSection: some View {
+        Section(header: Text("Selected")) {
+            ForEach(missingTags, id: \.self) { tag in
+                Button(action: {
+                    if tags.count > 1 {
+                        tags.removeAll(where: {$0 == tag})
+                        UserDefaults.standard.set(self.tags, forKey: "selectedTags")
+                    }
+                }, label: {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(tag).bold()
+                        }
+                        Spacer()
+                        Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
+                    }
+                })
             }
         }
     }
@@ -81,7 +107,7 @@ struct SelectTagsView: View {
             .listSectionSeparator(.hidden)
 
     }
-    
+
     @ViewBuilder
     func listSection(letter: String, items filtered: [Tag]) -> some View {
         if filtered.count > 0 {

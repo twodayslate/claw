@@ -7,7 +7,8 @@ struct HottestView: View {
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
-    
+    @State var error: Error?
+
     var body: some View {
         ScrollViewReader { scrollProxy in
             ScrollView {
@@ -58,7 +59,7 @@ struct HottestView: View {
                 do {
                     try await hottest.loadIfEmpty()
                 } catch {
-                    print("error", error)
+                    self.error = error
                 }
             }
             .refreshable {
@@ -66,10 +67,11 @@ struct HottestView: View {
                     do {
                         try await self.hottest.reload()
                     } catch {
-                        // no-op
+                        self.error = error
                     }
                 }.value
             }
+            .errorAlert(error: $error)
         }
     }
 }

@@ -9,7 +9,9 @@ struct TagStoryView: View {
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
-    
+
+    @State var error: Error?
+
     init(tags: [String]) {
         self.stories = TagStoryFetcher(tags: tags)
     }
@@ -21,8 +23,8 @@ struct TagStoryView: View {
         ScrollViewReader { scrollProxy in
             SimpleScrollView(contentOffset: $scrollViewContentOffset) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if self.stories.tags.count == 1, let tag = tags.tags.first(where: {$0.tag == self.stories.tags.first }) {
-                        Text("\(tag.description)").id(0).padding().foregroundColor(.gray)
+                    if self.stories.tags.count == 1, let tag = tags.tags.first(where: {$0.tag == self.stories.tags.first }), let description = tag.description {
+                        Text("\(description)").id(0).padding().foregroundColor(.gray)
                         Divider().padding(0).padding([.leading])
                     } else {
                         Divider().id(0).padding(0).padding([.leading])
@@ -54,18 +56,19 @@ struct TagStoryView: View {
                 }.onDisappear(perform: {
                     self.isVisible = false
                 })
+                .animation(.default, value: stories.items)
                 .task {
                     do {
                         try await self.stories.loadIfEmpty()
                     } catch {
-                        print("error", error)
+                        self.error = error
                     }
                 }
                 .task {
                     do {
                         try await self.tags.loadIfEmpty()
                     } catch {
-                        print("error", error)
+                        self.error = error
                     }
                 }
                 .onAppear {
@@ -88,10 +91,11 @@ struct TagStoryView: View {
                     do {
                         try await stories.reload()
                     } catch {
-                        // no-op
+                        self.error = error
                     }
                 }.value
             }
+            .errorAlert(error: $error)
         }
     }
 }

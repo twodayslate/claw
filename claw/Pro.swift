@@ -122,11 +122,7 @@ struct Pro: View {
                 }
             }
         }
-        .alert("Failed to purchase!", isPresented: .init(get: { error != nil }, set: { _ in error = nil }), actions: {}, message: {
-            if let error {
-                Text(error.localizedDescription)
-            }
-        })
+        .errorAlert("Failed to purchase!", error: $error)
     }
 
     @ViewBuilder
