@@ -85,7 +85,7 @@ struct AppIconChooserView: View {
                         HStack {
                             Spacer()
                             Text("Unlock Supporter Icons")
-                                .font(.headline)
+                                .font(style: .headline)
                                 .foregroundColor(.accentColor)
                                 .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
                             Spacer()
@@ -100,5 +100,6 @@ struct AppIconChooserView: View {
         .alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
+        .font(style: .body)
     }
 }

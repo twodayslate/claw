@@ -31,7 +31,7 @@ struct TagView: View {
             title: tag,
             withChevron: false) {
                 Text(tag)
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))
+                    .font(style: .footnote)
                     .fixedSize(horizontal: true, vertical: false)
                     .lineLimit(1)
                     .foregroundColor(foregroundColor)

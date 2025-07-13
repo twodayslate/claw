@@ -34,9 +34,14 @@ struct StoryCell: View {
                 }
                 
                 VStack(alignment: .leading) {
-                    Text(story.title).font(Font(.headline, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(Color.accentColor.opacity(contains ? 0.69 : 1.0))
+                    Text(story.title)
+                        .font(style: .headline)
+                        .foregroundColor(Color.accentColor
+                        .opacity(contains ? 0.69 : 1.0))
                     if settings.layout > .compact {
-                        Text(URL(string: story.url)?.host ?? "").foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
+                        Text(URL(string: story.url)?.host ?? "")
+                            .font(style: .callout)
+                            .foregroundColor(Color.secondary)
                     }
                     if settings.layout > .compact {
                         TagList(tags: story.tags)
@@ -48,7 +53,8 @@ struct StoryCell: View {
                                 .foregroundColor(story.user_is_author == true ? .blue : .gray) +
                             Text(" " +
                                  story.time_ago).foregroundColor(Color.secondary)
-                        }.font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
+                        }
+                        .font(style: .subheadline)
                         Spacer()
                         SGNavigationLink(destination: StoryView(story), withChevron: false) {
                             if story.comment_count == 1 {
@@ -56,7 +62,8 @@ struct StoryCell: View {
                             } else {
                                 Text("\(story.comment_count) comments").foregroundColor(Color.secondary)
                             }
-                        }.fixedSize().font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
+                        }.fixedSize()
+                            .font(style: .subheadline)
                     }
                 }
             }

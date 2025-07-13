@@ -67,13 +67,13 @@ struct Pro: View {
                             }
                             Spacer()
                         }
-                        .font(.headline)
+                        .font(style: .headline)
                         developerMessage
                         reviews
                         Group {
                             Text("Reviews have been anonymized. Payment will be charged to your Apple ID account at the confirmation of purchase. The subscription automatically renews unless it is canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase. ") + privacyAndTerms()
                         }
-                        .font(.caption2)
+                        .font(style: .caption2)
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                         .tint(Color(UIColor.secondaryLabel).opacity(0.7))
                         subscribeBar
@@ -182,14 +182,14 @@ struct Pro: View {
                 Spacer(minLength: 0)
             }
             Text(title)
-                .font(.subheadline)
+                .font(style: .subheadline)
                 .bold()
             Text(text)
-                .font(.footnote)
+                .font(style: .footnote)
             HStack {
                 Spacer(minLength: 0)
                 Text("- \(author)")
-                    .font(.caption2)
+                    .font(style: .caption2)
                     .italic()
                     .opacity(0.8)
             }
@@ -214,7 +214,7 @@ struct Pro: View {
             }
             .padding(.bottom, 2)
             Text("Although this application is open source and you can compile/run it for free, I want to thank you all for your awesome support! Your enthusiasm and support mean the world to me - it's what keeps me motivated and excited about what I do. With your help, I can keep improving and adding cool features that make your experience even better. You're a key part of this journey, and I'm thrilled to have you on board. Thanks for being awesome!")
-                .font(.subheadline)
+                .font(style: .subheadline)
                 .opacity(0.9)
                 .italic()
                 .padding(.leading, 12)
@@ -230,7 +230,7 @@ struct Pro: View {
         VStack {
             HStack {
                 Text("Subscribe")
-                    .font(.title3)
+                    .font(style: .title3)
                     .bold()
                     .foregroundColor(Color(UIColor.label).opacity(0.8))
                 Spacer()
@@ -306,12 +306,12 @@ struct Pro: View {
             } label: {
                 VStack {
                     Text("\(product.displayPrice)")
-                        .font(.headline)
+                        .font(style: .headline)
                     HStack {
                         Spacer()
                         Text(unit == .month ? "monthly" : "yearly")
                             .italic()
-                            .font(.caption)
+                            .font(style: .caption)
                             .opacity(unit == .month ? 0.7 : 0.9)
                         Spacer()
                     }
@@ -363,13 +363,13 @@ struct Pro: View {
                     Text(heading)
                         .fixedSize(horizontal: false, vertical: true)
                         .foregroundColor(.accentColor)
-                        .font(.title2)
+                        .font(style: .title2)
                         .bold()
                     Spacer()
                 }
                 HStack {
                     Text(subheading)
-                        .font(.callout)
+                        .font(style: .callout)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }

@@ -74,7 +74,9 @@ struct SelectTagsView: View {
     
     @ViewBuilder
     var tagCount: some View {
-        Text("\(fetcher.tags.count) Tags").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.gray)
+        Text("\(fetcher.tags.count) Tags")
+            .font(style: .footnote)
+            .foregroundColor(.gray)
             .frame(maxWidth: .infinity, alignment: .center)
             .listSectionSeparator(.hidden)
 
