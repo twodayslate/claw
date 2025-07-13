@@ -4,7 +4,7 @@ import SwiftUI
 import SimpleCommon
 
 struct TagStoryView: View {
-    @ObservedObject var stories: TagStoryFetcher
+    @StateObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
@@ -13,7 +13,7 @@ struct TagStoryView: View {
     @State var error: Error?
 
     init(tags: [String]) {
-        self.stories = TagStoryFetcher(tags: tags)
+        self._stories = StateObject(wrappedValue: TagStoryFetcher(tags: tags))
     }
     
     @State private var scrollViewContentOffset = CGFloat(0)
@@ -30,21 +30,22 @@ struct TagStoryView: View {
                         Divider().id(0).padding(0).padding([.leading])
                     }
                    
-                    if stories.items.count <= 0 {
+                    if stories.items.isEmpty {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
-                    }
-                    ForEach(stories.items) { story in
-                        StoryListCellView(story: story).id(story).task {
-                            do {
-                                try await self.stories.more(story)
-                            } catch {
-                                print("error", error)
+                    } else {
+                        ForEach(stories.items) { story in
+                            StoryListCellView(story: story).id(story).task {
+                                do {
+                                    try await self.stories.more(story)
+                                } catch {
+                                    print("error", error)
+                                }
                             }
+                            Divider().padding(0).padding([.leading])
                         }
-                        Divider().padding(0).padding([.leading])
                     }
                     if stories.isLoadingMore {
                         HStack {
@@ -74,7 +75,8 @@ struct TagStoryView: View {
                 .onAppear {
                     self.isVisible = true
                 }
-                .navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
+                .navigationBarTitle(self.stories.tags.joined(separator: ", "))
+                .onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible && scrollViewContentOffset > 0.1 {
                             withAnimation {

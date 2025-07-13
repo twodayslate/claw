@@ -38,7 +38,7 @@ class TagFetcher: ObservableObject {
     @Published var isLoading = false
     
     func loadIfEmpty() async throws {
-        if self.tags.count <= 0 {
+        if self.tags.isEmpty {
             try await load()
         }
     }
