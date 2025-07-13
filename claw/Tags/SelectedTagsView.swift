@@ -1,24 +1,38 @@
 import SwiftUI
 
-struct SelectedTagsView: View {
-    @State var tags: [String] = UserDefaults.standard.object(forKey: "selectedTags") as? [String] ?? ["programming"] {
+@Observable
+class SelectedTagsModel {
+    var tags: [String] {
         didSet {
             UserDefaults.standard.set(self.tags, forKey: "selectedTags")
         }
     }
 
+    init() {
+        self.tags = UserDefaults.standard.object(forKey: "selectedTags") as? [String] ?? ["programming"]
+    }
+}
+
+struct SelectedTagsView: View {
+    @State var model = SelectedTagsModel()
+
+    @State var editMode: EditMode = .inactive
+
     var body: some View {
-        let wrapper = TagStoryView(tags: self.tags)
-        
-        wrapper//.id(self.tags)
-            .navigationBarItems(
-                leading: NavigationLink(
-                    destination: SelectTagsView(tags: $tags)
-                        .navigationBarTitle("Selected Tags", displayMode: .inline),
-                    label: {
-                        Text("Edit").bold()
-                    }
-                )
-            )
+        Group {
+            if editMode == .active {
+                SelectTagsView(tags: $model.tags)
+            } else {
+                TagStoryView(tags: model.tags)
+            }
+        }
+        .animation(.default, value: editMode)
+        .navigationTitle(model.tags.joined(separator: ", "))
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                EditButton()
+            }
+        }
+        .environment(\.editMode, $editMode)
     }
 }

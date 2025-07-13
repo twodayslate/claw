@@ -14,21 +14,22 @@ struct HottestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if hottest.items.count <= 0 {
+                    if hottest.items.isEmpty {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                         }
                         Divider().padding(0).padding([.leading])
-                    }
-                    ForEach(hottest.items) { story in
-                        StoryListCellView(story: story).id(story).task {
-                            do {
-                                try await self.hottest.more(story)
-                            } catch {
-                                print("error", error)
+                    } else {
+                        ForEach(hottest.items) { story in
+                            StoryListCellView(story: story).id(story).task {
+                                do {
+                                    try await self.hottest.more(story)
+                                } catch {
+                                    print("error", error)
+                                }
                             }
+                            Divider().padding(0).padding([.leading])
                         }
-                        Divider().padding(0).padding([.leading])
                     }
                     if hottest.isLoadingMore {
                         HStack {
@@ -38,6 +39,7 @@ struct HottestView: View {
                         }
                     }
                 }
+                .animation(.default, value: hottest.items)
                 .onDisappear {
                     self.isVisible = false
                 }
