@@ -10,14 +10,18 @@ import SwiftUI
 struct ColorIconView: View {
     var color: UIColor
 
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var settings: Settings
 
     var body: some View {
         Button(action: {
             settings.accentColorData = color.data
-            try? settings.managedObjectContext?.save()
-            self.presentationMode.wrappedValue.dismiss()
+            do {
+                try settings.managedObjectContext?.save()
+            } catch {
+                print("error", error)
+            }
+            dismiss()
         }, label: {
             HStack {
                 ColorPicker(color.name ?? "Unknown", selection: .constant(Color(color)))

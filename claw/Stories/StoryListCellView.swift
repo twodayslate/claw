@@ -61,7 +61,7 @@ struct StoryListCellView: View {
                 Text("\(activeSheet.debugDescription)")
             }
         }
-        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+        }.onTapGesture(count: 1, perform: {
             withAnimation(.easeIn) {
                 backgroundColorState = Color(UIColor.systemGray4)
                 withAnimation(.easeOut) {

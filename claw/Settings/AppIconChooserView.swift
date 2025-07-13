@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AppIconChooserView: View {
     @EnvironmentObject var settings: Settings
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     @StateObject var storeModel: StoreKitModel = .pro
     
     @State var showAlert = false
@@ -17,7 +17,7 @@ struct AppIconChooserView: View {
                         }
                         settings.alternateIconName = nil
                         try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     })
                 }, label: {
                     AppIconView(icon: AppIcon(alternateIconName: nil, name: "claw", assetName: "AppIcon-thumb", subtitle: "Maria Garcia (mariajgarcia.com)")).environmentObject(settings)
@@ -32,7 +32,7 @@ struct AppIconChooserView: View {
                         }
                         settings.alternateIconName = "Akhmad437LobsterDarkIcon"
                         try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     })
                 }, label: {
                     AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterDarkIcon", name: "Dark Lobster", assetName: "Akhmad437LobsterDarkIcon-thumb", subtitle: "@akhmadmaulidi"))
@@ -47,7 +47,7 @@ struct AppIconChooserView: View {
                         }
                         settings.alternateIconName = "Akhmad437LobsterLightIcon"
                         try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     })
                 }, label: {
                     AppIconView(icon: AppIcon(alternateIconName: "Akhmad437LobsterLightIcon", name: "Light Lobster", assetName: "Akhmad437LobsterLightIcon-thumb", subtitle: "@akhmadmaulidi"))
@@ -63,7 +63,7 @@ struct AppIconChooserView: View {
                         }
                         settings.alternateIconName = "KnuxIcon"
                         try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     })
                 }, label: {
                     AppIconView(icon: AppIcon(alternateIconName: "KnuxIcon", name: "Pixel Lobster", assetName: "KnuxIcon-thumb", subtitle: "Knux 400"))
@@ -80,7 +80,7 @@ struct AppIconChooserView: View {
                         }
                         settings.alternateIconName = "ClawHeart"
                         try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     })
                 } label: {
                     AppIconView(icon: AppIcon(alternateIconName: "ClawHeart", name: "clawve", assetName: "ClawHeart-thumb", subtitle: "Maria Garcia (mariajgarcia.com)"))

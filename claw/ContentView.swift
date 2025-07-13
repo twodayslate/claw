@@ -28,7 +28,7 @@ enum TabSelection: String {
 struct NavigableTabViewItem<Content: View, TabItem: View>: View {
     @Environment(\.didReselect) var didReselect
     @EnvironmentObject var settings: Settings
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     
     let tabSelection: TabSelection
     let content: Content
@@ -48,7 +48,7 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
         NavigationView {
                 self.content.environmentObject(settings).onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
-                        self.presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
         }.tabItem {
@@ -222,7 +222,7 @@ struct ContentView: View {
         .environment(\.managedObjectContext, viewContext)
         .environmentObject(self.observableSheet)
         .environmentObject(urlToOpen)
-        .accentColor(settings.accentColor)
+        .tint(settings.accentColor)
         .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
         .environment(\.openURL, OpenURLAction { url in
             return handleUrl(url)

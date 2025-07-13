@@ -69,8 +69,12 @@ struct AccentColorChooserView: View {
                 .labelsHidden()
                 .onChange(of: customColor) {
                     if isCustom {
-                        settings.accentColorData = UIColor($0).data
-                        try? settings.managedObjectContext?.save()
+                        settings.accentColorData = UIColor(customColor).data
+                        do {
+                            try settings.managedObjectContext?.save()
+                        } catch {
+                            print("error", error)
+                        }
                     }
                 }
                 Text("Custom").foregroundColor(Color(UIColor.label))

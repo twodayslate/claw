@@ -15,7 +15,7 @@ struct TagStoryView: View {
     }
     
     @State private var scrollViewContentOffset = CGFloat(0)
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ScrollViewReader { scrollProxy in
@@ -70,7 +70,7 @@ struct TagStoryView: View {
                                 scrollProxy.scrollTo(0)
                             }
                         } else {
-                            presentationMode.wrappedValue.dismiss()
+                            dismiss()
                         }
                     }
                 }
