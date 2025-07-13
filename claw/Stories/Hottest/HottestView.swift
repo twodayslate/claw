@@ -13,15 +13,19 @@ struct HottestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if hottest.stories.count <= 0 {
+                    if hottest.items.count <= 0 {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                         }
                         Divider().padding(0).padding([.leading])
                     }
-                    ForEach(hottest.stories) { story in
+                    ForEach(hottest.items) { story in
                         StoryListCellView(story: story).id(story).task {
-                            self.hottest.more(story)
+                            do {
+                                try await self.hottest.more(story)
+                            } catch {
+                                print("error", error)
+                            }
                         }
                         Divider().padding(0).padding([.leading])
                     }
@@ -44,16 +48,23 @@ struct HottestView: View {
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {
-                                scrollProxy.scrollTo(hottest.stories.first)
+                                scrollProxy.scrollTo(hottest.items.first)
                             }
                         }
                     }
                 }
             }
+            .task {
+                do {
+                    try await hottest.loadIfEmpty()
+                } catch {
+                    print("error", error)
+                }
+            }
             .refreshable {
                 await Task {
                     do {
-                        try await self.hottest.refresh()
+                        try await self.hottest.reload()
                     } catch {
                         // no-op
                     }

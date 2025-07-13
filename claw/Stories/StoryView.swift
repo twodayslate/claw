@@ -131,7 +131,9 @@ struct StoryView: View {
                         }.padding()
                     }
                 }
-            }.navigationBarTitle(self.title, displayMode: .inline).onReceive(didReselect) { _ in
+            }
+            .navigationBarTitle(self.title, displayMode: .inline)
+            .onReceive(didReselect) { _ in
                 DispatchQueue.main.async {
                     if scrollViewContentOffset > 0 {
                         withAnimation {
@@ -144,7 +146,11 @@ struct StoryView: View {
             }
             .task {
                 self.story.short_id = self.short_id
-                self.story.load()
+                do {
+                    try await self.story.load()
+                } catch {
+                    print("error", error)
+                }
                 let contains = viewedItems.contains { element in
                     element.short_id == story.short_id && element.isStory
                 }
@@ -156,7 +162,7 @@ struct StoryView: View {
             .refreshable {
                 await Task {
                     do {
-                        try await self.story.awaitLoad()
+                        try await self.story.load()
                     } catch {
                         // no-op
                     }

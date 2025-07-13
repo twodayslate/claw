@@ -107,6 +107,7 @@
 			membershipExceptions = (
 				"Extensions/Bundle+version.swift",
 				"Extensions/URLRequest+UA.swift",
+				GenericArrayFetcher.swift,
 				Stories/APIConfiguration.swift,
 				Stories/GenericStory.swift,
 				Stories/Hottest/HottestFetcher.swift,
