@@ -36,7 +36,9 @@ struct SettingsTextSizeSlider: View {
                     }
                     
                 }, label: {
-                    Text("\(Image(systemName: "minus"))").foregroundColor(.accentColor).font(.body)
+                    Text("\(Image(systemName: "minus"))")
+                        .foregroundColor(.accentColor)
+                        .font(style: .body)
                 }).buttonStyle(BorderlessButtonStyle())
 
                 Slider(value: $bindableSettings.textSizeModifier, in: -6.0...6.0, step: 0.5).zIndex(1.0)
@@ -46,7 +48,9 @@ struct SettingsTextSizeSlider: View {
                         settings.textSizeModifier += 1.0
                     }
                 }, label: {
-                    Text("\(Image(systemName: "plus"))").foregroundColor(.accentColor).font(.body)
+                    Text("\(Image(systemName: "plus"))")
+                        .foregroundColor(.accentColor)
+                        .font(style: .body)
                 }).buttonStyle(BorderlessButtonStyle())
             }
         }

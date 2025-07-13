@@ -37,7 +37,7 @@ struct AccentColorChooserView: View {
                         HStack {
                             Spacer()
                             Text("Unlock Custom Colors")
-                                .font(.headline)
+                                .font(style: .headline)
                                 .foregroundColor(.accentColor)
                                 .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
                             Spacer()

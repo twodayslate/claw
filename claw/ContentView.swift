@@ -99,36 +99,38 @@ struct ContentView: View {
                                             }
                                             self._selection = $0
                                         })
-        TabView(selection: selection) {
-            NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
-                HottestView()
-            }, tabItem: {
-                _selection == .Hottest ? Image(systemName: "flame.fill") : Image(systemName: "flame")
-                Text("Hottest")
-            })
-            
-            NavigableTabViewItem(tabSelection: TabSelection.Newest, content: {
-                    NewestView()
-            }, tabItem: {
-                _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
-                Text("Newest")
-            })
-            
-            NavigableTabViewItem(tabSelection: TabSelection.Tags, content: {
-                    SelectedTagsView()
-            }, tabItem: {
-                _selection == .Tags ? Image(systemName: "tag.fill") : Image(systemName: "tag")
-                Text("Tags")
-            })
+        withEnvironment {
+            TabView(selection: selection) {
+                NavigableTabViewItem(tabSelection: TabSelection.Hottest, content: {
+                    HottestView()
+                }, tabItem: {
+                    _selection == .Hottest ? Image(systemName: "flame.fill") : Image(systemName: "flame")
+                    Text("Hottest")
+                })
 
-            NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
+                NavigableTabViewItem(tabSelection: TabSelection.Newest, content: {
+                    NewestView()
+                }, tabItem: {
+                    _selection == .Newest ? Image(systemName: "burst.fill") : Image(systemName: "burst")
+                    Text("Newest")
+                })
+
+                NavigableTabViewItem(tabSelection: TabSelection.Tags, content: {
+                    SelectedTagsView()
+                }, tabItem: {
+                    _selection == .Tags ? Image(systemName: "tag.fill") : Image(systemName: "tag")
+                    Text("Tags")
+                })
+
+                NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
                     SettingsView()
-            }, tabItem: {
-                Image(systemName: "gear")
-                Text("Settings")
-            })
+                }, tabItem: {
+                    Image(systemName: "gear")
+                    Text("Settings")
+                })
+            }
+            .tabBarMinimizeBehavior(.onScrollDown)
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
         .environment(\.didReselect, didReselect.eraseToAnyPublisher())
         .onOpenURL(perform: { url in
             let _ = print(url)
@@ -168,60 +170,48 @@ struct ContentView: View {
         .sheet(item: self.$observableSheet.sheet, content: { item in
             switch item {
             case .story(let id):
-                SimplePanel{
-                    StoryView(id).id(id)
-                }.id(id)
-                .environmentObject(urlToOpen)
-                .environment(settings)
-                .environmentObject(self.observableSheet)
-                .environment(\.openURL, OpenURLAction { url in
-                    return handleUrl(url)
-                })
+                withEnvironment {
+                    SimplePanel{
+                        StoryView(id).id(id)
+                    }.id(id)
+                }
             case .user(let username):
-                SimplePanel{
-                    UserView(username).id(username)
-                }.id(username)
-                .environmentObject(urlToOpen)
-                .environment(settings)
-                .environmentObject(self.observableSheet)
-                .environment(\.openURL, OpenURLAction { url in
-                    return handleUrl(url)
-                })
+                withEnvironment {
+                    SimplePanel{
+                        UserView(username).id(username)
+                    }.id(username)
+                }
             case .url(let url):
-                SimplePanel {
-                    VStack {
-                        Text("Unknown URL").bold()
-                        Text("\(url)").foregroundColor(Color.accentColor).underline()
+                withEnvironment {
+                    SimplePanel {
+                        VStack {
+                            Text("Unknown URL").bold()
+                            Text("\(url)").foregroundColor(Color.accentColor).underline()
+                        }
                     }
                 }
-                .environmentObject(urlToOpen)
-                .environment(self.settings)
-                .environmentObject(self.observableSheet)
-                .environment(\.openURL, OpenURLAction { url in
-                    return handleUrl(url)
-                })
             case .share(let url):
                 ShareSheet(activityItems: [url])
             default:
-                SimplePanel {
-                    Text("Error: \(item.debugDescription)")
+                withEnvironment {
+                    SimplePanel {
+                        Text("Error: \(item.debugDescription)")
+                    }
                 }
-                .environment(self.settings)
-                .environmentObject(self.observableSheet)
-                .environmentObject(urlToOpen)
-                .environment(\.openURL, OpenURLAction { url in
-                    return handleUrl(url)
-                })
             }
         })
-        .environment(settings)
-        .environmentObject(self.observableSheet)
-        .environmentObject(urlToOpen)
-        .tint(settings.accentColor)
-        .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
-        .environment(\.openURL, OpenURLAction { url in
-            return handleUrl(url)
-        })
+    }
+
+    func withEnvironment<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .environment(settings)
+            .environmentObject(self.observableSheet)
+            .environmentObject(urlToOpen)
+            .tint(settings.accentColor)
+            .font(Font(.body, sizeModifier: CGFloat(settings.textSizeModifier)))
+            .environment(\.openURL, OpenURLAction { url in
+                return handleUrl(url)
+            })
     }
 
     func handleUrl(_ url: URL) -> OpenURLAction.Result {

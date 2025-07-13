@@ -59,7 +59,7 @@ struct CommentColorPicker: View {
                                 HStack {
                                     Spacer()
                                     Text("Unlock Custom Colors")
-                                        .font(.headline)
+                                        .font(style: .headline)
                                         .foregroundColor(.accentColor)
                                         .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
                                     Spacer()
@@ -76,7 +76,7 @@ struct CommentColorPicker: View {
             .overlay(alignment: .top) {
                 VStack(alignment: .leading) {
                     Text("Preview")
-                        .font(.footnote)
+                        .font(style: .footnote)
                         .foregroundColor(Color.gray)
                     preview(reader: reader)
                         .background(Color(UIColor.systemBackground))
@@ -154,7 +154,7 @@ struct CommentColorPicker: View {
                     .opacity(isCustomSelected ? 1.0 : 0)
                 VStack(alignment: .leading) {
                     Text("Custom")
-                        .font(.callout)
+                        .font(style: .callout)
                     HStack {
                         ColorPicker("Custom Color #1", selection: $customColorOne)
                             .labelsHidden()
@@ -230,7 +230,7 @@ struct CommentColorPicker: View {
                     .opacity(settings.commentColorScheme == scheme ? 1.0 : 0)
                 VStack(alignment: .leading) {
                     Text(scheme.name)
-                        .font(.callout)
+                        .font(style: .callout)
                     HStack {
                         colorRow(colors: scheme.colors)
                     }

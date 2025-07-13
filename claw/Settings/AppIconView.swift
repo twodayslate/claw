@@ -34,17 +34,23 @@ struct AppIconView: View {
                     )
             }
             VStack(alignment: .leading) {
-                Text("\(icon.name)").foregroundColor(Color(UIColor.label))
+                Text("\(icon.name)")
+                    .foregroundColor(Color(UIColor.label))
+                    .font(style: .headline)
                 if let subtitle = icon.subtitle {
-                    Text("\(subtitle)").foregroundColor(.gray)
-                        .font(Font(.subheadline, sizeModifier: CGFloat(settings.textSizeModifier)))
+                    Text("\(subtitle)")
+                        .foregroundColor(.gray)
+                        .font(style: .subheadline)
                 }
             }
             
             if settings.alternateIconName == icon.alternateIconName {
                 Spacer()
-                Text("\(Image(systemName: "checkmark"))").bold().foregroundColor(.accentColor)
+                Text("\(Image(systemName: "checkmark"))")
+                    .bold()
+                    .foregroundColor(.accentColor)
             }
         }
+        .font(style: .body)
     }
 }

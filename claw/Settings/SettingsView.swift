@@ -36,16 +36,12 @@ struct SettingsView: View {
     ]
     
     @Environment(Settings.self) var settings
-    @Environment(\.sizeCategory) var sizeCategory
     @Environment(\.modelContext) var modelContext
 
     var body: some View {
         @Bindable var bindableSettings = settings
         Form {
-            Section(
-                header:
-                    Text("Appearance")
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+            Section {
                         if UIApplication.shared.supportsAlternateIcons {
                             NavigationLink(destination: AppIconChooserView(), label: {
                                 HStack {
@@ -79,11 +75,15 @@ struct SettingsView: View {
                         HStack {
                             SettingsTextSizeSlider()
                         }
-                    }
-            Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                SettingsLayoutSlider()
+            } header: {
+                Text("Apperance").font(style: .footnote)
             }
-            Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+            Section {
+                SettingsLayoutSlider()
+            } header: {
+                Text("Layout").font(style: .footnote)
+            }
+            Section {
                 
                 Picker(selection: $bindableSettings.browser, label:
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
@@ -97,6 +97,8 @@ struct SettingsView: View {
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
                 }
+            } header: {
+                Text("Browsing").font(style: .footnote)
             }
             Section {
                 if storeModel.owned {
@@ -127,19 +129,19 @@ struct SettingsView: View {
                 }
                 SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
             }
-            Section(
-                header: Text("Legal")
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))),
-                footer: Text(showingShortVersion ? emailSubject : longVersion)
-                    .font(Font(.caption2, sizeModifier: CGFloat(settings.textSizeModifier)))
+            Section {
+                SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
+                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
+            } header: {
+                Text("Legal").font(style: .footnote)
+            } footer: {
+                Text(showingShortVersion ? emailSubject : longVersion)
+                    .font(style: .caption2)
                     .opacity(0.4)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .onTapGesture {
                         showingShortVersion.toggle()
                     }
-            ) {
-                SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
-                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
             }
         }
         .formStyle(.grouped)

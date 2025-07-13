@@ -75,6 +75,7 @@ struct AppIconChooserView: View {
         .alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
+        .font(style: .body)
     }
 
     func iapAppIcon(_ icon: AppIcon) -> some View {
