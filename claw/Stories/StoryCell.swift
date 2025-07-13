@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct StoryCell: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     var story: NewestStory
     
-    @FetchRequest(fetchRequest: ViewedItem.fetchAllRequest()) var viewedItems: FetchedResults<ViewedItem>
+    @Query(ViewedItem.fetchAllDescriptor) var viewedItems: [ViewedItem]
     
     var body: some View {
         let contains = viewedItems.contains { element in
@@ -69,8 +70,8 @@ struct StoryCell_Previews: PreviewProvider {
             StoryCell(story: NewestStory(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", title: "A title here", url: "https://zac.gorak.us/story", score: 45, flags: 1, comment_count: 4, description: "A description", comments_url: "https://lobste.rs/c/asdf", submitter_user: "placeholder", user_is_author: false, tags: ["ios", "programming"]))
         }
         .previewLayout(.sizeThatFits)
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
     }
 }

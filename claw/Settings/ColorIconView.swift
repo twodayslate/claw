@@ -6,21 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ColorIconView: View {
     var color: UIColor
 
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
 
     var body: some View {
         Button(action: {
             settings.accentColorData = color.data
-            do {
-                try settings.managedObjectContext?.save()
-            } catch {
-                print("error", error)
-            }
             dismiss()
         }, label: {
             HStack {
@@ -48,8 +44,8 @@ struct ColorIconViewPreview: PreviewProvider {
             ColorIconView(color: .lobsterRed)
             ColorIconView(color: .blue.withAlphaComponent(0.5))
         }
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

@@ -1,22 +1,24 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 struct SettingsLayoutSlider: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject var settings: Settings
-    
+    @Environment(Settings.self) private var settings
+
     var body: some View {
+        @Bindable var bindableSettings = settings
+
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     if HottestFetcher.cachedStories.count > 0 {
                         ForEach(HottestFetcher.cachedStories) { story in
-                            StoryListCellView(story: story).environmentObject(settings).allowsHitTesting(false)
+                            StoryListCellView(story: story).allowsHitTesting(false)
                             Divider().padding(0).padding([.leading])
                         }
                     } else {
                         ForEach(1..<5) { _ in
-                                StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).allowsHitTesting(false)
+                                StoryListCellView(story: NewestStory.placeholder).allowsHitTesting(false)
                             Divider().padding(0).padding([.leading])
                         }
                     }
@@ -30,10 +32,10 @@ struct SettingsLayoutSlider: View {
                 .padding([.bottom], 8.0)
             HStack {
                 Image(systemName: "doc.plaintext").renderingMode(.template).foregroundColor(.accentColor)
-                Picker("Story Cell Layout", selection: $settings.layoutValue, content: {
-                    Text("Compact").tag(Settings.Layout.compact.rawValue)
-                    Text("Comfortable").tag(Settings.Layout.comfortable.rawValue)
-                    Text("Default").tag(Settings.Layout.Default.rawValue)
+                Picker("Story Cell Layout", selection: $bindableSettings.layoutValue, content: {
+                    Text("Compact").tag(LayoutSetting.compact.rawValue)
+                    Text("Comfortable").tag(LayoutSetting.comfortable.rawValue)
+                    Text("Default").tag(LayoutSetting.Default.rawValue)
                 }).pickerStyle(SegmentedPickerStyle())
                 Image(systemName: "doc.richtext").renderingMode(.template).foregroundColor(.accentColor)
             }
@@ -45,10 +47,11 @@ struct SettingsLayoutSlider_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
-            SettingsLayoutSlider().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
-            SettingsLayoutSlider().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext).environmentObject(Settings(context: PersistenceController.preview.container.viewContext)).preferredColorScheme(.dark)
+            SettingsLayoutSlider()
+            SettingsLayoutSlider().preferredColorScheme(.dark)
 
         }.previewLayout(.sizeThatFits)
+        .modelContainer(PersistenceControllerV2.preview.container)
         
     }
 }

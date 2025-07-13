@@ -6,7 +6,7 @@ import SimpleCommon
 struct TagStoryView: View {
     @ObservedObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
     
@@ -30,12 +30,12 @@ struct TagStoryView: View {
                    
                     if stories.items.count <= 0 {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
+                            StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     }
                     ForEach(stories.items) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
+                        StoryListCellView(story: story).id(story).task {
                             self.stories.more(story)
                         }
                         Divider().padding(0).padding([.leading])

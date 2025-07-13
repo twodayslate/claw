@@ -3,7 +3,7 @@ import SwiftUI
 
 struct NewestView: View {
     @ObservedObject var newest = NewestFetcher.shared
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
     
@@ -14,12 +14,12 @@ struct NewestView: View {
                     Divider().padding(0).padding([.leading])
                     if newest.stories.count <= 0 {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
+                            StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     }
                     ForEach(newest.stories) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
+                        StoryListCellView(story: story).id(story).task {
                             withAnimation(.easeIn, {
                                 newest.more(story)
                             })

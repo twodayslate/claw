@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import SimpleCommon
 
 struct RedactedCommentColorPickerPreview: View {
@@ -31,7 +32,7 @@ struct RedactedCommentColorPickerPreview: View {
 }
 
 struct CommentColorPicker: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
 
     @State var customColorOne: Color = Color(UIColor.tintColor).opacity(1.0)
     @State var customColorTwo: Color = Color(UIColor.tintColor).opacity(0.9)
@@ -207,7 +208,6 @@ struct CommentColorPicker: View {
 
     func saveCustom() {
         settings.commentColorScheme = .custom(UIColor(customColorOne), UIColor(customColorTwo), UIColor(customColorThree), UIColor(customColorFour), UIColor(customColorFive), UIColor(customColorSix), UIColor(customColorSeven))
-        try? settings.managedObjectContext?.save()
     }
 
     var isCustomSelected: Bool {
@@ -220,7 +220,7 @@ struct CommentColorPicker: View {
     }
 
     @ViewBuilder
-    func colorSchemeRow(_ scheme: Settings.CommentColorScheme) -> some View {
+    func colorSchemeRow(_ scheme: CommentColorScheme) -> some View {
         Button {
             settings.commentColorScheme = scheme
         } label: {
@@ -256,8 +256,8 @@ struct CommentColorPicker: View {
 struct CommentColorPickerPreview: PreviewProvider {
     static var previews: some View {
         CommentColorPicker()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

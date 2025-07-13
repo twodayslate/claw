@@ -44,7 +44,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     
     var child: CommentStructure
 
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     @Binding var sharedComment: Comment?
     

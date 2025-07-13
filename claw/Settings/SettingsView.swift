@@ -1,6 +1,6 @@
 import SwiftUI
+import SwiftData
 import MessageUI
-
 import SimpleCommon
 
 struct SettingsView: View {
@@ -35,17 +35,19 @@ struct SettingsView: View {
         "Akhmad437LobsterDarkIcon": "Dark Lobster"
     ]
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.sizeCategory) var sizeCategory
-    
+    @Environment(\.modelContext) var modelContext
+
     var body: some View {
+        @Bindable var bindableSettings = settings
         Form {
             Section(
                 header:
                     Text("Appearance")
                     .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                         if UIApplication.shared.supportsAlternateIcons {
-                            NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
+                            NavigationLink(destination: AppIconChooserView(), label: {
                                 HStack {
                                     SimpleIconLabel(
                                         iconBackgroundColor: .clear,
@@ -58,7 +60,7 @@ struct SettingsView: View {
                                 }
                             })
                         }
-                        NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
+                        NavigationLink(destination: AccentColorChooserView(), label: {
                             HStack {
                                 SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
                                 Spacer()
@@ -66,7 +68,7 @@ struct SettingsView: View {
                             }
                         })
 
-                        NavigationLink(destination: CommentColorPicker().environmentObject(settings), label: {
+                        NavigationLink(destination: CommentColorPicker(), label: {
                             HStack {
                                 SimpleIconLabel(iconBackgroundColor: (settings.commentColorScheme.colors.first ?? Color.accentColor), iconColor: (settings.commentColorScheme.colors.first ?? Color.accentColor) == .white ? .black : .white, systemImage: "list.bullet.indent", text: "Comment Colors")
                                 Spacer()
@@ -79,19 +81,19 @@ struct SettingsView: View {
                         }
                     }
             Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                SettingsLayoutSlider().environmentObject(settings)
+                SettingsLayoutSlider()
             }
             Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
                 
-                Picker(selection: $settings.browser, label:
+                Picker(selection: $bindableSettings.browser, label:
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
                        , content: {
-                    Text("In-App Safari").tag(Browser.inAppSafari)
-                    Text("Default Browser").tag(Browser.defaultBrowser)
+                    Text("In-App Safari").tag(BrowserSetting.inAppSafari)
+                    Text("Default Browser").tag(BrowserSetting.defaultBrowser)
                 })
                 
-                if settings.browser == Browser.inAppSafari {
-                    Toggle(isOn: $settings.readerModeEnabled, label: {
+                if settings.browser == BrowserSetting.inAppSafari {
+                    Toggle(isOn: $bindableSettings.readerModeEnabled, label: {
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
                 }
@@ -155,6 +157,13 @@ struct SettingsView: View {
                 print(error.localizedDescription)
             }
         }
+        .onDisappear {
+            do {
+                try modelContext.save()
+            } catch {
+                print("error", error)
+            }
+        }
     }
 }
 
@@ -165,8 +174,8 @@ struct SettingsView_Previews: PreviewProvider {
             SettingsView()
         }
         .previewLayout(.sizeThatFits)
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
         
     }

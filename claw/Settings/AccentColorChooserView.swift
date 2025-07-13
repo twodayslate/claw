@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AccentColorChooserView: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @State var customColor: Color = .accentColor
     @StateObject var storeModel = StoreKitModel.pro
 
@@ -61,7 +62,6 @@ struct AccentColorChooserView: View {
     var customRow: some View {
         Button {
             settings.accentColorData = UIColor(customColor).data
-            try? settings.managedObjectContext?.save()
             dismiss()
         } label: {
             HStack {
@@ -70,11 +70,6 @@ struct AccentColorChooserView: View {
                 .onChange(of: customColor) {
                     if isCustom {
                         settings.accentColorData = UIColor(customColor).data
-                        do {
-                            try settings.managedObjectContext?.save()
-                        } catch {
-                            print("error", error)
-                        }
                     }
                 }
                 Text("Custom").foregroundColor(Color(UIColor.label))
@@ -91,8 +86,8 @@ struct AccentColorChooserView: View {
 struct AccentColorChooserViewPreview: PreviewProvider {
     static var previews: some View {
         AccentColorChooserView()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

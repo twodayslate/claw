@@ -18,7 +18,7 @@ struct AppIcon: Codable {
 struct AppIconView: View {
     var icon: AppIcon
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     var body: some View {
         HStack {

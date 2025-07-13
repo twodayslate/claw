@@ -7,14 +7,16 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 
 import SimpleCommon
 
 struct SettingsTextSizeSlider: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.sizeCategory) var sizeCategory
     
     var body: some View {
+        @Bindable var bindableSettings = settings
         VStack {
             HStack {
                 SimpleIconLabel(iconBackgroundColor: Color(UIColor.darkGray), systemImage: "textformat.size", text: "Text Size")
@@ -36,9 +38,9 @@ struct SettingsTextSizeSlider: View {
                 }, label: {
                     Text("\(Image(systemName: "minus"))").foregroundColor(.accentColor).font(.body)
                 }).buttonStyle(BorderlessButtonStyle())
-                
-                Slider(value: $settings.textSizeModifier, in: -6.0...6.0, step: 0.5).zIndex(1.0)
-                
+
+                Slider(value: $bindableSettings.textSizeModifier, in: -6.0...6.0, step: 0.5).zIndex(1.0)
+
                 Button(action: {
                     if settings.textSizeModifier <= 5.0 {
                         settings.textSizeModifier += 1.0
