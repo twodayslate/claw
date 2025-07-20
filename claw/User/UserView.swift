@@ -96,8 +96,7 @@ struct UserView: View {
                 if !user.about.isEmpty {
                     VStack(alignment: .leading) {
                         Text("About").bold()
-                        // BUG: https://github.com/lobsters/lobsters/issues/933
-                        Text(.init(user.about))
+                        HTMLView(html: user.about.trimmingCharacters(in: .whitespacesAndNewlines))
                     }
                 }
             }
