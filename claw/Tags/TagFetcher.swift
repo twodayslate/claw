@@ -30,7 +30,7 @@ class TagFetcher: ObservableObject {
             do {
                 try await self.load()
             } catch {
-                print("unable to load tags", error)
+                print("Unable to fetch tags", error)
             }
         }
     }
@@ -38,12 +38,12 @@ class TagFetcher: ObservableObject {
     @Published var isLoading = false
     
     func loadIfEmpty() async throws {
-        if self.tags.count <= 0 {
+        if self.tags.isEmpty {
             try await load()
         }
     }
     
-    private func load() async throws {
+    func load() async throws {
         if isLoading {
             return
         }
@@ -52,7 +52,7 @@ class TagFetcher: ObservableObject {
         defer {
             isLoading = false
         }
-        let url = URL(string: "https://lobste.rs/tags.json")!
+        let url = APIConfiguration.shared.tagsURL()
         
         var request = URLRequest(url: url)
         request.setUserAgent()

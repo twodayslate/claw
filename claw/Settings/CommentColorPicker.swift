@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import SimpleCommon
 
 struct RedactedCommentColorPickerPreview: View {
@@ -31,7 +32,7 @@ struct RedactedCommentColorPickerPreview: View {
 }
 
 struct CommentColorPicker: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
 
     @State var customColorOne: Color = Color(UIColor.tintColor).opacity(1.0)
     @State var customColorTwo: Color = Color(UIColor.tintColor).opacity(0.9)
@@ -58,7 +59,7 @@ struct CommentColorPicker: View {
                                 HStack {
                                     Spacer()
                                     Text("Unlock Custom Colors")
-                                        .font(.headline)
+                                        .font(style: .headline)
                                         .foregroundColor(.accentColor)
                                         .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
                                     Spacer()
@@ -75,7 +76,7 @@ struct CommentColorPicker: View {
             .overlay(alignment: .top) {
                 VStack(alignment: .leading) {
                     Text("Preview")
-                        .font(.footnote)
+                        .font(style: .footnote)
                         .foregroundColor(Color.gray)
                     preview(reader: reader)
                         .background(Color(UIColor.systemBackground))
@@ -105,37 +106,37 @@ struct CommentColorPicker: View {
                 break
             }
         }
-        .onChange(of: customColorOne) { _ in
+        .onChange(of: customColorOne) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorTwo) { _ in
+        .onChange(of: customColorTwo) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorThree) { _ in
+        .onChange(of: customColorThree) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorFour) { _ in
+        .onChange(of: customColorFour) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorFive) { _ in
+        .onChange(of: customColorFive) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorSix) { _ in
+        .onChange(of: customColorSix) {
             Task {
                 onlySaveIfCustom()
             }
         }
-        .onChange(of: customColorSeven) { _ in
+        .onChange(of: customColorSeven) {
             Task {
                 onlySaveIfCustom()
             }
@@ -153,7 +154,7 @@ struct CommentColorPicker: View {
                     .opacity(isCustomSelected ? 1.0 : 0)
                 VStack(alignment: .leading) {
                     Text("Custom")
-                        .font(.callout)
+                        .font(style: .callout)
                     HStack {
                         ColorPicker("Custom Color #1", selection: $customColorOne)
                             .labelsHidden()
@@ -207,7 +208,6 @@ struct CommentColorPicker: View {
 
     func saveCustom() {
         settings.commentColorScheme = .custom(UIColor(customColorOne), UIColor(customColorTwo), UIColor(customColorThree), UIColor(customColorFour), UIColor(customColorFive), UIColor(customColorSix), UIColor(customColorSeven))
-        try? settings.managedObjectContext?.save()
     }
 
     var isCustomSelected: Bool {
@@ -220,7 +220,7 @@ struct CommentColorPicker: View {
     }
 
     @ViewBuilder
-    func colorSchemeRow(_ scheme: Settings.CommentColorScheme) -> some View {
+    func colorSchemeRow(_ scheme: CommentColorScheme) -> some View {
         Button {
             settings.commentColorScheme = scheme
         } label: {
@@ -230,7 +230,7 @@ struct CommentColorPicker: View {
                     .opacity(settings.commentColorScheme == scheme ? 1.0 : 0)
                 VStack(alignment: .leading) {
                     Text(scheme.name)
-                        .font(.callout)
+                        .font(style: .callout)
                     HStack {
                         colorRow(colors: scheme.colors)
                     }
@@ -256,8 +256,8 @@ struct CommentColorPicker: View {
 struct CommentColorPickerPreview: PreviewProvider {
     static var previews: some View {
         CommentColorPicker()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

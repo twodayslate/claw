@@ -1,6 +1,6 @@
 import SwiftUI
+import SwiftData
 import MessageUI
-
 import SimpleCommon
 
 struct SettingsView: View {
@@ -35,17 +35,15 @@ struct SettingsView: View {
         "Akhmad437LobsterDarkIcon": "Dark Lobster"
     ]
     
-    @EnvironmentObject var settings: Settings
-    @Environment(\.sizeCategory) var sizeCategory
-    
+    @Environment(Settings.self) var settings
+    @Environment(\.modelContext) var modelContext
+
     var body: some View {
-        List {
-            Section(
-                header:
-                    Text("Appearance")
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+        @Bindable var bindableSettings = settings
+        Form {
+            Section {
                         if UIApplication.shared.supportsAlternateIcons {
-                            NavigationLink(destination: AppIconChooserView().environmentObject(settings), label: {
+                            NavigationLink(destination: AppIconChooserView(), label: {
                                 HStack {
                                     SimpleIconLabel(
                                         iconBackgroundColor: .clear,
@@ -58,7 +56,7 @@ struct SettingsView: View {
                                 }
                             })
                         }
-                        NavigationLink(destination: AccentColorChooserView().environmentObject(settings), label: {
+                        NavigationLink(destination: AccentColorChooserView(), label: {
                             HStack {
                                 SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
                                 Spacer()
@@ -66,7 +64,7 @@ struct SettingsView: View {
                             }
                         })
 
-                        NavigationLink(destination: CommentColorPicker().environmentObject(settings), label: {
+                        NavigationLink(destination: CommentColorPicker(), label: {
                             HStack {
                                 SimpleIconLabel(iconBackgroundColor: (settings.commentColorScheme.colors.first ?? Color.accentColor), iconColor: (settings.commentColorScheme.colors.first ?? Color.accentColor) == .white ? .black : .white, systemImage: "list.bullet.indent", text: "Comment Colors")
                                 Spacer()
@@ -77,24 +75,30 @@ struct SettingsView: View {
                         HStack {
                             SettingsTextSizeSlider()
                         }
-                    }
-            Section(header: Text("Layout").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
-                SettingsLayoutSlider().environmentObject(settings)
+            } header: {
+                Text("Apperance").font(style: .footnote)
             }
-            Section(header: Text("Browsing").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))) {
+            Section {
+                SettingsLayoutSlider()
+            } header: {
+                Text("Layout").font(style: .footnote)
+            }
+            Section {
                 
-                Picker(selection: $settings.browser, label:
+                Picker(selection: $bindableSettings.browser, label:
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
                        , content: {
-                    Text("In-App Safari").tag(Browser.inAppSafari)
-                    Text("Default Browser").tag(Browser.defaultBrowser)
+                    Text("In-App Safari").tag(BrowserSetting.inAppSafari)
+                    Text("Default Browser").tag(BrowserSetting.defaultBrowser)
                 })
                 
-                if settings.browser == Browser.inAppSafari {
-                    Toggle(isOn: $settings.readerModeEnabled, label: {
+                if settings.browser == BrowserSetting.inAppSafari {
+                    Toggle(isOn: $bindableSettings.readerModeEnabled, label: {
                         SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
                     })
                 }
+            } header: {
+                Text("Browsing").font(style: .footnote)
             }
             Section {
                 if storeModel.owned {
@@ -125,25 +129,25 @@ struct SettingsView: View {
                 }
                 SettingsLinkView(systemImage:  "star.fill", text: "Rate", url: "https://itunes.apple.com/gb/app/id1531645542?action=write-review&mt=8", iconColor: .yellow)
             }
-            Section(
-                header: Text("Legal")
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))),
-                footer: Text(showingShortVersion ? emailSubject : longVersion)
-                    .font(Font(.caption2, sizeModifier: CGFloat(settings.textSizeModifier)))
+            Section {
+                SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
+                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
+            } header: {
+                Text("Legal").font(style: .footnote)
+            } footer: {
+                Text(showingShortVersion ? emailSubject : longVersion)
+                    .font(style: .caption2)
                     .opacity(0.4)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .onTapGesture {
                         showingShortVersion.toggle()
                     }
-            ) {
-                SettingsLinkView(systemImage: "doc.text.magnifyingglass", text: "Privacy Policy", url: "https://zac.gorak.us/ios/privacy", iconColor: .gray)
-                SettingsLinkView(systemImage: "doc.text", text: "Terms of Use", url: "https://zac.gorak.us/ios/terms", iconColor: .gray)
             }
         }
+        .formStyle(.grouped)
         .sheet(isPresented: $isShowingMailView) {
             SimpleMailView(result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
         }
-        .listStyle(GroupedListStyle())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -153,6 +157,13 @@ struct SettingsView: View {
                 }
             } catch {
                 print(error.localizedDescription)
+            }
+        }
+        .onDisappear {
+            do {
+                try modelContext.save()
+            } catch {
+                print("error", error)
             }
         }
     }
@@ -165,8 +176,8 @@ struct SettingsView_Previews: PreviewProvider {
             SettingsView()
         }
         .previewLayout(.sizeThatFits)
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
         
     }

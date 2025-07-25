@@ -114,37 +114,36 @@ class StoryFetcher: ObservableObject {
         self.short_id = short_id
     }
 
-    deinit {
-        self.session?.cancel()
-    }
-
     static var cachedStories = [Story]()
     static let fetchQueue = DispatchQueue(label: "StoryFetcher")
-    
-    private var session: URLSessionTask? = nil
-    
+
     @Published var isReloading = false
-    func reload() {
-        self.session?.cancel()
+    func reload() async throws {
+        if isReloading {
+            return
+        }
         self.isReloading = true
-        self.load()
+        defer {
+            isReloading = false
+        }
+        try await self.load()
     }
     
-    func loadIfEmpty() {
+    func loadIfEmpty() async throws {
         if let _ = self.story {
             return
         }
-        self.load()
+        try await self.load()
     }
 
-    func awaitLoad() async throws {
+    func load() async throws {
         guard let short_id = self.short_id else {
             return
         }
         if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
-        let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
+        let url = APIConfiguration.shared.storyURL(shortId: short_id)
         
         let (data, _) = try await URLSession.shared.data(from: url)
         
@@ -160,46 +159,5 @@ class StoryFetcher: ObservableObject {
         }
         
     }
-    
-    func load() {
-        guard let short_id = self.short_id else {
-            return
-        }
-        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
-            DispatchQueue.main.async {
-                self.story = cachedStory
-            }
-        }
-        let url = URL(string: "https://lobste.rs/s/\(short_id).json")!
 
-        self.session?.cancel()
-
-        self.session = URLSession.shared.dataTask(with: url) {(data,response,error) in
-            DispatchQueue.main.async {
-                self.isReloading = false
-            }
-            do {
-                if let d = data {
-                    let decodedLists = try JSONDecoder().decode(Story.self, from: d)
-                    DispatchQueue.main.async {
-                        self.story = decodedLists
-                    }
-                    Self.fetchQueue.async {
-                        Task { @MainActor in
-                            StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
-                            StoryFetcher.cachedStories.append(decodedLists)
-                            if StoryFetcher.cachedStories.count > 10 {
-                                StoryFetcher.cachedStories.removeFirst()
-                            }
-                        }
-                    }
-                } else {
-                    print("No Data for story")
-                }
-            } catch {
-                print ("Error fetching story \(error)")
-            }
-        }
-        self.session?.resume()
-    }
 }

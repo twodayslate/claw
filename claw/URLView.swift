@@ -9,16 +9,21 @@ import SwiftUI
 
 struct URLView: View {
     var link: HTMLLink
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     @EnvironmentObject var observableSheet: ObservableActiveSheet
     
     var body: some View {
         VStack(alignment: .leading){
             if link.text != link.url {
-                Text("\(link.text)").font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier))).bold().foregroundColor(Color.primary)
+                Text("\(link.text)")
+                    .font(style: .footnote)
+                    .bold()
+                    .foregroundColor(Color.primary)
             }
-            Text("\(fixedUpUrl?.absoluteString ?? link.url)").font(Font(.caption, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(Color.primary)
+            Text("\(fixedUpUrl?.absoluteString ?? link.url)")
+                .font(style: .caption)
+                .foregroundColor(Color.primary)
         }
         .padding()
         .background(.thinMaterial)
@@ -71,7 +76,8 @@ struct URLView_Previews: PreviewProvider {
             .environment(\.colorScheme, .dark)
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
     }
 }

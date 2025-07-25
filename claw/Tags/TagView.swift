@@ -6,7 +6,7 @@ struct TagView: View {
     var tag: String
     
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     var color: Color {
         if tag == "ask" || tag == "show" || tag == "announce" || tag == "interview" {
@@ -31,7 +31,7 @@ struct TagView: View {
             title: tag,
             withChevron: false) {
                 Text(tag)
-                    .font(Font(.footnote, sizeModifier: CGFloat(settings.textSizeModifier)))
+                    .font(style: .footnote)
                     .fixedSize(horizontal: true, vertical: false)
                     .lineLimit(1)
                     .foregroundColor(foregroundColor)
@@ -132,6 +132,7 @@ struct TagView_Previews: PreviewProvider {
             .environment(\.colorScheme, .dark)
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
     }
 }

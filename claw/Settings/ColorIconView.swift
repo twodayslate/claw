@@ -6,18 +6,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ColorIconView: View {
     var color: UIColor
 
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
-    @EnvironmentObject var settings: Settings
+    @Environment(\.dismiss) private var dismiss
+    @Environment(Settings.self) var settings
 
     var body: some View {
         Button(action: {
             settings.accentColorData = color.data
-            try? settings.managedObjectContext?.save()
-            self.presentationMode.wrappedValue.dismiss()
+            dismiss()
         }, label: {
             HStack {
                 ColorPicker(color.name ?? "Unknown", selection: .constant(Color(color)))
@@ -44,8 +44,8 @@ struct ColorIconViewPreview: PreviewProvider {
             ColorIconView(color: .lobsterRed)
             ColorIconView(color: .blue.withAlphaComponent(0.5))
         }
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }

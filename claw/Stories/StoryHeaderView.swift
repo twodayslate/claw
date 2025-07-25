@@ -1,9 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T
         
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
     
@@ -14,7 +15,11 @@ struct StoryHeaderView<T: GenericStory>: View {
         VStack(alignment: .leading) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(story.title).font(Font(.title2, sizeModifier: CGFloat(settings.textSizeModifier))).foregroundColor(.accentColor).fixedSize(horizontal: false, vertical: true).padding([.bottom], 1.0)
+                    Text(story.title)
+                        .font(style: .title2)
+                        .foregroundColor(.accentColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding([.bottom], 1.0)
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
                         Button(action: {
                             guard let url = URL(string: story.url) else {
@@ -27,8 +32,12 @@ struct StoryHeaderView<T: GenericStory>: View {
                                 UIApplication.shared.open(url)
                             }
                         }, label: {
-                            Text(host).foregroundColor(Color.secondary).font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
-                            }).padding([.bottom], 4.0)
+                            Text(host)
+                                .foregroundColor(Color.secondary)
+                                .font(style: .callout)
+                            }
+                        )
+                        .padding([.bottom], 4.0)
                     }
                     HStack(alignment: .center, spacing: 16.0) {
                         VStack(alignment: .center) {
@@ -41,10 +50,10 @@ struct StoryHeaderView<T: GenericStory>: View {
                             SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
                                 Text("via ").foregroundColor(Color.secondary) +
                                 Text(story.submitter_user)
-                                    .font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
                                     .foregroundColor(story.user_is_author ? .blue : .gray) +
                                     Text(" " + story.time_ago).foregroundColor(Color.secondary)
-                            }.font(Font(.callout, sizeModifier: CGFloat(settings.textSizeModifier)))
+                            }
+                            .font(style: .callout)
                         }
                     }
                 }
@@ -91,11 +100,11 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description.trimmingCharacters(in: .whitespacesAndNewlines))
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link).environmentObject(urlToOpen).environmentObject(settings)
+                        URLView(link: link).environmentObject(urlToOpen)
                     }
                 }.padding()
             }
-        }.onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+        }.onTapGesture(count: 1, perform: {
             if !story.url.isEmpty {
                 guard let url = URL(string: story.url) else {
                     // show error

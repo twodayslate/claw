@@ -6,9 +6,9 @@ struct UserView: View {
     @ObservedObject var userFetcher: UserFetcher
     var username: String?
     @Environment(\.didReselect) var didReselect
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     
     init(_ user: NewestUser) {
@@ -71,7 +71,7 @@ struct UserView: View {
                         VStack(alignment: .leading) {
                             ForEach(keybase) { auth in
                                 HStack {
-                                    Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+                                    Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
                                         let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username)!
                                         if settings.browser == .inAppSafari {
                                             urlToOpen.url = keybase_url
@@ -79,7 +79,7 @@ struct UserView: View {
                                             UIApplication.shared.open(keybase_url)
                                         }
                                     })
-                                    Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+                                    Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
                                         if let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username  + "/sigchain#" + auth.sig_hash) {
                                             if settings.browser == .inAppSafari {
                                                 urlToOpen.url = keybase_url
@@ -103,7 +103,7 @@ struct UserView: View {
         }
         .navigationBarTitle(self.username ?? "").onReceive(didReselect) { _ in
             DispatchQueue.main.async {
-                self.presentationMode.wrappedValue.dismiss()
+                dismiss()
             }
         }
         .task {
@@ -136,7 +136,8 @@ struct UserView_Previews: PreviewProvider {
             UserView(.placeholder)
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         .environmentObject(ObservableURL())
     }
 }
