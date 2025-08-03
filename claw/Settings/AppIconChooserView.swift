@@ -71,36 +71,9 @@ struct AppIconChooserView: View {
                 })
             }
 
-            ZStack(alignment: .leading) {
-                Button {
-                    UIApplication.shared.setAlternateIconName("ClawHeart", completionHandler: {error in
-                        guard error == nil else {
-                            // show error
-                            return
-                        }
-                        settings.alternateIconName = "ClawHeart"
-                        try? settings.managedObjectContext?.save()
-                        self.presentationMode.wrappedValue.dismiss()
-                    })
-                } label: {
-                    AppIconView(icon: AppIcon(alternateIconName: "ClawHeart", name: "clawve", assetName: "ClawHeart-thumb", subtitle: "Maria Garcia (mariajgarcia.com)"))
-                        .environmentObject(settings)
-                }
-                .disabled(!storeModel.owned)
-                .blur(radius: storeModel.owned ? 0.0 : 5.0)
-                if !storeModel.owned {
-                    NavigationLink(destination: Pro()) {
-                        HStack {
-                            Spacer()
-                            Text("Unlock Supporter Icons")
-                                .font(.headline)
-                                .foregroundColor(.accentColor)
-                                .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
-                            Spacer()
-                        }
-
-                    }
-                }
+            Section("Supporter Icons") {
+                iapAppIcon(AppIcon(alternateIconName: "ClawHeart", name: "clawve", assetName: "ClawHeart-thumb", subtitle: "Maria Garcia (mariajgarcia.com)"))
+                iapAppIcon(AppIcon(alternateIconName: "blueprint", name: "Blueprint", assetName: "blueprint-thumb", subtitle: nil))
             }
         }
         .listStyle(GroupedListStyle())
@@ -108,5 +81,43 @@ struct AppIconChooserView: View {
         .alert(isPresented: $showAlert, content: {
             Alert(title: Text("Error"), message: Text("Unable to set icon. Try again later."), dismissButton: .default(Text("Okay")))
         })
+    }
+
+    func iapAppIcon(_ icon: AppIcon) -> some View {
+        ZStack(alignment: .leading) {
+            iconButton(icon)
+            .disabled(!storeModel.owned)
+            .blur(radius: storeModel.owned ? 0.0 : 5.0)
+            if !storeModel.owned {
+                NavigationLink(destination: Pro()) {
+                    HStack {
+                        Spacer()
+                        Text("Unlock Supporter Icons")
+                            .font(.headline)
+                            .foregroundColor(.accentColor)
+                            .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
+                        Spacer()
+                    }
+
+                }
+            }
+        }
+    }
+
+    func iconButton(_ icon: AppIcon) -> some View {
+        Button {
+            UIApplication.shared.setAlternateIconName(icon.alternateIconName, completionHandler: { error in
+                guard error == nil else {
+                    // show error
+                    return
+                }
+                settings.alternateIconName = icon.alternateIconName
+                try? settings.managedObjectContext?.save()
+                self.presentationMode.wrappedValue.dismiss()
+            })
+        } label: {
+            AppIconView(icon: icon)
+                .environmentObject(settings)
+        }
     }
 }
