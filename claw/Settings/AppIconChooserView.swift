@@ -5,7 +5,8 @@ struct AppIconChooserView: View {
     @Environment(Settings.self) var settings
     @Environment(\.dismiss) private var dismiss
     @StateObject var storeModel: StoreKitModel = .pro
-    
+    @Environment(\.managedObjectContext) var managedObjectContext
+
     @State var showAlert = false
     var body: some View {
         List {
@@ -107,12 +108,11 @@ struct AppIconChooserView: View {
                     return
                 }
                 settings.alternateIconName = icon.alternateIconName
-                try? settings.managedObjectContext?.save()
-                self.presentationMode.wrappedValue.dismiss()
+                try? managedObjectContext.save()
+                dismiss()
             })
         } label: {
             AppIconView(icon: icon)
-                .environmentObject(settings)
         }
     }
 }

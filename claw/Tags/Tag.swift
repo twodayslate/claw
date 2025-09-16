@@ -16,7 +16,4 @@ struct Tag: Codable, Identifiable, Hashable {
     var hotness_mod: Double
 
     var id: Int { hashValue }
-	var permit_by_new_users: Bool
-    var category_id: Int?
-    var category: String?
 }

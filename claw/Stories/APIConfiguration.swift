@@ -36,7 +36,7 @@ class APIConfiguration {
         #if DEBUG
         // For development, change this to your local docker-lobsters instance
         // Example: "http://localhost:3000"
-        return "http://localhost:3000"
+        return "https://lobste.rs"
         #else
         // Production always uses lobste.rs
         return "https://lobste.rs"
