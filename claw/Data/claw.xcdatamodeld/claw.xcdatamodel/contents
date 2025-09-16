@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="22G90" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
-    <entity name="Settings" representedClassName=".Settings" syncable="YES">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24270" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Settings" representedClassName=".CoreDataSettings" syncable="YES">
         <attribute name="accentColorData" optional="YES" attributeType="Binary"/>
         <attribute name="alternateIconName" optional="YES" attributeType="String"/>
         <attribute name="browserRawValue" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
@@ -10,7 +10,7 @@
         <attribute name="textSizeModifier" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
-    <entity name="ViewedItem" representedClassName=".ViewedItem" syncable="YES">
+    <entity name="ViewedItem" representedClassName=".CoreDataViewedItem" syncable="YES">
         <attribute name="isComment" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="isStory" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="short_id" optional="YES" attributeType="String"/>

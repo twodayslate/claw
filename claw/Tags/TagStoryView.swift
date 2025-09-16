@@ -4,41 +4,48 @@ import SwiftUI
 import SimpleCommon
 
 struct TagStoryView: View {
-    @ObservedObject var stories: TagStoryFetcher
+    @StateObject var stories: TagStoryFetcher
     @ObservedObject var tags = TagFetcher.shared
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
-    
+
+    @State var error: Error?
+
     init(tags: [String]) {
-        self.stories = TagStoryFetcher(tags: tags)
+        self._stories = StateObject(wrappedValue: TagStoryFetcher(tags: tags))
     }
     
     @State private var scrollViewContentOffset = CGFloat(0)
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ScrollViewReader { scrollProxy in
             SimpleScrollView(contentOffset: $scrollViewContentOffset) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if self.stories.tags.count == 1, let tag = tags.tags.first(where: {$0.tag == self.stories.tags.first }) {
-                        Text("\(tag.description)").id(0).padding().foregroundColor(.gray)
+                    if self.stories.tags.count == 1, let tag = tags.tags.first(where: {$0.tag == self.stories.tags.first }), let description = tag.description {
+                        Text("\(description)").id(0).padding().foregroundColor(.gray)
                         Divider().padding(0).padding([.leading])
                     } else {
                         Divider().id(0).padding(0).padding([.leading])
                     }
                    
-                    if stories.items.count <= 0 {
+                    if stories.items.isEmpty {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
+                            StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
-                    }
-                    ForEach(stories.items) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
-                            self.stories.more(story)
+                    } else {
+                        ForEach(stories.items) { story in
+                            StoryListCellView(story: story).id(story).task {
+                                do {
+                                    try await self.stories.more(story)
+                                } catch {
+                                    print("error", error)
+                                }
+                            }
+                            Divider().padding(0).padding([.leading])
                         }
-                        Divider().padding(0).padding([.leading])
                     }
                     if stories.isLoadingMore {
                         HStack {
@@ -50,27 +57,33 @@ struct TagStoryView: View {
                 }.onDisappear(perform: {
                     self.isVisible = false
                 })
+                .animation(.default, value: stories.items)
                 .task {
-                    self.stories.loadIfEmpty()
+                    do {
+                        try await self.stories.loadIfEmpty()
+                    } catch {
+                        self.error = error
+                    }
                 }
                 .task {
                     do {
                         try await self.tags.loadIfEmpty()
                     } catch {
-                        // todo: set and use error
+                        self.error = error
                     }
                 }
                 .onAppear {
                     self.isVisible = true
                 }
-                .navigationBarTitle(self.stories.tags.joined(separator: ", ")).onReceive(didReselect) { _ in
+                .navigationBarTitle(self.stories.tags.joined(separator: ", "))
+                .onReceive(didReselect) { _ in
                     DispatchQueue.main.async {
                         if self.isVisible && scrollViewContentOffset > 0.1 {
                             withAnimation {
                                 scrollProxy.scrollTo(0)
                             }
                         } else {
-                            presentationMode.wrappedValue.dismiss()
+                            dismiss()
                         }
                     }
                 }
@@ -78,12 +91,13 @@ struct TagStoryView: View {
             .refreshable {
                 await Task {
                     do {
-                        try await stories.refresh()
+                        try await stories.reload()
                     } catch {
-                        // no-op
+                        self.error = error
                     }
                 }.value
             }
+            .errorAlert(error: $error)
         }
     }
 }

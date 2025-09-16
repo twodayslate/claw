@@ -44,7 +44,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     
     var child: CommentStructure
 
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     @Binding var sharedComment: Comment?
     
@@ -116,7 +116,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                 }
             }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")})
         })
-        .onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
+        .onTapGesture(count: 1, perform: {
             withAnimation(.easeIn) {
                 backgroundColorState = Color(UIColor.systemGray4)
                 withAnimation(.easeOut) {

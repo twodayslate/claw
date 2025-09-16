@@ -13,7 +13,7 @@ import SwiftSoup
 // * https://github.com/Lambdo-Labs/MDText
 
 struct NodesView: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     
     var nodes: [Node]
     var bullet = "•"
@@ -292,7 +292,8 @@ struct HTMLView_Previews: PreviewProvider {
             }
         }
         .previewLayout(.sizeThatFits)
-        .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+        .modelContainer(PersistenceControllerV2.preview.container)
+        .environment(SettingsV2())
         
         " ".join([
             Text("Hello"), Text("link").foregroundColor(.blue), Text("world!"), Text("**[bold](https://site.com)**"),

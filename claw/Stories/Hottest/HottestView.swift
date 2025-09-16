@@ -1,28 +1,35 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 struct HottestView: View {
     @ObservedObject var hottest = HottestFetcher.shared
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
-    
+    @State var error: Error?
+
     var body: some View {
         ScrollViewReader { scrollProxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if hottest.stories.count <= 0 {
+                    if hottest.items.isEmpty {
                         ForEach(1..<10) { _ in
-                            StoryListCellView(story: NewestStory.placeholder).environmentObject(settings).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
+                            StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                         }
                         Divider().padding(0).padding([.leading])
-                    }
-                    ForEach(hottest.stories) { story in
-                        StoryListCellView(story: story).id(story).environmentObject(settings).task {
-                            self.hottest.more(story)
+                    } else {
+                        ForEach(hottest.items) { story in
+                            StoryListCellView(story: story).id(story).task {
+                                do {
+                                    try await self.hottest.more(story)
+                                } catch {
+                                    print("error", error)
+                                }
+                            }
+                            Divider().padding(0).padding([.leading])
                         }
-                        Divider().padding(0).padding([.leading])
                     }
                     if hottest.isLoadingMore {
                         HStack {
@@ -32,6 +39,7 @@ struct HottestView: View {
                         }
                     }
                 }
+                .animation(.default, value: hottest.items)
                 .onDisappear {
                     self.isVisible = false
                 }
@@ -43,21 +51,29 @@ struct HottestView: View {
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {
-                                scrollProxy.scrollTo(hottest.stories.first)
+                                scrollProxy.scrollTo(hottest.items.first)
                             }
                         }
                     }
                 }
             }
+            .task {
+                do {
+                    try await hottest.loadIfEmpty()
+                } catch {
+                    self.error = error
+                }
+            }
             .refreshable {
                 await Task {
                     do {
-                        try await self.hottest.refresh()
+                        try await self.hottest.reload()
                     } catch {
-                        // no-op
+                        self.error = error
                     }
                 }.value
             }
+            .errorAlert(error: $error)
         }
     }
 }

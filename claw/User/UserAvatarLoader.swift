@@ -8,7 +8,8 @@ struct UserAvatarLoader: View {
     
     init(user: NewestUser) {
         self.user = user
-        if let url = URL(string: "https://lobste.rs/"+user.avatar_url) {
+        
+        if let url = APIConfiguration.shared.userAvatarURL(avatarPath: user.avatar_url) {
             self.imageUrl = url
         } else {
             self.imageUrl = URL(string: user.avatar_url)!

@@ -7,38 +7,24 @@ struct Provider: TimelineProvider {
     @ObservedObject var hottest = HottestFetcher()
     
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
-        let entry = SimpleEntry(date: Date(), stories: hottest.stories)
+        let entry = SimpleEntry(date: Date(), stories: hottest.items)
         completion(entry)
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
         var entries: [SimpleEntry] = []
-        
-        let url = URL(string: "https://lobste.rs/hottest.json")!
-    
-        hottest.load()
-        
-        URLSession.shared.dataTask(with: url) {(data,response,error) in
-            do {
-                if let d = data {
-                    let decodedLists = try JSONDecoder().decode([NewestStory].self, from: d)
-                    DispatchQueue.main.async {
-                        let entry = SimpleEntry(date: Calendar.current.date(byAdding: .hour, value: 1, to: Date())!, stories: decodedLists)
-                        entries.append(entry)
-                        let timeline = Timeline(entries: entries, policy: .atEnd)
-                        completion(timeline)
-                    }
-                }else {
-                    print("No Data")
-                }
-            } catch {
-                print ("Error \(error)")
-            }
-        }.resume()
+
+        Task {
+            try await hottest.load()
+            let entry = SimpleEntry(date: Calendar.current.date(byAdding: .hour, value: 1, to: Date())!, stories: hottest.items)
+            entries.append(entry)
+            let timeline = Timeline(entries: entries, policy: .atEnd)
+            completion(timeline)
+        }
     }
     
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), stories: hottest.stories)
+        SimpleEntry(date: Date(), stories: hottest.items)
     }
 }
 

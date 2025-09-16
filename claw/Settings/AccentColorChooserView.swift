@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AccentColorChooserView: View {
-    @EnvironmentObject var settings: Settings
+    @Environment(Settings.self) var settings
     @State var customColor: Color = .accentColor
     @StateObject var storeModel = StoreKitModel.pro
 
@@ -36,7 +37,7 @@ struct AccentColorChooserView: View {
                         HStack {
                             Spacer()
                             Text("Unlock Custom Colors")
-                                .font(.headline)
+                                .font(style: .headline)
                                 .foregroundColor(.accentColor)
                                 .shadow(color: Color(UIColor.systemBackground), radius: 3.0)
                             Spacer()
@@ -61,7 +62,6 @@ struct AccentColorChooserView: View {
     var customRow: some View {
         Button {
             settings.accentColorData = UIColor(customColor).data
-            try? settings.managedObjectContext?.save()
             dismiss()
         } label: {
             HStack {
@@ -69,8 +69,7 @@ struct AccentColorChooserView: View {
                 .labelsHidden()
                 .onChange(of: customColor) {
                     if isCustom {
-                        settings.accentColorData = UIColor($0).data
-                        try? settings.managedObjectContext?.save()
+                        settings.accentColorData = UIColor(customColor).data
                     }
                 }
                 Text("Custom").foregroundColor(Color(UIColor.label))
@@ -87,8 +86,8 @@ struct AccentColorChooserView: View {
 struct AccentColorChooserViewPreview: PreviewProvider {
     static var previews: some View {
         AccentColorChooserView()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            .environmentObject(Settings(context: PersistenceController.preview.container.viewContext))
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environment(SettingsV2())
             .environmentObject(ObservableURL())
     }
 }
