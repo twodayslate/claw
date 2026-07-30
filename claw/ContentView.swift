@@ -138,7 +138,10 @@ struct ContentView: View {
                 if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), APIConfiguration.shared.isLobstersHost(lobsters_url.host) {
                     if lobsters_url.pathComponents.count > 2 {
                         if lobsters_url.pathComponents[1] == "s" {
-                            self.observableSheet.sheet = ActiveSheet.story(id: lobsters_url.pathComponents[2])
+                            self.observableSheet.sheet = ActiveSheet.story(
+                                id: lobsters_url.pathComponents[2],
+                                url: lobsters_url
+                            )
                         }
                         else if lobsters_url.pathComponents[1] == "u" {
                             self.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
@@ -169,10 +172,10 @@ struct ContentView: View {
         })
         .sheet(item: self.$observableSheet.sheet, content: { item in
             switch item {
-            case .story(let id):
+            case .story(let id, let url):
                 withEnvironment {
                     SimplePanel{
-                        StoryView(id).id(id)
+                        StoryView(id, commentsURL: url).id(id)
                     }.id(id)
                 }
             case .user(let username):

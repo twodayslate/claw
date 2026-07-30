@@ -50,7 +50,7 @@ class APIConfiguration {
     }
     
     func storyURL(shortId: String) -> URL {
-        return URL(string: "\(baseURL)/s/\(shortId).json")!
+        return URL(string: "\(baseURL)/s/\(shortId)")!
     }
     
     func hottestURL(page: Int) -> URL {

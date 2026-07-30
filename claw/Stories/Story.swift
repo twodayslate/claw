@@ -109,9 +109,15 @@ class StoryFetcher: ObservableObject {
     @Published var story: Story? = nil
 
     public var short_id: String? = nil
+    public var pageURL: URL? = nil
+    private let webpageFetcher: WebpageFetcher
 
-    init(_ short_id: String? = nil) {
+    init(
+        _ short_id: String? = nil,
+        webpageFetcher: WebpageFetcher = .shared
+    ) {
         self.short_id = short_id
+        self.webpageFetcher = webpageFetcher
     }
 
     static var cachedStories = [Story]()
@@ -143,17 +149,36 @@ class StoryFetcher: ObservableObject {
         if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
-        let url = APIConfiguration.shared.storyURL(shortId: short_id)
-        
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let configuredURL = APIConfiguration.shared.storyURL(shortId: short_id)
+        let url: URL
+        if let pageURL, APIConfiguration.shared.isLobstersHost(pageURL.host) {
+            url = pageURL
+        } else {
+            url = configuredURL
+        }
+
+        var request = URLRequest(url: url)
+
+        let isShortURL = url.pathComponents.count == 3
+            && url.pathComponents[1] == "s"
+            && url.pathComponents[2] == short_id
+        let hasCookies = !webpageFetcher.cookies(for: url).isEmpty
+        if isShortURL, !hasCookies {
+            request.setValue("claw_cache_bypass=1", forHTTPHeaderField: "Cookie")
+        }
+
+        let webpage = try await webpageFetcher.fetch(request)
         
         isReloading = false
 
-        let decodedLists = try JSONDecoder().decode(Story.self, from: data)
-        self.story = decodedLists
+        let parsedStory = try StoryHTMLParser.parse(
+            webpage.html,
+            pageURL: webpage.url
+        )
+        self.story = parsedStory
 
         StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
-        StoryFetcher.cachedStories.append(decodedLists)
+        StoryFetcher.cachedStories.append(parsedStory)
         if StoryFetcher.cachedStories.count > 10 {
             StoryFetcher.cachedStories.removeFirst()
         }

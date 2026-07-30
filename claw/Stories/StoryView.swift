@@ -7,17 +7,20 @@ import SimpleCommon
 struct StoryView: View {
     var short_id: String
     var from_newest: NewestStory?
+    var commentsURL: URL?
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
     @StateObject var story = StoryFetcher()
     
-    init(_ short_id: String) {
+    init(_ short_id: String, commentsURL: URL? = nil) {
         self.short_id = short_id
+        self.commentsURL = commentsURL
     }
     
     init(_ story: NewestStory) {
         self.from_newest = story
         self.short_id = story.short_id
+        self.commentsURL = URL(string: story.comments_url)
     }
     
     var title: String {
@@ -146,6 +149,7 @@ struct StoryView: View {
             }
             .task {
                 self.story.short_id = self.short_id
+                self.story.pageURL = self.commentsURL
                 do {
                     try await self.story.load()
                 } catch {

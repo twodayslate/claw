@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F60000022E50000100C0DE01 /* WebpageFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */; };
 		F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116B251057E70065C3E9 /* WidgetKit.framework */; };
 		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
 		F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291170251057E70065C3E9 /* hottest_widget.swift */; };
@@ -71,6 +72,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebpageFetcherTests.swift; sourceTree = "<group>"; };
 		F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = hottest.widgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F629116D251057E70065C3E9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -217,6 +219,7 @@
 			isa = PBXGroup;
 			children = (
 				F669C946250C5DDE00B1FF42 /* clawTests.swift */,
+				F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */,
 				F669C948250C5DDE00B1FF42 /* Info.plist */,
 			);
 			path = clawTests;
@@ -463,6 +466,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F669C947250C5DDE00B1FF42 /* clawTests.swift in Sources */,
+				F60000022E50000100C0DE01 /* WebpageFetcherTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,7 +7,7 @@ enum ActiveSheet: Identifiable, Equatable {
 
     case share(URL)
     case safari(URL)
-    case story(id:String)
+    case story(id:String, url:URL?)
     case user(username:String)
     case url(URL)
     case error(Error)
@@ -17,7 +17,7 @@ enum ActiveSheet: Identifiable, Equatable {
         case .share(let url): return "share:\(url.absoluteString)"
         case .safari(let url): return "safari:\(url.absoluteString)"
         case .user(let username): return "user:\(username)"
-        case .story(let id): return "id:\(id)"
+        case .story(let id, _): return "id:\(id)"
         case .url(let url): return "url\(url.absoluteString)"
         case .error(let error): return "error: \(error)"
         }
