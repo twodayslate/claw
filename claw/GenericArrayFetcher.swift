@@ -9,6 +9,7 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var isLoadingMore = false
     @Published var isReloading = false
     @Published var isLoading = false
+    @Published var hasAttemptedLoad = false
 
     public internal(set) var page: Int = 1
     

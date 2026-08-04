@@ -16,6 +16,7 @@ class NewestFetcher: GenericArrayFetcher<NewestStory> {
         if isLoading {
             return
         }
+        hasAttemptedLoad = true
         page = 1
         isLoading = true
         defer {

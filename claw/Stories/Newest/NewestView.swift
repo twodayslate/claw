@@ -13,11 +13,13 @@ struct NewestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if newest.items.isEmpty {
+                    if newest.items.isEmpty && (!newest.hasAttemptedLoad || newest.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
+                    } else if newest.items.isEmpty {
+                        StoryFeedEmptyView()
                     } else {
                         ForEach(newest.items) { story in
                             StoryListCellView(story: story).id(story).task {
@@ -77,4 +79,3 @@ struct NewestView: View {
         }
     }
 }
-
