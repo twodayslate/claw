@@ -73,6 +73,7 @@
 
 /* Begin PBXFileReference section */
 		F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebpageFetcherTests.swift; sourceTree = "<group>"; };
+		F60000172E50000100C0DE01 /* Info-Debug.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Debug.plist"; sourceTree = "<group>"; };
 		F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = hottest.widgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F629116D251057E70065C3E9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -100,6 +101,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"claw: Unofficial Lobsters App.storekit",
+				"Info-Debug.plist",
 				Info.plist,
 			);
 			target = F669C92B250C5DD400B1FF42 /* claw */;
@@ -184,6 +186,7 @@
 			children = (
 				F6291170251057E70065C3E9 /* hottest_widget.swift */,
 				F6291173251057E80065C3E9 /* Assets.xcassets */,
+				F60000172E50000100C0DE01 /* Info-Debug.plist */,
 				F6291175251057E80065C3E9 /* Info.plist */,
 			);
 			path = hottest.widget;
@@ -533,7 +536,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = C6L3992RFB;
-				INFOPLIST_FILE = hottest.widget/Info.plist;
+				INFOPLIST_FILE = "hottest.widget/Info-Debug.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -704,7 +707,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"claw/Preview Content\"";
 				DEVELOPMENT_TEAM = C6L3992RFB;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = claw/Info.plist;
+				INFOPLIST_FILE = "claw/Info-Debug.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

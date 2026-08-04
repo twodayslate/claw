@@ -34,9 +34,7 @@ class APIConfiguration {
     /// Release builds always use production server
     var baseURL: String {
         #if DEBUG
-        // For development, change this to your local docker-lobsters instance
-        // Example: "http://localhost:3000"
-        return "https://lobste.rs"
+        return "http://localhost:3000"
         #else
         // Production always uses lobste.rs
         return "https://lobste.rs"
