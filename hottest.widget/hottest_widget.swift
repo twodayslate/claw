@@ -7,7 +7,8 @@ struct Provider: TimelineProvider {
     @ObservedObject var hottest = HottestFetcher()
     
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
-        let entry = SimpleEntry(date: Date(), stories: hottest.items)
+        let stories = HottestWidgetCache.load() ?? hottest.items
+        let entry = SimpleEntry(date: Date(), stories: stories)
         completion(entry)
     }
     
@@ -15,16 +16,48 @@ struct Provider: TimelineProvider {
         var entries: [SimpleEntry] = []
 
         Task {
-            try await hottest.load()
-            let entry = SimpleEntry(date: Calendar.current.date(byAdding: .hour, value: 1, to: Date())!, stories: hottest.items)
+            do {
+                try await hottest.load()
+                HottestWidgetCache.save(hottest.items)
+            } catch {
+                hottest.items = HottestWidgetCache.load() ?? []
+            }
+
+            let now = Date()
+            let entry = SimpleEntry(date: now, stories: hottest.items)
             entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
+            let refreshDate = Calendar.current.date(
+                byAdding: .hour,
+                value: 1,
+                to: now
+            ) ?? now.addingTimeInterval(3600)
+            let timeline = Timeline(entries: entries, policy: .after(refreshDate))
             completion(timeline)
         }
     }
     
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), stories: hottest.items)
+        SimpleEntry(date: Date(), stories: nil)
+    }
+}
+
+private enum HottestWidgetCache {
+    private static let suiteName = "group.com.twodayslate.claw"
+    private static let key = "hottest-widget-stories-v2"
+
+    static func load() -> [NewestStory]? {
+        guard let defaults = UserDefaults(suiteName: suiteName),
+              let data = defaults.data(forKey: key) else {
+            return nil
+        }
+        return try? JSONDecoder().decode([NewestStory].self, from: data)
+    }
+
+    static func save(_ stories: [NewestStory]) {
+        guard let data = try? JSONEncoder().encode(stories) else {
+            return
+        }
+        UserDefaults(suiteName: suiteName)?.set(data, forKey: key)
     }
 }
 
@@ -65,6 +98,7 @@ struct hottest_widgetEntryView : View {
                 Text(entry.date, style: .time)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding()
         .fixupContainerBackgroundWidget {
             Color(UIColor.systemBackground)
@@ -105,6 +139,8 @@ struct SmallestHottestWidgetView: View {
                     }
                     .foregroundColor(.gray)
                     .widgetURL(URL(string: "claw://open?url=\(story.short_id_url)"))
+                } else if entry.stories != nil {
+                    WidgetEmptyStateView()
                 } else {
                     Spacer(minLength: 0)
                     Text("A redacted title goes here")
@@ -132,63 +168,38 @@ struct MediumHottestWidgetView: View {
     var body: some View {
         Text("\(Image(systemName: "flame"))").foregroundColor(.red)
         Divider()
-        Spacer()
         
-        if let stories = entry.stories, let story = stories.first {
-            let story2 = stories[1]
-            Link(destination: URL(string: "claw://open?url=\(story.short_id_url)") ?? URL(string: "claw://")!) {
-                Text(story.title)
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                HStack(alignment: .center, spacing: 4.0) {
-                    Text("via").font(.caption)
-                    Text("\(story.submitter_user)").font(.caption)
-                    Text("\(story.time_ago)").font(.caption)
-                    Spacer(minLength: 0)
-                    Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
-                }.foregroundColor(.gray)
-            }
-            
-            Spacer()
-
-            Link(destination: URL(string: "claw://open?url=\(story2.short_id_url)") ?? URL(string: "claw://")!){
-                Text(story2.title)
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                HStack(alignment: .center, spacing: 4.0) {
-                    Text("via").font(.caption)
-                    Text("\(story2.submitter_user)").font(.caption)
-                    Text("\(story2.time_ago)").font(.caption)
-                    Spacer(minLength: 0)
-                    Text("\(Image(systemName: "arrow.up")) \(story2.score)").font(.footnote)
-                }.foregroundColor(.gray)
+        if let stories = entry.stories {
+            if stories.isEmpty {
+                WidgetEmptyStateView()
+            } else {
+                let visibleStories = Array(stories.prefix(2))
+                ForEach(visibleStories) { story in
+                    LargeStoryView(story: story)
+                    if story != visibleStories.last {
+                        Spacer()
+                    }
+                }
             }
         } else {
-            Text("The first redacted title")
-                .font(.subheadline)
-                .redacted(reason: .placeholder)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(alignment: .center, spacing: 4.0) {
-                Text("via").font(.caption)
-                Text("username").font(.caption).redacted(reason: .placeholder)
-                Text("some time ago").font(.caption).redacted(reason: .placeholder)
-                Spacer(minLength: 0)
-                Text("\(Image(systemName: "arrow.up")) -").font(.footnote)
-            }.foregroundColor(.gray)
-            
             Spacer()
-            
-            Text("A second redacted title goes here")
-                .font(.subheadline)
-                .redacted(reason: .placeholder)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(alignment: .center, spacing: 4.0) {
-                Text("via").font(.caption)
-                Text("username").font(.caption).redacted(reason: .placeholder)
-                Text("some time ago").font(.caption).redacted(reason: .placeholder)
-                Spacer(minLength: 0)
-                Text("\(Image(systemName: "arrow.up")) -").font(.footnote)
-            }.foregroundColor(.gray)
+            LargeStoryView(story: nil)
+            Spacer()
+            LargeStoryView(story: nil)
+        }
+    }
+}
+
+struct WidgetEmptyStateView: View {
+    var body: some View {
+        VStack {
+            Spacer(minLength: 0)
+            Text("No stories available")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
         }
     }
 }
@@ -232,16 +243,20 @@ struct LargeHottestWidgetView: View {
     var body: some View {
         Text("\(Image(systemName: "flame"))").foregroundColor(.red)
         Divider()
-        Spacer()
-        if let stories = entry.stories, stories.count > 3 {
-            LargeStoryView(story: stories[0])
-            Spacer()
-            LargeStoryView(story: stories[1])
-            Spacer()
-            LargeStoryView(story: stories[2])
-            Spacer()
-            LargeStoryView(story: stories[3])
+        if let stories = entry.stories {
+            if stories.isEmpty {
+                WidgetEmptyStateView()
+            } else {
+                let visibleStories = Array(stories.prefix(4))
+                ForEach(visibleStories) { story in
+                    LargeStoryView(story: story)
+                    if story != visibleStories.last {
+                        Spacer()
+                    }
+                }
+            }
         } else {
+            Spacer()
             LargeStoryView(story: nil)
             Spacer()
             LargeStoryView(story: nil)
