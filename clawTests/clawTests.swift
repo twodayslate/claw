@@ -722,7 +722,7 @@ class clawTests: XCTestCase {
 
         session.beginLogin()
         _ = try await feedClient.load(configuration.loginURL())
-        let submitted = try await feedClient.callAsyncJavaScript(
+        let submitted = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
             """
             const email = document.getElementById('email');
             const password = document.getElementById('password');
@@ -736,7 +736,6 @@ class clawTests: XCTestCase {
             arguments: ["username": "test", "passphrase": "test"]
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await feedClient.waitForCurrentNavigation()
 
         for _ in 0..<200 {
             if session.isAuthenticated,
@@ -786,7 +785,7 @@ class clawTests: XCTestCase {
 
         let client = LobstersWebViewClient(dataStore: .nonPersistent())
         _ = try await client.load(configuration.loginURL())
-        let submitted = try await client.callAsyncJavaScript(
+        let submitted = try await client.callAsyncJavaScriptWaitingForNavigation(
             """
             const email = document.getElementById('email');
             const password = document.getElementById('password');
@@ -800,7 +799,6 @@ class clawTests: XCTestCase {
             arguments: ["username": "test", "passphrase": "test"]
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await client.waitForCurrentNavigation()
         let signedInUsername = try await client.evaluateJavaScript(
             "document.body?.dataset?.username || ''"
         ) as? String
@@ -855,7 +853,7 @@ class clawTests: XCTestCase {
         } catch let error as URLError where error.code == .cannotConnectToHost {
             throw XCTSkip("The disposable local Lobsters server is not running.")
         }
-        let submitted = try await feedClient.callAsyncJavaScript(
+        let submitted = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
             """
             const email = document.getElementById('email');
             const password = document.getElementById('password');
@@ -869,7 +867,6 @@ class clawTests: XCTestCase {
             arguments: ["username": "test", "passphrase": "test"]
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await feedClient.waitForCurrentNavigation()
 
         let cookies = await feedClient.allCookies()
         let cookie = try XCTUnwrap(cookies.first(where: {
@@ -962,7 +959,7 @@ class clawTests: XCTestCase {
         } catch let error as URLError where error.code == .cannotConnectToHost {
             throw XCTSkip("The disposable local Lobsters server is not running.")
         }
-        let submitted = try await client.callAsyncJavaScript(
+        let submitted = try await client.callAsyncJavaScriptWaitingForNavigation(
             """
             const email = document.getElementById('email');
             const password = document.getElementById('password');
@@ -976,7 +973,6 @@ class clawTests: XCTestCase {
             arguments: ["username": "test", "passphrase": "test"]
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await client.waitForCurrentNavigation()
 
         let fixtureID = try await createFixtureStory(
             in: client,
@@ -1016,7 +1012,7 @@ class clawTests: XCTestCase {
     ) async throws -> String {
         let marker = UUID().uuidString
         _ = try await client.load(configuration.newStoryURL())
-        let submitted = try await client.callAsyncJavaScript(
+        let submitted = try await client.callAsyncJavaScriptWaitingForNavigation(
             """
             const form = document.querySelector('#story_holder form');
             const title = document.getElementById('story_title');
@@ -1036,7 +1032,6 @@ class clawTests: XCTestCase {
             ]
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await client.waitForCurrentNavigation()
         let shortID = try await client.evaluateJavaScript(
             "document.querySelector('li.story[data-shortid]')?.dataset.shortid || ''"
         ) as? String
@@ -1201,7 +1196,7 @@ class clawTests: XCTestCase {
             relativeTo: configuration.baseURL
         )!.absoluteURL
         _ = try await client.load(editURL)
-        let submitted = try await client.callAsyncJavaScript(
+        let submitted = try await client.callAsyncJavaScriptWaitingForNavigation(
             """
             const form = document.getElementById('edit_story');
             const button = [...(form?.querySelectorAll('input[type="submit"]') || [])]
@@ -1213,7 +1208,6 @@ class clawTests: XCTestCase {
             """
         )
         XCTAssertEqual(submitted as? Bool, true)
-        try await client.waitForCurrentNavigation()
     }
 
     @MainActor
@@ -1222,9 +1216,10 @@ class clawTests: XCTestCase {
         configuration: APIConfiguration
     ) async throws {
         _ = try await client.load(configuration.settingsURL())
-        let loggedOut = try await client.callAsyncJavaScript(LobstersWebActions.logout)
+        let loggedOut = try await client.callAsyncJavaScriptWaitingForNavigation(
+            LobstersWebActions.logout
+        )
         XCTAssertEqual(loggedOut as? Bool, true)
-        try await client.waitForCurrentNavigation()
         let signedOutUsername = try await client.evaluateJavaScript(
             "document.body?.dataset?.username || ''"
         ) as? String

@@ -195,27 +195,6 @@ final class LobstersWebViewClient: NSObject {
         return try await wait(for: navigation, timeout: timeout)
     }
 
-    func waitForCurrentNavigation(timeout: Duration = .seconds(15)) async throws {
-        let startingURL = currentURL
-
-        // Form submissions begin asynchronously after JavaScript returns. Give WebKit
-        // a short opportunity to publish the new WKNavigation before deciding that no
-        // navigation occurred, while also handling very fast redirects that finish
-        // before the next poll.
-        for _ in 0..<40 {
-            if let activeNavigation {
-                _ = try await wait(for: activeNavigation, timeout: timeout)
-                return
-            }
-            if currentURL != startingURL, !webView.isLoading {
-                return
-            }
-            try await Task.sleep(for: .milliseconds(25))
-        }
-
-        throw ClientError.navigationFailed
-    }
-
     func reloadIfNeeded() {
         guard let webView = retainedWebView else {
             return
@@ -268,6 +247,27 @@ final class LobstersWebViewClient: NSObject {
             Self.log(error, message: "JavaScript call \(callID) failed")
             throw error
         }
+    }
+
+    @discardableResult
+    func callAsyncJavaScriptWaitingForNavigation(
+        _ script: String,
+        arguments: [String: Any] = [:],
+        timeout: Duration = .seconds(15)
+    ) async throws -> Any? {
+        // Capture this before running the script. A form submission can navigate and
+        // finish before callAsyncJavaScript returns, especially on a fast local server.
+        let startingNavigationCount = completedNavigationCount
+        let result = try await callAsyncJavaScript(
+            script,
+            arguments: arguments,
+            timeout: timeout
+        )
+        try await waitForNavigation(
+            after: startingNavigationCount,
+            timeout: timeout
+        )
+        return result
     }
 
     func evaluateJavaScript(
@@ -374,6 +374,23 @@ final class LobstersWebViewClient: NSObject {
                 self?.completeWaiter(waiterID, with: .failure(CancellationError()))
             }
         }
+    }
+
+    private func waitForNavigation(
+        after navigationCount: Int,
+        timeout: Duration
+    ) async throws {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+
+        while clock.now < deadline {
+            if completedNavigationCount > navigationCount, !webView.isLoading {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        throw ClientError.navigationTimedOut
     }
 
     private func completeWaiters(

@@ -778,11 +778,12 @@ final class LobstersSession: ObservableObject {
 
         await webClient.setCookie(cookie)
         _ = try await webClient.load(APIConfiguration.shared.settingsURL())
-        let submitted = try await webClient.callAsyncJavaScript(LobstersWebActions.logout) as? Bool ?? false
+        let submitted = try await webClient.callAsyncJavaScriptWaitingForNavigation(
+            LobstersWebActions.logout
+        ) as? Bool ?? false
         guard submitted else {
             throw SessionError.logoutPageUnavailable
         }
-        try await webClient.waitForCurrentNavigation()
     }
 
     private func discardCancelledLogin(generation: UInt) async {
