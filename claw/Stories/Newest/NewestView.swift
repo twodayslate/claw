@@ -3,6 +3,7 @@ import SwiftUI
 
 struct NewestView: View {
     @ObservedObject var newest = NewestFetcher.shared
+    @EnvironmentObject private var observableSheet: ObservableActiveSheet
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
@@ -60,10 +61,15 @@ struct NewestView: View {
                 }
             }
             .task {
+                guard observableSheet.sheet == nil else {
+                    return
+                }
                 do {
                     try await newest.loadIfEmpty()
                 } catch {
-                    self.error = error
+                    if observableSheet.sheet == nil {
+                        self.error = error
+                    }
                 }
             }
             .refreshable {

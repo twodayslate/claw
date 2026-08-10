@@ -1,0 +1,210 @@
+name: Build and Integration Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  XCODE_VERSION: "26.6"
+  SIMULATOR_MODEL: "iPhone 17 Pro"
+  SIMULATOR_OS: "26.2"
+  LOBSTERS_DIRECTORY: .ci/lobsters
+  COMPOSE_PROJECT_NAME: claw-lobsters-${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  integration:
+    name: Build and Integration Test
+    runs-on: self-hosted
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout Claw
+        uses: actions/checkout@v6
+
+      - name: Checkout latest Lobsters
+        uses: actions/checkout@v6
+        with:
+          repository: lobsters/lobsters
+          ref: main
+          fetch-depth: 1
+          path: ${{ env.LOBSTERS_DIRECTORY }}
+
+      - name: Record Lobsters revision
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        run: |
+          {
+            echo "### Lobsters under test"
+            echo
+            echo "Commit: \`$(git rev-parse HEAD)\`"
+            echo
+            git log -1 --format='Subject: %s'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Isolate Lobsters network port
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        shell: bash
+        run: |
+          ruby -ryaml -e '
+            path = ARGV.fetch(0)
+            compose = YAML.safe_load(File.read(path), aliases: true)
+            compose.fetch("services").fetch("app")["ports"] = [
+              {"target" => 3000, "host_ip" => "127.0.0.1"}
+            ]
+            File.write(path, YAML.dump(compose))
+          ' docker-compose.yaml
+
+      - name: Build latest Lobsters image
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        run: docker compose build --pull --no-cache app
+
+      - name: Initialize Lobsters test data
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        run: docker compose run --rm app bin/setup
+
+      - name: Create Lobsters UI test fixtures
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        shell: bash
+        run: |
+          docker compose run --rm -T app bin/rails runner - <<'RUBY'
+          author = User.find_by!(username: "System")
+          test_user = User.find_by!(username: "test")
+          tag = Tag.find_by!(tag: "test")
+          story = Story.find_or_create_by!(title: "Claw UI Vote Fixture") do |fixture|
+            fixture.user = author
+            fixture.url = "https://example.com/claw-ui-vote-fixture"
+            fixture.tags = [tag]
+          end
+          Vote.where(user: test_user, story: story, comment_id: nil).delete_all
+          RUBY
+
+          story_id="$(
+            docker compose run --rm -T app bin/rails runner \
+              'puts Story.find_by!(title: "Claw UI Vote Fixture").short_id' \
+              | tail -n 1
+          )"
+          if [[ ! "$story_id" =~ ^[a-z0-9]+$ ]]; then
+            echo "Unable to determine the Lobsters UI fixture short ID: $story_id"
+            exit 1
+          fi
+          echo "CLAW_UI_TEST_STORY_ID=$story_id" >> "$GITHUB_ENV"
+
+      - name: Start Lobsters
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        shell: bash
+        run: |
+          docker compose up --detach --force-recreate app
+          address="$(docker compose port app 3000)"
+          port="${address##*:}"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "Unable to determine the Lobsters host port from: $address"
+            exit 1
+          fi
+          base_url="http://127.0.0.1:$port"
+          echo "LOBSTERS_BASE_URL=$base_url" >> "$GITHUB_ENV"
+          echo "CLAW_UI_TEST_BASE_URL=$base_url" >> "$GITHUB_ENV"
+
+      - name: Wait for Lobsters
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        shell: bash
+        run: |
+          ready=false
+          for attempt in {1..120}; do
+            if curl --fail --silent "$LOBSTERS_BASE_URL/" >/dev/null; then
+              ready=true
+              break
+            fi
+            if (( attempt % 15 == 0 )); then
+              echo "Still waiting for Lobsters ($attempt/120)"
+            fi
+            sleep 2
+          done
+
+          if [[ "$ready" != true ]]; then
+            docker compose logs --no-color
+            exit 1
+          fi
+
+      - name: Use configured Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Prepare Xcode
+        shell: bash
+        run: |
+          xcodebuild -downloadComponent MetalToolchain
+          if ! xcodebuild -showsdks | grep -q iphonesimulator; then
+            xcodebuild -downloadPlatform iOS
+          fi
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Setup simulator
+        id: simulator
+        uses: futureware-tech/simulator-action@v5
+        with:
+          model: ${{ env.SIMULATOR_MODEL }}
+          os: iOS
+          os_version: ${{ env.SIMULATOR_OS }}
+          erase_before_boot: true
+          wait_for_boot: true
+          shutdown_after_job: false
+
+      - name: Run unit, integration, and UI tests
+        shell: bash
+        run: |
+          mkdir -p results
+          simulator_id='${{ steps.simulator.outputs.udid }}'
+          xcodebuild \
+            -project claw.xcodeproj \
+            -scheme claw \
+            -configuration Debug \
+            -destination-timeout 60 \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -parallel-testing-enabled NO \
+            -resultBundlePath results/ClawTests.xcresult \
+            CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
+            CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
+            test
+
+      - name: Capture Lobsters diagnostics
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          mkdir -p results
+          if [[ -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" ]]; then
+            docker compose \
+              -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
+              logs --no-color > results/lobsters.log 2>&1
+            docker compose \
+              -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
+              ps > results/lobsters-containers.txt 2>&1
+          fi
+
+      - name: Upload test diagnostics
+        uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: integration-test-results
+          path: results
+          if-no-files-found: ignore
+
+      - name: Stop Lobsters
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [[ -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" ]]; then
+            docker compose \
+              -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
+              down --volumes --rmi local --remove-orphans
+          fi

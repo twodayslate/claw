@@ -61,6 +61,10 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
 }
 
 struct ContentView: View {
+    @EnvironmentObject private var storeModel: StoreKitModel
+    @EnvironmentObject private var sceneDelegate: ClawSceneDelegate
+    @StateObject private var lobstersSession = LobstersSession()
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
     @Query(Settings.fetchLatestDescriptor) var allSettings: [Settings]
             
@@ -83,6 +87,8 @@ struct ContentView: View {
     }
 
     @AppStorage("contentViewSelection") private var _selection: TabSelection = .Hottest
+    @AppStorage(TabBarMinimizePreference.defaultsKey)
+    private var tabBarMinimizePreference: TabBarMinimizePreference = .onScroll
 
     @State private var didReselect = PassthroughSubject<TabSelection, Never>()
 
@@ -98,6 +104,9 @@ struct ContentView: View {
                                                 didReselect.send($0)
                                             }
                                             self._selection = $0
+                                            if storeModel.owned {
+                                                lobstersSession.preparePage(for: $0)
+                                            }
                                         })
         withEnvironment {
             TabView(selection: selection) {
@@ -125,51 +134,85 @@ struct ContentView: View {
                 NavigableTabViewItem(tabSelection: TabSelection.Settings, content: {
                     SettingsView()
                 }, tabItem: {
-                    Image(systemName: "gear")
+                    if storeModel.owned, lobstersSession.isAuthenticated {
+                        if let avatar = lobstersSession.avatarImage {
+                            Image(uiImage: avatar)
+                                .renderingMode(.original)
+                                .clipShape(Circle())
+                                .shadow(
+                                    color: .black.opacity(0.28),
+                                    radius: 2,
+                                    x: 0,
+                                    y: 1
+                                )
+                        } else {
+                            Image(systemName: "person.crop.circle.fill")
+                        }
+                    } else {
+                        Image(systemName: "gear")
+                    }
                     Text("Settings")
                 })
             }
-            .tabBarMinimizeBehavior(.onScrollDown)
+            .tabBarMinimizeBehavior(tabBarMinimizePreference.behavior)
         }
         .environment(\.didReselect, didReselect.eraseToAnyPublisher())
-        .onOpenURL(perform: { url in
-            let _ = print(url)
-            let openAction = {
-                if url.host == "open", let comps = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = comps.queryItems, let item = items.first, item.name == "url", let itemValue = item.value, let lobsters_url = URL(string: itemValue), APIConfiguration.shared.isLobstersHost(lobsters_url.host) {
-                    if lobsters_url.pathComponents.count > 2 {
-                        if lobsters_url.pathComponents[1] == "s" {
-                            self.observableSheet.sheet = ActiveSheet.story(
-                                id: lobsters_url.pathComponents[2],
-                                url: lobsters_url
-                            )
-                        }
-                        else if lobsters_url.pathComponents[1] == "u" {
-                            self.observableSheet.sheet = ActiveSheet.user(username: lobsters_url.pathComponents[2])
-                        } else {
-                            self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
-                        }
-                    } else {
-                        self.observableSheet.sheet = ActiveSheet.url(lobsters_url)
-                    }
+        .environmentObject(lobstersSession)
+        .onAppear {
+            handlePendingAppURL()
+            let entitlementAvailable = storeModel.hasInitialized && storeModel.owned
+            lobstersSession.setEntitlementAvailable(entitlementAvailable)
+            if entitlementAvailable {
+                lobstersSession.preparePage(for: _selection)
+            }
+        }
+        .onChange(of: storeModel.owned) { _, owned in
+            guard storeModel.hasInitialized else {
+                return
+            }
+            lobstersSession.setEntitlementAvailable(owned)
+            Task {
+                if owned {
+                    await lobstersSession.start()
+                    lobstersSession.preparePage(for: _selection)
                 } else {
-                    self.observableSheet.sheet = ActiveSheet.url(url)
+                    await lobstersSession.signOut()
                 }
             }
-            // If the share sheet is currently present, dismiss it. See #22
-            if url.host == "open", let shareSheet = ((UIApplication.shared.windows.first?.rootViewController?.presentedViewController as? SwiftUI.UIHostingController<SwiftUI.AnyView>)?.children.first as? UIActivityViewController) {
-                shareSheet.dismiss(animated: true, completion: {
-                    openAction()
-                })
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard storeModel.owned else {
+                return
             }
-            // Dismiss the current sheet. See #22
-            else if url.host == "open" && (self.observableSheet.sheet != nil || self.urlToOpen.url != nil) {
-                UIApplication.shared.windows.first?.rootViewController?.presentedViewController?.dismiss(animated: true, completion: {
-                        openAction()
-                })
-            } else {
-                openAction()
+            switch phase {
+            case .active:
+                lobstersSession.applicationDidBecomeActive()
+            case .background:
+                lobstersSession.applicationDidEnterBackground()
+            default:
+                break
             }
-        })
+        }
+        .task {
+            do {
+                if !storeModel.hasInitialized {
+                    try await storeModel.initialize()
+                }
+                lobstersSession.setEntitlementAvailable(storeModel.owned)
+                if storeModel.owned {
+                    await lobstersSession.start()
+                    lobstersSession.preparePage(for: _selection)
+                } else {
+                    await lobstersSession.signOut()
+                }
+            } catch {
+                lobstersSession.setEntitlementAvailable(false)
+                lobstersSession.markEntitlementUnavailable(error)
+            }
+        }
+        .onChange(of: sceneDelegate.pendingURL) { _, _ in
+            handlePendingAppURL()
+        }
         .sheet(item: self.$observableSheet.sheet, content: { item in
             switch item {
             case .story(let id, let url):
@@ -208,6 +251,7 @@ struct ContentView: View {
     func withEnvironment<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
             .environment(settings)
+            .environmentObject(lobstersSession)
             .environmentObject(self.observableSheet)
             .environmentObject(urlToOpen)
             .tint(settings.accentColor)
@@ -215,6 +259,63 @@ struct ContentView: View {
             .environment(\.openURL, OpenURLAction { url in
                 return handleUrl(url)
             })
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        let openAction = {
+            if url.host == "open",
+               let components = URLComponents(
+                url: url,
+                resolvingAgainstBaseURL: false
+               ),
+               let item = components.queryItems?.first(where: { $0.name == "url" }),
+               let value = item.value,
+               let lobstersURL = URL(string: value),
+               APIConfiguration.shared.isLobstersURL(lobstersURL) {
+                if lobstersURL.pathComponents.count > 2,
+                   lobstersURL.pathComponents[1] == "s" {
+                    observableSheet.sheet = .story(
+                        id: lobstersURL.pathComponents[2],
+                        url: lobstersURL
+                    )
+                } else if lobstersURL.pathComponents.count > 2,
+                          lobstersURL.pathComponents[1] == "u" {
+                    observableSheet.sheet = .user(
+                        username: lobstersURL.pathComponents[2]
+                    )
+                } else {
+                    observableSheet.sheet = .url(lobstersURL)
+                }
+            } else {
+                observableSheet.sheet = .url(url)
+            }
+        }
+
+        // If the share sheet is currently present, dismiss it. See #22.
+        if url.host == "open",
+           let shareSheet = (
+            (UIApplication.shared.windows.first?.rootViewController?
+                .presentedViewController as? SwiftUI.UIHostingController<SwiftUI.AnyView>)?
+                .children.first as? UIActivityViewController
+           ) {
+            shareSheet.dismiss(animated: true, completion: openAction)
+        } else if url.host == "open"
+                    && (observableSheet.sheet != nil || urlToOpen.url != nil) {
+            // Dismiss the current sheet before presenting the new route. See #22.
+            UIApplication.shared.windows.first?.rootViewController?
+                .presentedViewController?
+                .dismiss(animated: true, completion: openAction)
+        } else {
+            openAction()
+        }
+    }
+
+    private func handlePendingAppURL() {
+        guard let url = sceneDelegate.pendingURL else {
+            return
+        }
+        handleIncomingURL(url)
+        sceneDelegate.consume(url)
     }
 
     func handleUrl(_ url: URL) -> OpenURLAction.Result {
@@ -238,6 +339,9 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().modelContainer(PersistenceControllerV2.preview.container)
+        ContentView()
+            .modelContainer(PersistenceControllerV2.preview.container)
+            .environmentObject(StoreKitModel.pro)
+            .environmentObject(ClawSceneDelegate())
     }
 }

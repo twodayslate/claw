@@ -4,6 +4,7 @@ import SwiftData
 
 struct HottestView: View {
     @ObservedObject var hottest = HottestFetcher.shared
+    @EnvironmentObject private var observableSheet: ObservableActiveSheet
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
@@ -60,10 +61,15 @@ struct HottestView: View {
                 }
             }
             .task {
+                guard observableSheet.sheet == nil else {
+                    return
+                }
                 do {
                     try await hottest.loadIfEmpty()
                 } catch {
-                    self.error = error
+                    if observableSheet.sheet == nil {
+                        self.error = error
+                    }
                 }
             }
             .refreshable {

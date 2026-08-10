@@ -32,21 +32,44 @@ enum WebpageFetcherError: LocalizedError {
 final class WebpageFetcher {
     static let shared = WebpageFetcher()
 
-    private let session: URLSession
-    private let cookieStorage: HTTPCookieStorage
+    private let pageLoader: LobstersPageLoader
+    private let cookieStorage: HTTPCookieStorage?
+    private let credentialStore: LobstersCredentialStore
+    private let storedCredentialPolicy: LobstersStoredCredentialPolicy
 
-    init(cookieStorage: HTTPCookieStorage = .shared) {
-        let configuration = URLSessionConfiguration.default
+    init(
+        cookieStorage: HTTPCookieStorage? = nil,
+        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement
+    ) {
+        let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = cookieStorage
-        configuration.httpShouldSetCookies = true
+        configuration.httpShouldSetCookies = cookieStorage != nil
 
         self.cookieStorage = cookieStorage
-        self.session = URLSession(configuration: configuration)
+        let credentialStore = LobstersCredentialStore()
+        self.credentialStore = credentialStore
+        self.storedCredentialPolicy = storedCredentialPolicy
+        self.pageLoader = LobstersPageLoader(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore,
+            storedCredentialPolicy: storedCredentialPolicy
+        )
     }
 
-    init(session: URLSession, cookieStorage: HTTPCookieStorage = .shared) {
-        self.session = session
+    init(
+        session: URLSession,
+        cookieStorage: HTTPCookieStorage? = nil,
+        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement
+    ) {
         self.cookieStorage = cookieStorage
+        let credentialStore = LobstersCredentialStore()
+        self.credentialStore = credentialStore
+        self.storedCredentialPolicy = storedCredentialPolicy
+        self.pageLoader = LobstersPageLoader(
+            session: session,
+            credentialStore: credentialStore,
+            storedCredentialPolicy: storedCredentialPolicy
+        )
     }
 
     func fetch(_ url: URL) async throws -> Webpage {
@@ -54,60 +77,23 @@ final class WebpageFetcher {
     }
 
     func fetch(_ originalRequest: URLRequest) async throws -> Webpage {
-        var request = originalRequest
-        if request.value(forHTTPHeaderField: "Accept") == nil {
-            request.setValue(
-                "text/html,application/xhtml+xml",
-                forHTTPHeaderField: "Accept"
-            )
-        }
-        request.setUserAgent()
-
-        let (data, response) = try await session.data(for: request)
-        guard let response = response as? HTTPURLResponse else {
-            throw WebpageFetcherError.invalidResponse
-        }
-        guard (200..<300).contains(response.statusCode) else {
-            throw WebpageFetcherError.unsuccessfulStatusCode(response.statusCode)
-        }
-        guard let html = String(data: data, encoding: .utf8) else {
-            throw WebpageFetcherError.cannotDecodeContent
-        }
-        guard let responseURL = response.url ?? request.url else {
+        let page = try await pageLoader.load(originalRequest)
+        guard let responseURL = page.response.url ?? originalRequest.url else {
             throw WebpageFetcherError.invalidResponse
         }
 
-        return Webpage(html: html, url: responseURL, response: response)
+        return Webpage(html: page.html, url: responseURL, response: page.response)
     }
 
-    func cookies(for url: URL) -> [HTTPCookie] {
-        cookieStorage.cookies(for: url) ?? []
-    }
-
-    /// Copies cookies captured by another web client, such as WKWebView, into
-    /// the cookie store used for app requests.
-    func storeCookies(_ cookies: [HTTPCookie], for url: URL) {
-        guard let host = url.host?.lowercased() else {
-            return
+    func cookies(for url: URL) throws -> [HTTPCookie] {
+        if let cookieStorage {
+            return cookieStorage.cookies(for: url) ?? []
         }
-
-        let matchingCookies = cookies.filter { cookie in
-            let domain = cookie.domain
-                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-                .lowercased()
-            return host == domain || host.hasSuffix(".\(domain)")
+        guard storedCredentialPolicy.allowsStoredCredentials,
+              let storedCookie = try credentialStore.loadCookie(for: url),
+              let cookie = storedCookie.makeCookie() else {
+            return []
         }
-        cookieStorage.setCookies(
-            matchingCookies,
-            for: url,
-            mainDocumentURL: url
-        )
-    }
-
-    func removeCookies(named names: Set<String>? = nil, for url: URL) {
-        for cookie in cookies(for: url)
-        where names == nil || names?.contains(cookie.name) == true {
-            cookieStorage.deleteCookie(cookie)
-        }
+        return [cookie]
     }
 }

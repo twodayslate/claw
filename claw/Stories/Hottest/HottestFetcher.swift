@@ -12,15 +12,32 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
         if isLoading {
             return
         }
+        let generation = captureContentGeneration()
         hasAttemptedLoad = true
         page = 1
         isLoading = true
         defer {
-            isLoading = false
+            if isCurrentContentGeneration(generation) {
+                isLoading = false
+            }
         }
-        let url = APIConfiguration.shared.hottestURL(page: self.page)
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: data)
+        let decodedLists: [NewestStory]
+        do {
+            let url = APIConfiguration.shared.hottestWebpageURL(page: self.page)
+            let loadedPage = try await LobstersPageLoader.shared.load(url)
+            decodedLists = try await StoryListHTMLParser.parseOffMain(
+                loadedPage.html,
+                pageURL: loadedPage.response.url ?? url
+            )
+        } catch {
+            guard isCurrentContentGeneration(generation) else {
+                return
+            }
+            throw error
+        }
+        guard isCurrentContentGeneration(generation) else {
+            return
+        }
         
         self.items = decodedLists
         self.page += 1
@@ -30,12 +47,31 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
         guard self.items.last == story && !isLoadingMore else {
             return
         }
-        let url = APIConfiguration.shared.hottestPageURL(page: self.page)
+        let generation = captureContentGeneration()
+        let url = APIConfiguration.shared.hottestWebpageURL(page: self.page)
         isLoadingMore = true
-        defer { isLoadingMore = false }
+        defer {
+            if isCurrentContentGeneration(generation) {
+                isLoadingMore = false
+            }
+        }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let decodedLists = try JSONDecoder().decode([NewestStory].self, from: data)
+        let decodedLists: [NewestStory]
+        do {
+            let loadedPage = try await LobstersPageLoader.shared.load(url)
+            decodedLists = try await StoryListHTMLParser.parseOffMain(
+                loadedPage.html,
+                pageURL: loadedPage.response.url ?? url
+            )
+        } catch {
+            guard isCurrentContentGeneration(generation) else {
+                return
+            }
+            throw error
+        }
+        guard isCurrentContentGeneration(generation) else {
+            return
+        }
 
         let stories = decodedLists
         for story in stories {

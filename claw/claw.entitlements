@@ -8,6 +8,10 @@
 	<array>
 		<string>group.com.twodayslate.claw</string>
 	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(LOBSTERS_KEYCHAIN_ACCESS_GROUP)</string>
+	</array>
 	<key>com.apple.security.network.client</key>
 	<true/>
 </dict>

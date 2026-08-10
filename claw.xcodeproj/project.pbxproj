@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		F60000022E50000100C0DE01 /* WebpageFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */; };
+		F60000102E50000100C0DE01 /* LobstersCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000112E50000100C0DE01 /* LobstersCredentialStore.swift */; };
+		F60000122E50000100C0DE01 /* LobstersPageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000132E50000100C0DE01 /* LobstersPageLoader.swift */; };
+		F60000142E50000100C0DE01 /* StoryListHTMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000152E50000100C0DE01 /* StoryListHTMLParser.swift */; };
+		F60000162E50000100C0DE01 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = F669C969250C846200B1FF42 /* SwiftSoup */; };
+		F60000182E50000100C0DE01 /* LobstersHTMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000192E50000100C0DE01 /* LobstersHTMLParser.swift */; };
 		F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116B251057E70065C3E9 /* WidgetKit.framework */; };
 		F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F629116D251057E70065C3E9 /* SwiftUI.framework */; };
 		F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6291170251057E70065C3E9 /* hottest_widget.swift */; };
@@ -73,7 +78,11 @@
 
 /* Begin PBXFileReference section */
 		F60000012E50000100C0DE01 /* WebpageFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebpageFetcherTests.swift; sourceTree = "<group>"; };
+		F60000112E50000100C0DE01 /* LobstersCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LobstersCredentialStore.swift; path = ../claw/LobstersCredentialStore.swift; sourceTree = "<group>"; };
+		F60000132E50000100C0DE01 /* LobstersPageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LobstersPageLoader.swift; path = ../claw/LobstersPageLoader.swift; sourceTree = "<group>"; };
+		F60000152E50000100C0DE01 /* StoryListHTMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoryListHTMLParser.swift; path = ../claw/Stories/StoryListHTMLParser.swift; sourceTree = "<group>"; };
 		F60000172E50000100C0DE01 /* Info-Debug.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Debug.plist"; sourceTree = "<group>"; };
+		F60000192E50000100C0DE01 /* LobstersHTMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LobstersHTMLParser.swift; path = ../claw/LobstersHTMLParser.swift; sourceTree = "<group>"; };
 		F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = hottest.widgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F629116B251057E70065C3E9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F629116D251057E70065C3E9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -132,6 +141,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F60000162E50000100C0DE01 /* SwiftSoup in Frameworks */,
 				F629116E251057E70065C3E9 /* SwiftUI.framework in Frameworks */,
 				F629116C251057E70065C3E9 /* WidgetKit.framework in Frameworks */,
 			);
@@ -184,6 +194,10 @@
 		F629116F251057E70065C3E9 /* hottest.widget */ = {
 			isa = PBXGroup;
 			children = (
+				F60000112E50000100C0DE01 /* LobstersCredentialStore.swift */,
+				F60000132E50000100C0DE01 /* LobstersPageLoader.swift */,
+				F60000152E50000100C0DE01 /* StoryListHTMLParser.swift */,
+				F60000192E50000100C0DE01 /* LobstersHTMLParser.swift */,
 				F6291170251057E70065C3E9 /* hottest_widget.swift */,
 				F6291173251057E80065C3E9 /* Assets.xcassets */,
 				F60000172E50000100C0DE01 /* Info-Debug.plist */,
@@ -265,6 +279,9 @@
 			dependencies = (
 			);
 			name = hottest.widgetExtension;
+			packageProductDependencies = (
+				F669C969250C846200B1FF42 /* SwiftSoup */,
+			);
 			productName = hottest.widgetExtension;
 			productReference = F6291169251057E70065C3E9 /* hottest.widgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -453,6 +470,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F60000102E50000100C0DE01 /* LobstersCredentialStore.swift in Sources */,
+				F60000122E50000100C0DE01 /* LobstersPageLoader.swift in Sources */,
+				F60000142E50000100C0DE01 /* StoryListHTMLParser.swift in Sources */,
+				F60000182E50000100C0DE01 /* LobstersHTMLParser.swift in Sources */,
 				F6291171251057E70065C3E9 /* hottest_widget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -630,6 +651,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LOBSTERS_KEYCHAIN_ACCESS_GROUP = "$(AppIdentifierPrefix)com.twodayslate.claw.shared";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -685,6 +707,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LOBSTERS_KEYCHAIN_ACCESS_GROUP = "$(AppIdentifierPrefix)com.twodayslate.claw.shared";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

@@ -21,6 +21,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LobstersKeychainAccessGroup</key>
+	<string>$(LOBSTERS_KEYCHAIN_ACCESS_GROUP)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

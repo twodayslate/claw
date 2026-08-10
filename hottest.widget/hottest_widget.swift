@@ -43,7 +43,14 @@ struct Provider: TimelineProvider {
 
 private enum HottestWidgetCache {
     private static let suiteName = "group.com.twodayslate.claw"
-    private static let key = "hottest-widget-stories-v2"
+    private static var key: String {
+        let baseURL = APIConfiguration.shared.baseURL
+        var origin = URLComponents()
+        origin.scheme = baseURL.scheme
+        origin.host = baseURL.host
+        origin.port = baseURL.port
+        return "hottest-widget-stories-v3-\(origin.string ?? baseURL.absoluteString)"
+    }
 
     static func load() -> [NewestStory]? {
         guard let defaults = UserDefaults(suiteName: suiteName),

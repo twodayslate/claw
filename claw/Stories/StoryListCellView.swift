@@ -22,6 +22,7 @@ struct StoryListCellView: View {
             isActive: $navigationLinkActive,
             label: { EmptyView() })
             StoryCell(story: story)
+                .accessibilityIdentifier("story-row-\(story.short_id)")
                 .padding([.horizontal]).padding([.vertical], settings.layout > .compact ? 8.0 : 4.0).background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems:{
             if story.url.isEmpty {
                 Button(action: {

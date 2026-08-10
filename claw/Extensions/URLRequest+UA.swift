@@ -19,9 +19,8 @@ extension UIDevice {
     }
 }
 
-public extension URLRequest {
-    @MainActor
-    mutating func setUserAgent() {
+private enum UserAgentCache {
+    static let task = Task { @MainActor in
         // per @pushcx
         // $APP_NAME/$VERSION ($ARCH; $OS; +https://contact.link/for/the/app)
         let app_name = Bundle.main.name
@@ -30,9 +29,13 @@ public extension URLRequest {
         version = version + "-DEBUG"
         #endif
         let help_url = "https://zac.gorak.us/ios"
-        
-        let ua = "\(app_name)/\(version) (\(UIDevice.current.modelIdentifier); \(UIDevice.current.systemName) \(UIDevice.current.systemVersion); +\(help_url))"
-        
-        self.setValue(ua, forHTTPHeaderField: "User-Agent")
+
+        return "\(app_name)/\(version) (\(UIDevice.current.modelIdentifier); \(UIDevice.current.systemName) \(UIDevice.current.systemVersion); +\(help_url))"
+    }
+}
+
+public extension URLRequest {
+    mutating func setUserAgent() async {
+        setValue(await UserAgentCache.task.value, forHTTPHeaderField: "User-Agent")
     }
 }

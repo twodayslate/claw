@@ -35,12 +35,12 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LobstersKeychainAccessGroup</key>
+	<string>$(LOBSTERS_KEYCHAIN_ACCESS_GROUP)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
 	</dict>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save remote media</string>

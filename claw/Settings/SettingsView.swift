@@ -7,7 +7,10 @@ struct SettingsView: View {
     @State var mailResult: Result<MFMailComposeResult, Error>? = nil
     @State var isShowingMailView = false
     @State var isShowingMailViewAlert = false
-    @StateObject var storeModel = StoreKitModel.pro
+    @EnvironmentObject var storeModel: StoreKitModel
+    @EnvironmentObject var lobstersSession: LobstersSession
+    @State private var isShowingLobstersLogin = false
+    @State private var isShowingStorySubmission = false
     
     var twitterURL: URL {
         let twitter = URL(string: "twitter://user?screen_name=twodayslate")!
@@ -101,6 +104,96 @@ struct SettingsView: View {
                 Text("Browsing").font(style: .footnote)
             }
             Section {
+                NavigationLink(destination: AdvancedSettingsView()) {
+                    SimpleIconLabel(
+                        iconBackgroundColor: .accentColor,
+                        iconColor: settings.accentUIColor == .white ? .black : .white,
+                        systemImage: "gearshape.2.fill",
+                        text: "Advanced"
+                    )
+                }
+            }
+            Section {
+                if storeModel.owned {
+                    switch lobstersSession.state {
+                    case .checking, .signingIn:
+                        HStack {
+                            ProgressView()
+                            Text(lobstersSession.state == .signingIn ? "Signing in to Lobsters…" : "Checking Lobsters session…")
+                                .foregroundStyle(.secondary)
+                        }
+                    case .signedIn(let username), .signingOut(let username):
+                        NavigationLink(destination: UserView(username)) {
+                            HStack(spacing: 12) {
+                                accountAvatar
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Signed in as \(username)")
+                                    Text("Managed by Claw · Beta")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("lobsters-account-profile")
+
+                        Button("Sign Out", role: .destructive) {
+                            Task {
+                                await lobstersSession.signOut()
+                            }
+                        }
+                        .disabled(lobstersSession.activeAction != nil)
+
+                        Button {
+                            isShowingStorySubmission = true
+                        } label: {
+                            Label("Submit a Story", systemImage: "square.and.pencil")
+                        }
+                        .disabled(lobstersSession.activeAction != nil)
+                    case .signedOut:
+                        Button {
+                            isShowingLobstersLogin = true
+                        } label: {
+                            SimpleIconLabel(
+                                iconBackgroundColor: .accentColor,
+                                iconColor: .white,
+                                systemImage: "person.crop.circle.badge.checkmark",
+                                text: "Sign In to Lobsters"
+                            )
+                        }
+                    case .unavailable(let message):
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Lobsters login is temporarily unavailable.")
+                            Text(message)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Retry") {
+                                Task { await lobstersSession.start(force: true) }
+                            }
+                        }
+                    }
+                } else {
+                    NavigationLink(destination: Pro()) {
+                        HStack {
+                            SimpleIconLabel(
+                                iconBackgroundColor: .accentColor,
+                                iconColor: .white,
+                                systemImage: "person.crop.circle.badge.checkmark",
+                                text: "Lobsters Login"
+                            )
+                            Spacer()
+                            Text("Supporter")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Lobsters Account · Beta").font(style: .footnote)
+            } footer: {
+                Text("Third-party login management. Claw is an unofficial app and is not operated by Lobsters. While in beta, login is currently only available to additional supporters. Your password is handled by the Lobsters webpage; Claw securely stores only the resulting session cookie in Keychain.")
+                    .font(.caption2)
+            }
+            Section {
                 if storeModel.owned {
                     SimpleIconLabel(systemImage: "heart.fill", text: "Thank you for the support!")
                 } else {
@@ -148,12 +241,37 @@ struct SettingsView: View {
         .sheet(isPresented: $isShowingMailView) {
             SimpleMailView(result: self.$mailResult, subject: emailSubject, toReceipt: ["zac+claw@gorak.us"])
         }
+        .sheet(isPresented: $isShowingLobstersLogin) {
+            LobstersLoginView()
+                .environmentObject(lobstersSession)
+        }
+        .sheet(isPresented: $isShowingStorySubmission) {
+            LobstersStorySubmissionView()
+                .environmentObject(lobstersSession)
+        }
+        .alert(
+            "Lobsters Login Error",
+            isPresented: Binding(
+                get: { lobstersSession.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        lobstersSession.errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                lobstersSession.errorMessage = nil
+            }
+        } message: {
+            Text(lobstersSession.errorMessage ?? "An unknown error occurred.")
+        }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             do {
                 if !storeModel.hasInitialized {
-                    try await storeModel.update()
+                    try await storeModel.initialize()
                 }
             } catch {
                 print(error.localizedDescription)
@@ -167,6 +285,28 @@ struct SettingsView: View {
             }
         }
     }
+
+    @ViewBuilder
+    private var accountAvatar: some View {
+        if let avatarImage = lobstersSession.avatarImage {
+            Image(uiImage: avatarImage)
+                .resizable()
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
+                .shadow(
+                    color: .black.opacity(0.28),
+                    radius: 2,
+                    x: 0,
+                    y: 1
+                )
+        } else {
+            Image(systemName: "person.crop.circle.fill")
+                .resizable()
+                .foregroundStyle(.secondary)
+                .frame(width: 36, height: 36)
+        }
+    }
+
 }
 
 struct SettingsView_Previews: PreviewProvider {
@@ -179,6 +319,8 @@ struct SettingsView_Previews: PreviewProvider {
         .modelContainer(PersistenceControllerV2.preview.container)
         .environment(SettingsV2())
         .environmentObject(ObservableURL())
+        .environmentObject(StoreKitModel.pro)
+        .environmentObject(LobstersSession())
         
     }
 }

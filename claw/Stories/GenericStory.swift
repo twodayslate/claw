@@ -7,6 +7,13 @@
 
 import Foundation
 
+private let storyTimestampFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSZ"
+    return formatter
+}()
+
 protocol GenericStory: Codable, Hashable, Identifiable {
     var id: String { get }
     var short_id: String { get }
@@ -32,10 +39,7 @@ extension GenericStory {
     var time_ago: String {
         let isoDate = self.created_at
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSZ"
-    
-        if let date = dateFormatter.date(from:isoDate) {
+        if let date = storyTimestampFormatter.date(from: isoDate) {
             let minutes = abs(date.timeIntervalSinceNow/60)
             if minutes < 60 {
                 if minutes == 1 {

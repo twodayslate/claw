@@ -12,6 +12,30 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var hasAttemptedLoad = false
 
     public internal(set) var page: Int = 1
+    private var contentGeneration: UInt = 0
+
+    /// Captures the generation associated with a network load. Subclasses must
+    /// verify it before publishing results from an asynchronous request.
+    func captureContentGeneration() -> UInt {
+        contentGeneration
+    }
+
+    func isCurrentContentGeneration(_ generation: UInt) -> Bool {
+        generation == contentGeneration
+    }
+
+    /// Starts a fresh load while making any in-flight load ineligible to
+    /// publish. This is used when authentication changes the rendered webpage.
+    func supersedePendingLoads() {
+        contentGeneration &+= 1
+        isLoading = false
+        isLoadingMore = false
+    }
+
+    func loadSupersedingPendingLoads() async throws {
+        supersedePendingLoads()
+        try await load()
+    }
     
     func loadIfEmpty() async throws {
         if self.items.isEmpty {
