@@ -63,7 +63,6 @@ final class LobstersWebViewClient: NSObject {
 
     private struct JavaScriptWaiter {
         let continuation: CheckedContinuation<Any?, Error>
-        var operationTask: Task<Void, Never>?
         var timeoutTask: Task<Void, Never>?
     }
 
@@ -159,16 +158,24 @@ final class LobstersWebViewClient: NSObject {
         // Remove the form from the already-loaded document before relying on a
         // network navigation to replace it. This keeps cancelled credentials out
         // of the retained WebView even when the login-page reload fails.
-        _ = try? await webView.evaluateJavaScript(
-            """
-            (() => {
-                for (const field of document.querySelectorAll('input, textarea')) {
-                    field.value = '';
+        _ = try? await waitForJavaScript(timeout: .seconds(1)) { [webView] completion in
+            webView.evaluateJavaScript(
+                """
+                (() => {
+                    for (const field of document.querySelectorAll('input, textarea')) {
+                        field.value = '';
+                    }
+                    document.documentElement.replaceChildren();
+                })();
+                """
+            ) { value, error in
+                if let error {
+                    completion(.failure(error))
+                } else {
+                    completion(.success(value))
                 }
-                document.documentElement.replaceChildren();
-            })();
-            """
-        )
+            }
+        }
     }
 
     @discardableResult
@@ -231,13 +238,15 @@ final class LobstersWebViewClient: NSObject {
             "JavaScript call \(callID, privacy: .public) started page=\(Self.logDescription(for: self.currentURL), privacy: .public) arguments=\(arguments.keys.sorted().joined(separator: ","), privacy: .public)"
         )
         do {
-            let result = try await waitForJavaScript(timeout: timeout) { [webView] in
-                try await webView.callAsyncJavaScript(
+            let result = try await waitForJavaScript(timeout: timeout) { [webView] completion in
+                webView.callAsyncJavaScript(
                     script,
                     arguments: arguments,
                     in: nil,
-                    contentWorld: .page
-                )
+                    in: .page
+                ) { result in
+                    completion(result.map(Optional.some))
+                }
             }
             Self.logger.debug(
                 "JavaScript call \(callID, privacy: .public) completed"
@@ -275,8 +284,14 @@ final class LobstersWebViewClient: NSObject {
         timeout: Duration = .seconds(15)
     ) async throws -> Any? {
         try requireConfiguredPage()
-        return try await waitForJavaScript(timeout: timeout) { [webView] in
-            try await webView.evaluateJavaScript(script)
+        return try await waitForJavaScript(timeout: timeout) { [webView] completion in
+            webView.evaluateJavaScript(script) { value, error in
+                if let error {
+                    completion(.failure(error))
+                } else {
+                    completion(.success(value))
+                }
+            }
         }
     }
 
@@ -419,7 +434,9 @@ final class LobstersWebViewClient: NSObject {
 
     private func waitForJavaScript(
         timeout: Duration,
-        operation: @escaping @MainActor () async throws -> Any?
+        operation: @escaping @MainActor (
+            @escaping @MainActor @Sendable (Result<Any?, Error>) -> Void
+        ) -> Void
     ) async throws -> Any? {
         let waiterID = UUID()
 
@@ -427,22 +444,13 @@ final class LobstersWebViewClient: NSObject {
             try await withCheckedThrowingContinuation { continuation in
                 javaScriptWaiters[waiterID] = JavaScriptWaiter(
                     continuation: continuation,
-                    operationTask: nil,
                     timeoutTask: nil
                 )
-                javaScriptWaiters[waiterID]?.operationTask = Task { [weak self] in
-                    do {
-                        let value = try await operation()
-                        self?.completeJavaScriptWaiter(
-                            waiterID,
-                            with: .success(value)
-                        )
-                    } catch {
-                        self?.completeJavaScriptWaiter(
-                            waiterID,
-                            with: .failure(error)
-                        )
-                    }
+                operation { [weak self] result in
+                    self?.completeJavaScriptWaiter(
+                        waiterID,
+                        with: result
+                    )
                 }
                 javaScriptWaiters[waiterID]?.timeoutTask = Task { [weak self] in
                     try? await Task.sleep(for: timeout)
@@ -475,7 +483,6 @@ final class LobstersWebViewClient: NSObject {
         guard let waiter = javaScriptWaiters.removeValue(forKey: id) else {
             return
         }
-        waiter.operationTask?.cancel()
         waiter.timeoutTask?.cancel()
         waiter.continuation.resume(with: result)
     }
@@ -533,22 +540,25 @@ extension LobstersWebViewClient: WKNavigationDelegate {
 
     func webView(
         _ webView: WKWebView,
-        decidePolicyFor navigationAction: WKNavigationAction
-    ) async -> WKNavigationActionPolicy {
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+    ) {
         guard let url = navigationAction.request.url else {
-            return .cancel
+            decisionHandler(.cancel)
+            return
         }
 
         guard configurationProvider.isLobstersURL(url) else {
             if navigationAction.navigationType == .linkActivated,
                (url.scheme == "http" || url.scheme == "https") {
-                await UIApplication.shared.open(url)
+                UIApplication.shared.open(url)
             }
-            return .cancel
+            decisionHandler(.cancel)
+            return
         }
 
         targetURL = url
-        return .allow
+        decisionHandler(.allow)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
