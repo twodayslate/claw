@@ -55,7 +55,7 @@ class TagFetcher: ObservableObject {
         let url = APIConfiguration.shared.tagsURL()
         
         var request = URLRequest(url: url)
-        request.setUserAgent()
+        await request.setUserAgent()
         
         let (data, _) = try await URLSession.shared.data(for: request)
         

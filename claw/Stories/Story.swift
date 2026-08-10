@@ -20,6 +20,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var title: String
     var url: String
     var score: Int
+    var score_is_hidden: Bool? = nil
     var flags: Int
     var comment_count: Int
     var description: String
@@ -28,6 +29,8 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var user_is_author: Bool
     var tags: [String]
     var comments: [Comment]
+    var user_upvoted: Bool = false
+    var can_comment: Bool = false
     
     var sorted_comments: [CommentStructure] {
         var ans = [CommentStructure]()
@@ -93,11 +96,21 @@ struct Comment: Codable, Hashable, Identifiable {
     var is_deleted: Bool
     var is_moderated: Bool
     var score: Int
+    var score_is_hidden: Bool? = nil
     var flags: Int
     var url: String
     var comment: String
     var parent_comment: String?
     var commenting_user: String
+    var user_upvoted: Bool? = nil
+    var can_edit: Bool? = nil
+    var can_delete: Bool? = nil
+    var can_reply: Bool? = nil
+    var can_vote: Bool? = nil
+
+    var displayedScore: String {
+        score_is_hidden == true ? "~" : String(score)
+    }
 
     static var placeholder: Comment {
         Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", last_edited_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: "user")
@@ -106,11 +119,20 @@ struct Comment: Codable, Hashable, Identifiable {
 
 @MainActor
 class StoryFetcher: ObservableObject {
+    private final class WeakReference {
+        weak var value: StoryFetcher?
+
+        init(_ value: StoryFetcher) {
+            self.value = value
+        }
+    }
+
     @Published var story: Story? = nil
 
     public var short_id: String? = nil
     public var pageURL: URL? = nil
     private let webpageFetcher: WebpageFetcher
+    private var contentGeneration: UInt = 0
 
     init(
         _ short_id: String? = nil,
@@ -118,10 +140,47 @@ class StoryFetcher: ObservableObject {
     ) {
         self.short_id = short_id
         self.webpageFetcher = webpageFetcher
+        Self.liveFetchers.append(WeakReference(self))
     }
 
     static var cachedStories = [Story]()
     static let fetchQueue = DispatchQueue(label: "StoryFetcher")
+    private static var liveFetchers = [WeakReference]()
+
+    static func reloadLiveFetchers() async {
+        liveFetchers.removeAll { $0.value == nil }
+        let fetchers = liveFetchers.compactMap(\.value)
+        for fetcher in fetchers {
+            try? await fetcher.loadSupersedingPendingLoads()
+        }
+    }
+
+    static func invalidateLiveContent() {
+        cachedStories.removeAll()
+        liveFetchers.removeAll { $0.value == nil }
+        for fetcher in liveFetchers.compactMap(\.value) {
+            fetcher.invalidateContent()
+        }
+    }
+
+    private func supersedePendingLoads() {
+        contentGeneration &+= 1
+        isReloading = false
+    }
+
+    private func invalidateContent() {
+        supersedePendingLoads()
+        story = nil
+    }
+
+    private func loadSupersedingPendingLoads() async throws {
+        supersedePendingLoads()
+        try await load()
+    }
+
+    private func isCurrentContentGeneration(_ generation: UInt) -> Bool {
+        generation == contentGeneration
+    }
 
     @Published var isReloading = false
     func reload() async throws {
@@ -146,12 +205,13 @@ class StoryFetcher: ObservableObject {
         guard let short_id = self.short_id else {
             return
         }
+        let generation = contentGeneration
         if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
         let configuredURL = APIConfiguration.shared.storyURL(shortId: short_id)
         let url: URL
-        if let pageURL, APIConfiguration.shared.isLobstersHost(pageURL.host) {
+        if let pageURL, APIConfiguration.shared.isLobstersURL(pageURL) {
             url = pageURL
         } else {
             url = configuredURL
@@ -162,19 +222,36 @@ class StoryFetcher: ObservableObject {
         let isShortURL = url.pathComponents.count == 3
             && url.pathComponents[1] == "s"
             && url.pathComponents[2] == short_id
-        let hasCookies = !webpageFetcher.cookies(for: url).isEmpty
+        let hasCookies = try !webpageFetcher.cookies(for: url).isEmpty
         if isShortURL, !hasCookies {
             request.setValue("claw_cache_bypass=1", forHTTPHeaderField: "Cookie")
         }
 
-        let webpage = try await webpageFetcher.fetch(request)
-        
-        isReloading = false
+        let webpage: Webpage
+        do {
+            webpage = try await webpageFetcher.fetch(request)
+        } catch {
+            guard isCurrentContentGeneration(generation) else {
+                return
+            }
+            throw error
+        }
 
-        let parsedStory = try StoryHTMLParser.parse(
-            webpage.html,
-            pageURL: webpage.url
-        )
+        let parsedStory: Story
+        do {
+            parsedStory = try await StoryHTMLParser.parseOffMain(
+                webpage.html,
+                pageURL: webpage.url
+            )
+        } catch {
+            guard isCurrentContentGeneration(generation) else {
+                return
+            }
+            throw error
+        }
+        guard isCurrentContentGeneration(generation) else {
+            return
+        }
         self.story = parsedStory
 
         StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})

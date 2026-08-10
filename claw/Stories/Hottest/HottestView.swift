@@ -4,6 +4,7 @@ import SwiftData
 
 struct HottestView: View {
     @ObservedObject var hottest = HottestFetcher.shared
+    @EnvironmentObject private var observableSheet: ObservableActiveSheet
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
@@ -14,11 +15,13 @@ struct HottestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if hottest.items.isEmpty {
+                    if hottest.items.isEmpty && (!hottest.hasAttemptedLoad || hottest.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                         }
                         Divider().padding(0).padding([.leading])
+                    } else if hottest.items.isEmpty {
+                        StoryFeedEmptyView()
                     } else {
                         ForEach(hottest.items) { story in
                             StoryListCellView(story: story).id(story).task {
@@ -58,10 +61,15 @@ struct HottestView: View {
                 }
             }
             .task {
+                guard observableSheet.sheet == nil else {
+                    return
+                }
                 do {
                     try await hottest.loadIfEmpty()
                 } catch {
-                    self.error = error
+                    if observableSheet.sheet == nil {
+                        self.error = error
+                    }
                 }
             }
             .refreshable {

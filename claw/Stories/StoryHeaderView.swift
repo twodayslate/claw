@@ -3,6 +3,9 @@ import SwiftData
 
 struct StoryHeaderView<T: GenericStory>: View {
     var story: T
+    var isUpvoted: Bool? = nil
+    var isVoting = false
+    var voteAction: (() -> Void)?
         
     @Environment(Settings.self) var settings
     
@@ -15,23 +18,16 @@ struct StoryHeaderView<T: GenericStory>: View {
         VStack(alignment: .leading) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(story.title)
-                        .font(style: .title2)
-                        .foregroundColor(.accentColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding([.bottom], 1.0)
+                    if story.url.isEmpty {
+                        storyTitle
+                    } else {
+                        Button(action: openStoryURL) {
+                            storyTitle
+                        }
+                        .buttonStyle(.plain)
+                    }
                     if let url = URL(string: story.url), let host = url.host, !(host.isEmpty) {
-                        Button(action: {
-                            guard let url = URL(string: story.url) else {
-                                // show error
-                                return
-                            }
-                            if settings.browser == .inAppSafari, (url.scheme == "http" || url.scheme == "https") {
-                                urlToOpen.url = url
-                            } else {
-                                UIApplication.shared.open(url)
-                            }
-                        }, label: {
+                        Button(action: openStoryURL, label: {
                             Text(host)
                                 .foregroundColor(Color.secondary)
                                 .font(style: .callout)
@@ -40,9 +36,34 @@ struct StoryHeaderView<T: GenericStory>: View {
                         .padding([.bottom], 4.0)
                     }
                     HStack(alignment: .center, spacing: 16.0) {
-                        VStack(alignment: .center) {
-                            Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                            Text("\(story.score)").foregroundColor(.gray)
+                        if let isUpvoted, let voteAction {
+                            Button(action: voteAction) {
+                                VStack(alignment: .center) {
+                                    if isVoting {
+                                        ProgressView()
+                                    } else {
+                                        Image(systemName: "arrowtriangle.up.fill")
+                                            .foregroundColor(
+                                                isUpvoted
+                                                    ? .accentColor
+                                                    : Color(UIColor.systemGray3)
+                                            )
+                                    }
+                                    Text(story.displayedScore)
+                                        .foregroundColor(isUpvoted ? .accentColor : .gray)
+                                }
+                                .frame(minWidth: 32, minHeight: 44)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isVoting)
+                            .accessibilityLabel(isUpvoted ? "Remove upvote" : "Upvote")
+                            .accessibilityIdentifier("story-vote-\(story.short_id)")
+                        } else {
+                            VStack(alignment: .center) {
+                                Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
+                                Text(story.displayedScore).foregroundColor(.gray)
+                            }
                         }
                         
                         VStack(alignment: .leading) {
@@ -59,8 +80,14 @@ struct StoryHeaderView<T: GenericStory>: View {
                 }
                 Spacer(minLength: 0)// ensure full width
                 if !story.url.isEmpty {
-                    // make chevron bold like navigationlink
-                    Text("\(Image(systemName: "chevron.right"))").bold().foregroundColor(Color(UIColor.systemGray3))
+                    Button(action: openStoryURL) {
+                        Image(systemName: "chevron.right")
+                            .bold()
+                            .foregroundColor(Color(UIColor.systemGray3))
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open story")
                 }
             }.padding().background(backgroundColorState.ignoresSafeArea()).contextMenu(menuItems: {
                 if story.url.isEmpty {
@@ -104,25 +131,34 @@ struct StoryHeaderView<T: GenericStory>: View {
                     }
                 }.padding()
             }
-        }.onTapGesture(count: 1, perform: {
-            if !story.url.isEmpty {
-                guard let url = URL(string: story.url) else {
-                    // show error
-                    return
-                }
-                withAnimation(.easeIn) {
-                    backgroundColorState = Color(UIColor.systemGray4)
-                    withAnimation(.easeOut) {
-                        backgroundColorState = Color(UIColor.systemBackground)
-                    }
-                    if settings.browser == .inAppSafari, (url.scheme == "https" || url.scheme == "http") {
-                        urlToOpen.url = url
-                    } else {
-                        UIApplication.shared.open(url)
-                    }
-                }
+        }
+    }
+
+    private var storyTitle: some View {
+        Text(story.title)
+            .accessibilityIdentifier("story-title-\(story.short_id)")
+            .font(style: .title2)
+            .foregroundColor(.accentColor)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding([.bottom], 1.0)
+    }
+
+    private func openStoryURL() {
+        guard let url = URL(string: story.url),
+              url.scheme == "http" || url.scheme == "https" else {
+            return
+        }
+        withAnimation(.easeIn) {
+            backgroundColorState = Color(UIColor.systemGray4)
+            withAnimation(.easeOut) {
+                backgroundColorState = Color(UIColor.systemBackground)
             }
-        })
+        }
+        if settings.browser == .inAppSafari {
+            urlToOpen.url = url
+        } else {
+            UIApplication.shared.open(url)
+        }
     }
 }
 

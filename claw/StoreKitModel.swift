@@ -19,7 +19,10 @@ class StoreKitModel: NSObject, ObservableObject {
     @Published public private(set) var hasInitialized = false
 
     @Published private(set) var purchasedIdentifiers = Set<String>()
+    private var entitlementExpirations = [String: Date]()
+    private var nonExpiringEntitlements = Set<String>()
     var updateListenerTask: Task<Void, Error>?
+    private var initializationTask: Task<Void, Error>?
 
     init(defaultId: String, ids: [String]) {
         defaultPurchaseIdentifier = defaultId
@@ -27,12 +30,22 @@ class StoreKitModel: NSObject, ObservableObject {
 
         super.init()
 
+        #if DEBUG
+        // UI tests exercise Pro-only Lobsters interactions on a clean
+        // Simulator without depending on StoreKit test transactions.
+        if ProcessInfo.processInfo.arguments.contains("--claw-ui-testing") {
+            purchasedIdentifiers.insert(defaultPurchaseIdentifier)
+            hasInitialized = true
+        }
+        #endif
+
         // Start a transaction listener as close to app launch as possible so you don't miss any transactions.
         updateListenerTask = listenForTransactions()
 
-        Task {
-            // Initialize the store by starting a product request.
-            try await retrieve()
+        Task { [weak self] in
+            // Start initialization eagerly while sharing the same request with
+            // any view that also needs to await the initial entitlement state.
+            try? await self?.initialize()
         }
 
         SKPaymentQueue.default().add(self)
@@ -73,6 +86,28 @@ class StoreKitModel: NSObject, ObservableObject {
         block?()
     }
 
+    /// Loads the initial StoreKit state once, allowing every caller to await
+    /// the same request instead of racing independent product requests.
+    func initialize() async throws {
+        guard !hasInitialized else {
+            return
+        }
+        if let initializationTask {
+            try await initializationTask.value
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            try await self.retrieve()
+        }
+        initializationTask = task
+        defer { initializationTask = nil }
+        try await task.value
+    }
+
     /// Update the products and update purchase identifiers
     func update() async throws {
         let products = try await Product.products(for: productSet)
@@ -84,8 +119,11 @@ class StoreKitModel: NSObject, ObservableObject {
                 objectWillChange.send()
                 // can't get the latest transaction so assume it isn't purchased
                 purchasedIdentifiers.remove(product.id)
+                entitlementExpirations.removeValue(forKey: product.id)
+                nonExpiringEntitlements.remove(product.id)
             }
         }
+        persistLobstersEntitlement()
         hasInitialized = true
     }
 
@@ -126,6 +164,7 @@ class StoreKitModel: NSObject, ObservableObject {
                 try await updatePurchasedIdentifiers(transaction.payloadValue)
             }
         }
+        persistLobstersEntitlement()
         hasInitialized = true
         block?(products)
     }
@@ -149,17 +188,49 @@ class StoreKitModel: NSObject, ObservableObject {
             if let expirationDate = transaction.expirationDate {
                 if expirationDate >= Date() {
                     purchasedIdentifiers.insert(transaction.productID)
+                    entitlementExpirations[transaction.productID] = expirationDate
+                    nonExpiringEntitlements.remove(transaction.productID)
                 } else {
                     purchasedIdentifiers.remove(transaction.productID)
+                    entitlementExpirations.removeValue(forKey: transaction.productID)
+                    nonExpiringEntitlements.remove(transaction.productID)
                 }
             } else {
                 // If the App Store has not revoked the transaction, add it to the list of `purchasedIdentifiers`.
                 purchasedIdentifiers.insert(transaction.productID)
+                entitlementExpirations.removeValue(forKey: transaction.productID)
+                nonExpiringEntitlements.insert(transaction.productID)
             }
         } else {
             // If the App Store has revoked this transaction, remove it from the list of `purchasedIdentifiers`.
             purchasedIdentifiers.remove(transaction.productID)
+            entitlementExpirations.removeValue(forKey: transaction.productID)
+            nonExpiringEntitlements.remove(transaction.productID)
         }
+        persistLobstersEntitlement()
+    }
+
+    private func persistLobstersEntitlement() {
+        guard !purchasedIdentifiers.isEmpty else {
+            LobstersEntitlementStore.update(
+                isEntitled: false,
+                validUntil: nil
+            )
+            return
+        }
+
+        let hasNonExpiringEntitlement = !purchasedIdentifiers.isDisjoint(
+            with: nonExpiringEntitlements
+        )
+        let validUntil = hasNonExpiringEntitlement
+            ? nil
+            : purchasedIdentifiers.compactMap {
+                entitlementExpirations[$0]
+            }.max()
+        LobstersEntitlementStore.update(
+            isEntitled: true,
+            validUntil: validUntil
+        )
     }
 
     var owned: Bool {

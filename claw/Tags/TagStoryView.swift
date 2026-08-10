@@ -30,11 +30,13 @@ struct TagStoryView: View {
                         Divider().id(0).padding(0).padding([.leading])
                     }
                    
-                    if stories.items.isEmpty {
+                    if stories.items.isEmpty && (!stories.hasAttemptedLoad || stories.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
+                    } else if stories.items.isEmpty {
+                        StoryFeedEmptyView()
                     } else {
                         ForEach(stories.items) { story in
                             StoryListCellView(story: story).id(story).task {

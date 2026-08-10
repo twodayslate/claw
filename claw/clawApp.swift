@@ -12,6 +12,9 @@ import SwiftData
 
 @main
 struct clawApp: App {
+    @UIApplicationDelegateAdaptor(ClawAppDelegate.self)
+    private var appDelegate
+
     let persistenceController = PersistenceController.shared
     @StateObject var storeModel = StoreKitModel.pro
     @State var confetti = 0
@@ -25,6 +28,7 @@ struct clawApp: App {
         WindowGroup {
             ContentView()
                 .modelContainer(PersistenceControllerV2.shared.container)
+                .environmentObject(storeModel)
             .onAppear {
                 // this should go in the app/scene delegate if we had one
                 UIColor.additionalNameMapping[UIColor.lobsterRed] = "Lobsters Red"

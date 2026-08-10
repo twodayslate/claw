@@ -30,53 +30,49 @@ struct StoryHTMLParser {
             throw StoryHTMLParserError.missingStory
         }
 
-        let shortID = try storyElement.attr("data-shortid")
-        guard !shortID.isEmpty else {
+        guard let fields = try LobstersHTMLParser.storyFields(
+            from: storyElement,
+            pageURL: pageURL
+        ) else {
             throw StoryHTMLParserError.missingStoryID
-        }
-
-        guard let titleElement = try storyElement.select("span.link a.u-url").first() else {
-            throw StoryHTMLParserError.missingTitle
-        }
-
-        let title = try titleElement.text()
-        guard !title.isEmpty else {
-            throw StoryHTMLParserError.missingTitle
         }
 
         let comments = try parseComments(document: document, pageURL: pageURL)
         let canonicalURL = cleanURL(pageURL)
-        let byline = try storyElement.select("div.byline").first()
-        let submitter = try username(in: byline) ?? ""
-        let bylineText = try byline?.text().lowercased() ?? ""
-        let storyTime = try storyElement.select("time").first()
-        let createdAt = try timestamp(from: storyTime)
-        let tags = try storyElement.select("ul.tags a").array().map { try $0.text() }
         let description = try document.select("div.story_content div.story_text").first()?.html() ?? ""
-        let scoreElement = try storyElement.select("div.voters .upvoter").first()
-        let score = try number(from: scoreElement)
-
-        let href = try titleElement.attr("href")
-        let destinationURL = absoluteURL(from: href, relativeTo: pageURL)
-        let isSelfPost = destinationURL?.host == pageURL.host
-            && destinationURL?.path.hasPrefix("/s/\(shortID)") == true
+        let isSelfPost = fields.destinationURL.host == pageURL.host
+            && fields.destinationURL.path.hasPrefix("/s/\(fields.shortID)")
+        let canComment = try document.select(".comment_form_container form").array().contains { form in
+            let storyID = try form.select("input[name='story_id']").first()?.attr("value")
+            let parentID = try form.select("input[name='parent_comment_short_id']").first()
+            return storyID == fields.shortID && parentID == nil
+        }
 
         return Story(
-            short_id: shortID,
-            short_id_url: shortStoryURL(shortID: shortID, relativeTo: pageURL).absoluteString,
-            created_at: createdAt,
-            title: title,
-            url: isSelfPost ? "" : (destinationURL?.absoluteString ?? href),
-            score: score,
+            short_id: fields.shortID,
+            short_id_url: fields.storyURL.absoluteString,
+            created_at: fields.createdAt,
+            title: fields.title,
+            url: isSelfPost ? "" : fields.destinationURL.absoluteString,
+            score: fields.score,
+            score_is_hidden: fields.scoreIsHidden,
             flags: 0,
             comment_count: comments.count,
             description: description,
             comments_url: canonicalURL.absoluteString,
-            submitter_user: submitter,
-            user_is_author: bylineText.contains("authored by"),
-            tags: tags,
-            comments: comments
+            submitter_user: fields.submitter,
+            user_is_author: fields.userIsAuthor,
+            tags: fields.tags,
+            comments: comments,
+            user_upvoted: fields.userUpvoted,
+            can_comment: canComment
         )
+    }
+
+    static func parseOffMain(_ html: String, pageURL: URL) async throws -> Story {
+        try await Task.detached(priority: .userInitiated) {
+            try parse(html, pageURL: pageURL)
+        }.value
     }
 
     private static func parseComments(document: Document, pageURL: URL) throws -> [Comment] {
@@ -92,6 +88,7 @@ struct StoryHTMLParser {
             let permalink = absoluteURL(from: href, relativeTo: pageURL)
                 ?? URL(string: "/c/\(shortID)", relativeTo: pageURL)!.absoluteURL
             let scoreElement = try element.select("div.voters .upvoter").first()
+            let score = try LobstersHTMLParser.score(from: scoreElement)
 
             return Comment(
                 short_id: shortID,
@@ -100,12 +97,19 @@ struct StoryHTMLParser {
                 last_edited_at: date,
                 is_deleted: statusText.contains("deleted"),
                 is_moderated: statusText.contains("moderated") || statusText.contains("moderator"),
-                score: try number(from: scoreElement),
+                score: score.value,
+                score_is_hidden: score.isHidden,
                 flags: element.hasClass("flagged") ? 1 : 0,
                 url: permalink.absoluteString,
                 comment: try commentText?.html() ?? "",
                 parent_comment: try parentCommentID(for: element),
-                commenting_user: try username(in: byline) ?? ""
+                commenting_user: try LobstersHTMLParser.username(in: byline) ?? "",
+                user_upvoted: element.hasClass("upvoted"),
+                can_edit: try !element.select("a.comment_editor").isEmpty(),
+                can_delete: try !element.select("a.comment_deletor").isEmpty(),
+                can_reply: try !element.hasClass("flagged")
+                    && !element.select("a.comment_replier").isEmpty(),
+                can_vote: try !element.select("button.upvoter").isEmpty()
             )
         }
     }
@@ -130,58 +134,8 @@ struct StoryHTMLParser {
         return nil
     }
 
-    private static func username(in byline: Element?) throws -> String? {
-        guard let byline else {
-            return nil
-        }
-
-        for link in try byline.select("a[href^='/~']").array() {
-            if try link.attr("aria-hidden") == "true" {
-                continue
-            }
-            let name = try link.text()
-            if !name.isEmpty {
-                return name
-            }
-        }
-        return nil
-    }
-
-    private static func number(from element: Element?) throws -> Int {
-        guard let element else {
-            return 0
-        }
-
-        let candidate = try element.attr("title").isEmpty
-            ? element.text()
-            : element.attr("title")
-        let digits = candidate.filter { $0.isNumber || $0 == "-" }
-        return Int(digits) ?? 0
-    }
-
     private static func timestamp(from element: Element?) throws -> String {
-        if let unixString = try element?.attr("data-at-unix"),
-           let unixTime = TimeInterval(unixString) {
-            return formattedDate(Date(timeIntervalSince1970: unixTime))
-        }
-
-        if let dateString = try element?.attr("datetime"), !dateString.isEmpty {
-            let formatter = ISO8601DateFormatter()
-            if let date = formatter.date(from: dateString) {
-                return formattedDate(date)
-            }
-            return dateString
-        }
-
-        return formattedDate(Date())
-    }
-
-    private static func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        return formatter.string(from: date)
+        try LobstersHTMLParser.timestamp(from: element)
     }
 
     private static func cleanURL(_ url: URL) -> URL {
@@ -191,15 +145,6 @@ struct StoryHTMLParser {
         components.query = nil
         components.fragment = nil
         return components.url ?? url
-    }
-
-    private static func shortStoryURL(shortID: String, relativeTo pageURL: URL) -> URL {
-        var components = URLComponents()
-        components.scheme = pageURL.scheme
-        components.host = pageURL.host
-        components.port = pageURL.port
-        components.path = "/s/\(shortID)"
-        return components.url ?? URL(string: "/s/\(shortID)", relativeTo: pageURL)!.absoluteURL
     }
 
     private static func absoluteURL(from href: String, relativeTo pageURL: URL) -> URL? {

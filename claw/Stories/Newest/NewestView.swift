@@ -3,6 +3,7 @@ import SwiftUI
 
 struct NewestView: View {
     @ObservedObject var newest = NewestFetcher.shared
+    @EnvironmentObject private var observableSheet: ObservableActiveSheet
     @Environment(Settings.self) var settings
     @Environment(\.didReselect) var didReselect
     @State var isVisible = false
@@ -13,11 +14,13 @@ struct NewestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
-                    if newest.items.isEmpty {
+                    if newest.items.isEmpty && (!newest.hasAttemptedLoad || newest.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
+                    } else if newest.items.isEmpty {
+                        StoryFeedEmptyView()
                     } else {
                         ForEach(newest.items) { story in
                             StoryListCellView(story: story).id(story).task {
@@ -58,10 +61,15 @@ struct NewestView: View {
                 }
             }
             .task {
+                guard observableSheet.sheet == nil else {
+                    return
+                }
                 do {
                     try await newest.loadIfEmpty()
                 } catch {
-                    self.error = error
+                    if observableSheet.sheet == nil {
+                        self.error = error
+                    }
                 }
             }
             .refreshable {
@@ -77,4 +85,3 @@ struct NewestView: View {
         }
     }
 }
-

@@ -7,87 +7,182 @@
 
 import Foundation
 
-/// Centralized API configuration for the Claw app
-/// Handles base URL configuration for different build configurations
+/// Centralized Lobsters website configuration for the Claw app.
+/// Handles the base URL for different build configurations.
 /// 
-/// ## Usage for Local Development:
-/// To use your local docker-lobsters instance, change the DEBUG baseURL:
-/// ```swift
-/// #if DEBUG
-/// return "http://localhost:3000"  // Your local server
-/// #else
-/// return "https://lobste.rs"      // Production server
-/// #endif
-/// ```
-///
-/// This ensures:
-/// - Debug builds use your local development server
-/// - Release builds always use the production lobste.rs server
-/// - All API calls are centralized in one location
-class APIConfiguration {
+/// Debug builds default to the local Docker test server and expose a server
+/// switch in Settings. Release builds always use the production website.
+final class APIConfiguration: Sendable {
     static let shared = APIConfiguration()
+
+    #if DEBUG
+    enum DebugServer: String, CaseIterable, Identifiable {
+        case local
+        case production
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .local: return "Local Test Server"
+            case .production: return "Production"
+            }
+        }
+    }
+
+    private static let appGroupSuiteName = "group.com.twodayslate.claw"
+    private static let debugServerDefaultsKey = "lobstersDebugServer"
+    private static let uiTestBaseURLDefaultsKey = "clawUITestBaseURL"
+
+    private static var debugDefaults: UserDefaults {
+        UserDefaults(suiteName: appGroupSuiteName) ?? .standard
+    }
+    #endif
     
     private init() {}
     
-    /// Base URL for the Lobsters API
-    /// Debug builds can be easily changed to point to local development server
-    /// Release builds always use production server
-    var baseURL: String {
+    /// Base URL for the configured Lobsters website.
+    var baseURL: URL {
         #if DEBUG
-        // For development, change this to your local docker-lobsters instance
-        // Example: "http://localhost:3000"
-        return "https://lobste.rs"
+        if let uiTestBaseURL {
+            return uiTestBaseURL
+        }
+        switch debugServer {
+        case .local:
+            return URL(string: "http://localhost:3000")!
+        case .production:
+            return URL(string: "https://lobste.rs")!
+        }
         #else
-        // Production always uses lobste.rs
-        return "https://lobste.rs"
+        return URL(string: "https://lobste.rs")!
         #endif
     }
+
+    #if DEBUG
+    private var uiTestBaseURL: URL? {
+        let processInfo = ProcessInfo.processInfo
+        let value = processInfo.environment["CLAW_UI_TEST_BASE_URL"]
+            ?? (processInfo.arguments.contains("--claw-ui-testing")
+                ? UserDefaults.standard.string(
+                    forKey: Self.uiTestBaseURLDefaultsKey
+                )
+                : nil)
+        guard let value,
+              let url = URL(string: value),
+              url.scheme?.lowercased() == "http",
+              ["localhost", "127.0.0.1"].contains(
+                url.host?.lowercased() ?? ""
+              ) else {
+            return nil
+        }
+        return url
+    }
+
+    var debugServer: DebugServer {
+        // Automated UI traffic must always stay on the disposable local
+        // Lobsters instance, even if this Simulator previously selected prod.
+        if ProcessInfo.processInfo.arguments.contains("--claw-ui-testing") {
+            return .local
+        }
+        guard let value = Self.debugDefaults.string(
+            forKey: Self.debugServerDefaultsKey
+        ) else {
+            return .local
+        }
+        return DebugServer(rawValue: value) ?? .local
+    }
+
+    func setDebugServer(_ server: DebugServer) {
+        Self.debugDefaults.set(
+            server.rawValue,
+            forKey: Self.debugServerDefaultsKey
+        )
+    }
+    #endif
     
-    // MARK: - API Endpoints
+    // MARK: - Website routes
     
     func userURL(username: String) -> URL {
-        return URL(string: "\(baseURL)/~\(username).json")!
+        url(path: "/~\(username).json")
+    }
+
+    func userPageURL(username: String) -> URL {
+        url(path: "/~\(username)")
+    }
+
+    func loginURL() -> URL {
+        url(path: "/login")
+    }
+
+    func settingsURL() -> URL {
+        url(path: "/settings")
+    }
+
+    func newStoryURL() -> URL {
+        url(path: "/stories/new")
+    }
+
+    func hottestWebpageURL(page: Int = 1) -> URL {
+        if page <= 1 {
+            return baseURL
+        }
+        return url(path: "/page/\(page)")
+    }
+
+    func newestWebpageURL(page: Int = 1) -> URL {
+        if page <= 1 {
+            return url(path: "/newest")
+        }
+        return url(path: "/newest/page/\(page)")
+    }
+
+    func tagStoryWebpageURL(tags: [String], page: Int = 1) -> URL {
+        let tagPath = tags.joined(separator: ",")
+        if page <= 1 {
+            return url(path: "/t/\(tagPath)")
+        }
+        return url(path: "/t/\(tagPath)/page/\(page)")
     }
     
     func storyURL(shortId: String) -> URL {
-        return URL(string: "\(baseURL)/s/\(shortId)")!
-    }
-    
-    func hottestURL(page: Int) -> URL {
-        return URL(string: "\(baseURL)/hottest.json?page=\(page)")!
-    }
-    
-    func hottestPageURL(page: Int) -> URL {
-        return URL(string: "\(baseURL)/page/\(page).json")!
-    }
-    
-    func newestURL(page: Int) -> URL {
-        return URL(string: "\(baseURL)/newest.json?page=\(page)")!
-    }
-    
-    func newestPageURL(page: Int) -> URL {
-        return URL(string: "\(baseURL)/newest/page/\(page).json")!
+        url(path: "/s/\(shortId)")
     }
     
     func tagsURL() -> URL {
-        return URL(string: "\(baseURL)/tags.json")!
-    }
-    
-    func tagStoryURL(tags: [String], page: Int) -> URL {
-        return URL(string: "\(baseURL)/t/\(tags.joined(separator: ",")).json?page=\(page)")!
-    }
-    
-    func tagStoryURL(tags: [String]) -> URL {
-        return URL(string: "\(baseURL)/t/\(tags.joined(separator: ",")).json")!
+        url(path: "/tags.json")
     }
     
     func userAvatarURL(avatarPath: String) -> URL? {
-        return URL(string: "\(baseURL)/\(avatarPath)")
+        URL(string: avatarPath, relativeTo: baseURL)?.absoluteURL
     }
     
     func isLobstersHost(_ host: String?) -> Bool {
-        guard let host = host else { return false }
-        guard let url = URL(string: baseURL) else { return false }
-        return url.host == host
+        host?.lowercased() == baseURL.host?.lowercased()
+    }
+
+    func isLobstersURL(_ url: URL?) -> Bool {
+        guard let url else {
+            return false
+        }
+        return url.scheme?.lowercased() == baseURL.scheme?.lowercased()
+            && url.host?.lowercased() == baseURL.host?.lowercased()
+            && effectivePort(for: url) == effectivePort(for: baseURL)
+    }
+
+    private func url(path: String) -> URL {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        components.path = path
+        return components.url!
+    }
+
+    private func effectivePort(for url: URL) -> Int? {
+        if let port = url.port {
+            return port
+        }
+        switch url.scheme?.lowercased() {
+        case "http": return 80
+        case "https": return 443
+        default: return nil
+        }
     }
 }
