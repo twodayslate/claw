@@ -194,7 +194,7 @@ final class LobstersWebViewClient: NSObject {
         }
 
         let navigation: WKNavigation
-        if targetURL == url, webView.isLoading, let activeNavigation {
+        if targetURL == url, let activeNavigation {
             navigation = activeNavigation
         } else {
             navigation = try startNavigation(to: url)
@@ -323,10 +323,14 @@ final class LobstersWebViewClient: NSObject {
         to requestedURL: URL,
         targetURL: URL?,
         currentURL: URL?,
-        isLoading: Bool
+        isLoading: Bool,
+        hasActiveNavigation: Bool = false
     ) -> Bool {
         guard targetURL == requestedURL else {
             return true
+        }
+        if hasActiveNavigation {
+            return false
         }
         return !isLoading && currentURL != requestedURL
     }
@@ -344,7 +348,8 @@ final class LobstersWebViewClient: NSObject {
             to: url,
             targetURL: targetURL,
             currentURL: currentURL,
-            isLoading: webView.isLoading
+            isLoading: webView.isLoading,
+            hasActiveNavigation: activeNavigation != nil
         )
     }
 

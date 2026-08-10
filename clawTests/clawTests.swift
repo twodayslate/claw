@@ -431,6 +431,15 @@ class clawTests: XCTestCase {
                 isLoading: false
             )
         )
+        XCTAssertFalse(
+            LobstersWebViewClient.shouldNavigate(
+                to: loginURL,
+                targetURL: loginURL,
+                currentURL: redirectedURL,
+                isLoading: false,
+                hasActiveNavigation: true
+            )
+        )
 
         XCTAssertTrue(
             LobstersWebViewClient.hasLoadedPage(

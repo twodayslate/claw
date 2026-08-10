@@ -977,6 +977,11 @@ final class LobstersSession: ObservableObject {
             await loadAvatarIfNeeded(for: username, generation: generation)
         } catch is CancellationError {
             return
+        } catch LobstersWebViewClient.ClientError.pageUnavailable {
+            // The page can change between a navigation callback and this
+            // deferred session capture. The next completed page will capture
+            // the session, so this is not a user-visible login failure.
+            return
         } catch {
             if isCurrentSession(generation) {
                 errorMessage = error.localizedDescription

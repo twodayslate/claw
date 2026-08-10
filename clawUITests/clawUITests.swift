@@ -41,6 +41,7 @@ class clawUITests: XCTestCase {
         app.launch()
 
         signInToLocalLobstersIfNeeded(app)
+        app.terminate()
 
         let storyID = try localStoryID()
         try openLocalStory(storyID, in: app)
