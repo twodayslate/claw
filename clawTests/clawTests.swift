@@ -1063,7 +1063,7 @@ class clawTests: XCTestCase {
         )
 
         let marker = "Claw webpage action \(UUID().uuidString)"
-        let parentSubmitted = try await client.callAsyncJavaScript(
+        let parentResult = try await client.callAsyncJavaScript(
             LobstersWebActions.submitComment,
             arguments: [
                 "mode": "new",
@@ -1072,16 +1072,17 @@ class clawTests: XCTestCase {
                 "text": marker + " parent"
             ]
         )
-        XCTAssertEqual(parentSubmitted as? Bool, true)
-        _ = try await client.reload()
-        var parsedStory = try StoryHTMLParser.parse(
-            try await pageHTML(from: client),
+        let parentCommentID = try XCTUnwrap(parentResult as? String)
+        var parsedStory = try await waitForStory(
+            in: client,
             pageURL: storyURL
-        )
-        XCTAssertTrue(parsedStory.can_comment)
+        ) { story in
+            story.comments.contains { $0.short_id == parentCommentID }
+        }
         let parentComment = try XCTUnwrap(parsedStory.comments.first(where: {
-            $0.comment.contains(marker + " parent")
+            $0.short_id == parentCommentID
         }))
+        XCTAssertTrue(parentComment.comment.contains(marker + " parent"))
         XCTAssertEqual(parentComment.can_vote, true)
         let initialCommentVote = try await voteState(
             in: client,
@@ -1094,45 +1095,30 @@ class clawTests: XCTestCase {
             initialState: initialCommentVote
         )
 
-        let createdSubmitted = try await client.callAsyncJavaScript(
-            LobstersWebActions.submitComment,
-            arguments: [
-                "mode": "new",
-                "targetID": "",
-                "storyID": storyID,
-                "text": marker
-            ]
-        )
-        XCTAssertEqual(createdSubmitted as? Bool, true)
-        _ = try await client.reload()
-        parsedStory = try StoryHTMLParser.parse(
-            try await pageHTML(from: client),
-            pageURL: storyURL
-        )
-        let createdComment = try XCTUnwrap(parsedStory.comments.first(where: {
-            (try? SwiftSoup.parseBodyFragment($0.comment).text()) == marker
-        }))
-
         let edited = try await client.callAsyncJavaScript(
             LobstersWebActions.submitComment,
             arguments: [
                 "mode": "edit",
-                "targetID": createdComment.short_id,
+                "targetID": parentComment.short_id,
                 "storyID": storyID,
                 "text": marker + " edited"
             ]
         )
-        XCTAssertEqual(edited as? Bool, true)
-        _ = try await client.reload()
-        parsedStory = try StoryHTMLParser.parse(
-            try await pageHTML(from: client),
+        XCTAssertEqual(edited as? String, parentComment.short_id)
+        parsedStory = try await waitForStory(
+            in: client,
             pageURL: storyURL
-        )
+        ) { story in
+            story.comments.contains {
+                $0.short_id == parentComment.short_id
+                    && $0.comment.contains(marker + " edited")
+            }
+        }
         XCTAssertTrue(parsedStory.comments.contains(where: {
-            $0.short_id == createdComment.short_id && $0.comment.contains(marker + " edited")
+            $0.short_id == parentComment.short_id && $0.comment.contains(marker + " edited")
         }))
 
-        let replied = try await client.callAsyncJavaScript(
+        let replyResult = try await client.callAsyncJavaScript(
             LobstersWebActions.submitComment,
             arguments: [
                 "mode": "reply",
@@ -1141,15 +1127,17 @@ class clawTests: XCTestCase {
                 "text": marker + " reply"
             ]
         )
-        XCTAssertEqual(replied as? Bool, true)
-        _ = try await client.reload()
-        parsedStory = try StoryHTMLParser.parse(
-            try await pageHTML(from: client),
+        let replyCommentID = try XCTUnwrap(replyResult as? String)
+        parsedStory = try await waitForStory(
+            in: client,
             pageURL: storyURL
-        )
+        ) { story in
+            story.comments.contains { $0.short_id == replyCommentID }
+        }
         let reply = try XCTUnwrap(parsedStory.comments.first(where: {
-            $0.comment.contains(marker + " reply")
+            $0.short_id == replyCommentID
         }))
+        XCTAssertTrue(reply.comment.contains(marker + " reply"))
         XCTAssertEqual(reply.parent_comment, parentComment.short_id)
 
         var rejectedInvalidComment = false
@@ -1157,8 +1145,8 @@ class clawTests: XCTestCase {
             _ = try await client.callAsyncJavaScript(
                 LobstersWebActions.submitComment,
                 arguments: [
-                    "mode": "new",
-                    "targetID": "",
+                    "mode": "reply",
+                    "targetID": parentComment.short_id,
                     "storyID": storyID,
                     "text": "+1"
                 ]
@@ -1167,7 +1155,6 @@ class clawTests: XCTestCase {
             rejectedInvalidComment = true
         }
         XCTAssertTrue(rejectedInvalidComment)
-        _ = try await client.reload()
         parsedStory = try StoryHTMLParser.parse(
             try await pageHTML(from: client),
             pageURL: storyURL
@@ -1176,7 +1163,7 @@ class clawTests: XCTestCase {
             (try? SwiftSoup.parseBodyFragment($0.comment).text()) == "+1"
         }))
 
-        for commentID in [createdComment.short_id, reply.short_id, parentComment.short_id] {
+        for commentID in [reply.short_id, parentComment.short_id] {
             let deleted = try await client.callAsyncJavaScript(
                 LobstersWebActions.deleteComment,
                 arguments: ["shortID": commentID]
@@ -1230,6 +1217,33 @@ class clawTests: XCTestCase {
     private func pageHTML(from client: LobstersWebViewClient) async throws -> String {
         let value = try await client.evaluateJavaScript("document.documentElement.outerHTML")
         return try XCTUnwrap(value as? String)
+    }
+
+    @MainActor
+    private func waitForStory(
+        in client: LobstersWebViewClient,
+        pageURL: URL,
+        until expectedState: (Story) -> Bool
+    ) async throws -> Story {
+        var latestStory: Story?
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(10))
+
+        repeat {
+            let html = try await pageHTML(from: client)
+            let story = try StoryHTMLParser.parse(
+                html,
+                pageURL: pageURL
+            )
+            latestStory = story
+            if expectedState(story) {
+                return story
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        } while clock.now < deadline
+
+        XCTFail("The Lobsters webpage did not reflect the expected comment state.")
+        return try XCTUnwrap(latestStory)
     }
 
     @MainActor

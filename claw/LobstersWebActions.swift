@@ -4,6 +4,14 @@
 //
 
 enum LobstersWebActions {
+    static let newCommentFormExists = """
+    return Array.from(document.querySelectorAll('.comment_form_container form')).some(form => {
+      const story = form.querySelector('input[name="story_id"]');
+      const parent = form.querySelector('input[name="parent_comment_short_id"]');
+      return story?.value === storyID && !parent;
+    });
+    """
+
     static let storyVote = """
     const story = document.getElementById('story_' + shortID);
     if (!story) return { upvoted: null, stage: 'locate-story', error: 'Story not found' };
@@ -252,6 +260,7 @@ enum LobstersWebActions {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
     const originalFetch = window.fetch.bind(window);
+    let persistedMarkup = '';
     let resolveAction, rejectAction;
     const completed = new Promise((resolve, reject) => {
       resolveAction = resolve; rejectAction = reject;
@@ -280,18 +289,38 @@ enum LobstersWebActions {
             rejectAction(new Error('Lobsters did not save the comment.'));
             return;
           }
-          resolveAction();
+          persistedMarkup = markup;
+          resolveAction(persistedID);
         }, rejectAction);
       }
       return responsePromise;
     };
     try {
       form.requestSubmit();
-      await Promise.race([
+      const persistedID = await Promise.race([
         completed,
         new Promise((_, reject) => setTimeout(() => reject(new Error('Comment timed out')), 10000))
       ]);
-      return true;
+
+      // Lobsters normally replaces the form with the returned markup. Its
+      // current top-level handler still targets the former #story_comments
+      // element, though, so preserve the webpage behavior when that target no
+      // longer exists. The server response remains the source of truth.
+      if (mode === 'new') {
+        const deadline = Date.now() + 1000;
+        while (!document.getElementById('c_' + persistedID) && Date.now() < deadline) {
+          await new Promise(resolve => setTimeout(resolve, 25));
+        }
+        if (!document.getElementById('c_' + persistedID)) {
+          const comments = form.closest('.comments') || document.querySelector('.comments');
+          const destination = document.getElementById('comments-' + storyID)
+            || comments?.querySelector(':scope > li.comments_subtree[id]');
+          if (!destination) throw new Error('Comment list not found');
+          form.closest('.comment_form_container')?.remove();
+          destination.insertAdjacentHTML('afterbegin', persistedMarkup);
+        }
+      }
+      return persistedID;
     } finally {
       window.fetch = originalFetch;
     }

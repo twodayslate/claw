@@ -470,6 +470,18 @@ final class LobstersSession: ObservableObject {
             guard isCurrentSession(generation) else {
                 throw SessionError.signedOut
             }
+            if mode == "new" {
+                let formExists = try await storyWebClient.callAsyncJavaScript(
+                    LobstersWebActions.newCommentFormExists,
+                    arguments: ["storyID": storyID]
+                )
+                if formExists as? Bool != true {
+                    _ = try await storyWebClient.reload()
+                    guard isCurrentSession(generation) else {
+                        throw SessionError.signedOut
+                    }
+                }
+            }
             let result = try await storyWebClient.callAsyncJavaScript(
                 LobstersWebActions.submitComment,
                 arguments: [
@@ -479,7 +491,7 @@ final class LobstersSession: ObservableObject {
                     "text": text
                 ]
             )
-            guard result as? Bool == true else {
+            guard let persistedID = result as? String, !persistedID.isEmpty else {
                 throw SessionError.commentActionFailed
             }
             contentRefresher.invalidate()
