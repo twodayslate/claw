@@ -71,6 +71,15 @@ final class LobstersWebViewClient: NSObject {
         return error.domain != NSURLErrorDomain || error.code != NSURLErrorCancelled
     }
 
+    static func shouldRetryJavaScriptEvaluation(after error: Error) -> Bool {
+        if error is CancellationError || error is ClientError {
+            return false
+        }
+        let error = error as NSError
+        return error.domain != WKError.errorDomain
+            || error.code != WKError.Code.javaScriptExceptionOccurred.rawValue
+    }
+
     init(
         configurationProvider: APIConfiguration = .shared,
         dataStore: WKWebsiteDataStore? = nil,
@@ -283,16 +292,32 @@ final class LobstersWebViewClient: NSObject {
         _ script: String,
         timeout: Duration = .seconds(15)
     ) async throws -> Any? {
-        try requireConfiguredPage()
-        return try await waitForJavaScript(timeout: timeout) { [webView] completion in
-            webView.evaluateJavaScript(script) { value, error in
-                if let error {
-                    completion(.failure(error))
-                } else {
-                    completion(.success(value))
+        // iOS 26 can transiently reject a read-only evaluation while WebKit
+        // retires the prior document. Never retry scripts that mutate state.
+        for attempt in 0..<3 {
+            try requireConfiguredPage()
+            do {
+                return try await waitForJavaScript(timeout: timeout) { [webView] completion in
+                    webView.evaluateJavaScript(script) { value, error in
+                        if let error {
+                            completion(.failure(error))
+                        } else {
+                            completion(.success(value))
+                        }
+                    }
                 }
+            } catch {
+                guard attempt < 2, Self.shouldRetryJavaScriptEvaluation(after: error) else {
+                    throw error
+                }
+                Self.log(
+                    error,
+                    message: "Read-only JavaScript evaluation will retry"
+                )
+                try await Task.sleep(for: .milliseconds(100))
             }
         }
+        throw ClientError.pageUnavailable
     }
 
     func setCookie(_ cookie: HTTPCookie) async {

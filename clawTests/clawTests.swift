@@ -465,6 +465,55 @@ class clawTests: XCTestCase {
     }
 
     @MainActor
+    func testReadOnlyJavaScriptRetryPolicy() {
+        XCTAssertTrue(
+            LobstersWebViewClient.shouldRetryJavaScriptEvaluation(
+                after: NSError(
+                    domain: "WebKit.NavigationState",
+                    code: 1,
+                    userInfo: nil
+                )
+            )
+        )
+        XCTAssertFalse(
+            LobstersWebViewClient.shouldRetryJavaScriptEvaluation(
+                after: LobstersWebViewClient.ClientError.javaScriptTimedOut
+            )
+        )
+        XCTAssertFalse(
+            LobstersWebViewClient.shouldRetryJavaScriptEvaluation(
+                after: NSError(
+                    domain: WKError.errorDomain,
+                    code: WKError.Code.javaScriptExceptionOccurred.rawValue,
+                    userInfo: nil
+                )
+            )
+        )
+    }
+
+    func testReadOnlyPageRequestRetryPolicy() {
+        XCTAssertTrue(
+            LobstersPageLoader.shouldRetryReadOnlyRequest(
+                after: NSError(
+                    domain: "com.apple.extensionKit.errorDomain",
+                    code: 18,
+                    userInfo: nil
+                )
+            )
+        )
+        XCTAssertFalse(
+            LobstersPageLoader.shouldRetryReadOnlyRequest(
+                after: URLError(.cancelled)
+            )
+        )
+        XCTAssertFalse(
+            LobstersPageLoader.shouldRetryReadOnlyRequest(
+                after: LobstersPageLoaderError.cannotDecodeContent
+            )
+        )
+    }
+
+    @MainActor
     func testRetainedWebViewIgnoresSupersededNavigationErrors() {
         XCTAssertFalse(
             LobstersWebViewClient.shouldReportNavigationError(

@@ -5,6 +5,30 @@
 
 import Foundation
 
+private final class URLSessionTaskBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var task: URLSessionTask?
+    private var isCancelled = false
+
+    func setTask(_ task: URLSessionTask) {
+        lock.lock()
+        self.task = task
+        let shouldCancel = isCancelled
+        lock.unlock()
+        if shouldCancel {
+            task.cancel()
+        }
+    }
+
+    func cancel() {
+        lock.lock()
+        isCancelled = true
+        let task = task
+        lock.unlock()
+        task?.cancel()
+    }
+}
+
 struct LoadedLobstersPage: Sendable {
     let html: String
     let response: HTTPURLResponse
@@ -58,6 +82,14 @@ enum LobstersStoredCredentialPolicy: Sendable {
 final class LobstersPageLoader: @unchecked Sendable {
     static let shared = LobstersPageLoader()
 
+    static func shouldRetryReadOnlyRequest(after error: Error) -> Bool {
+        if error is CancellationError || error is LobstersPageLoaderError {
+            return false
+        }
+        let error = error as NSError
+        return error.domain != NSURLErrorDomain || error.code != NSURLErrorCancelled
+    }
+
     private let session: URLSession
     private let credentialStore: LobstersCredentialStore
     private let storedCredentialPolicy: LobstersStoredCredentialPolicy
@@ -100,7 +132,7 @@ final class LobstersPageLoader: @unchecked Sendable {
             request.setValue(cookie.requestHeaderValue, forHTTPHeaderField: "Cookie")
         }
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await data(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw LobstersPageLoaderError.invalidResponse
         }
@@ -115,7 +147,7 @@ final class LobstersPageLoader: @unchecked Sendable {
     }
 
     func data(from url: URL) async throws -> Data {
-        let (data, response) = try await session.data(from: url)
+        let (data, response) = try await data(for: URLRequest(url: url))
         guard let response = response as? HTTPURLResponse else {
             throw LobstersPageLoaderError.invalidResponse
         }
@@ -123,5 +155,47 @@ final class LobstersPageLoader: @unchecked Sendable {
             throw LobstersPageLoaderError.unsuccessfulStatusCode(response.statusCode)
         }
         return data
+    }
+
+    private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        for attempt in 0..<3 {
+            do {
+                return try await performDataTask(for: request)
+            } catch {
+                let method = request.httpMethod?.uppercased() ?? "GET"
+                guard attempt < 2,
+                      method == "GET" || method == "HEAD",
+                      Self.shouldRetryReadOnlyRequest(after: error) else {
+                    throw error
+                }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+        }
+        throw LobstersPageLoaderError.invalidResponse
+    }
+
+    private func performDataTask(for request: URLRequest) async throws -> (Data, URLResponse) {
+        // Avoid Foundation's async URLSession overlay so transient networking
+        // process teardown arrives as a retryable request error.
+        let taskBox = URLSessionTaskBox()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let task = session.dataTask(with: request) { data, response, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else if let data, let response {
+                        continuation.resume(returning: (data, response))
+                    } else {
+                        continuation.resume(
+                            throwing: LobstersPageLoaderError.invalidResponse
+                        )
+                    }
+                }
+                taskBox.setTask(task)
+                task.resume()
+            }
+        } onCancel: {
+            taskBox.cancel()
+        }
     }
 }
