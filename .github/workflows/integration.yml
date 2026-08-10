@@ -165,6 +165,9 @@ jobs:
         run: |
           mkdir -p results
           simulator_id='${{ steps.simulator.outputs.udid }}'
+          # A freshly erased iOS 26 Simulator can fail the first WebKit test
+          # host during process startup. Retry failures in a new host process;
+          # deterministic failures still exhaust all three attempts.
           xcodebuild \
             -project claw.xcodeproj \
             -scheme claw \
@@ -172,6 +175,9 @@ jobs:
             -destination-timeout 60 \
             -destination "platform=iOS Simulator,id=$simulator_id" \
             -parallel-testing-enabled NO \
+            -retry-tests-on-failure \
+            -test-iterations 3 \
+            -test-repetition-relaunch-enabled YES \
             -resultBundlePath results/ClawTests.xcresult \
             CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
             CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
