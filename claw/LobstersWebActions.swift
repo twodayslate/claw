@@ -340,7 +340,9 @@ enum LobstersWebActions {
       } catch { return false; }
     });
     if (!form) return false;
-    HTMLFormElement.prototype.submit.call(form);
+    // Let the JavaScript call return before navigation replaces its document.
+    // WebKit can otherwise tear down the async call while it is completing.
+    setTimeout(() => HTMLFormElement.prototype.submit.call(form), 0);
     return true;
     """
 }

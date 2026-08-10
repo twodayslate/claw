@@ -730,7 +730,7 @@ class clawTests: XCTestCase {
             if (!email || !password || !form) return false;
             email.value = username;
             password.value = passphrase;
-            form.requestSubmit();
+            setTimeout(() => form.requestSubmit(), 0);
             return true;
             """,
             arguments: ["username": "test", "passphrase": "test"]
@@ -794,7 +794,7 @@ class clawTests: XCTestCase {
             if (!email || !password || !form) return false;
             email.value = username;
             password.value = passphrase;
-            form.requestSubmit();
+            setTimeout(() => form.requestSubmit(), 0);
             return true;
             """,
             arguments: ["username": "test", "passphrase": "test"]
@@ -863,7 +863,7 @@ class clawTests: XCTestCase {
             if (!email || !password || !form) return false;
             email.value = username;
             password.value = passphrase;
-            form.requestSubmit();
+            setTimeout(() => form.requestSubmit(), 0);
             return true;
             """,
             arguments: ["username": "test", "passphrase": "test"]
@@ -970,7 +970,7 @@ class clawTests: XCTestCase {
             if (!email || !password || !form) return false;
             email.value = username;
             password.value = passphrase;
-            form.requestSubmit();
+            setTimeout(() => form.requestSubmit(), 0);
             return true;
             """,
             arguments: ["username": "test", "passphrase": "test"]
@@ -1027,7 +1027,7 @@ class clawTests: XCTestCase {
             title.value = storyTitle;
             description.value = storyDescription;
             for (const option of tags.options) option.selected = option.value === 'test';
-            form.requestSubmit(submit);
+            setTimeout(() => form.requestSubmit(submit), 0);
             return true;
             """,
             arguments: [
@@ -1208,7 +1208,7 @@ class clawTests: XCTestCase {
               .find(input => input.value === 'Delete');
             if (!form || !button) return false;
             button.removeAttribute('data-confirm');
-            form.requestSubmit(button);
+            setTimeout(() => form.requestSubmit(button), 0);
             return true;
             """
         )
