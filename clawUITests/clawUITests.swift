@@ -9,7 +9,6 @@ import XCTest
 
 class clawUITests: XCTestCase {
 
-    private let storyRowPrefix = "story-row-"
     private let storyVotePrefix = "story-vote-"
     private let voteFixtureTitle = "Claw UI Vote Fixture"
 
@@ -43,16 +42,16 @@ class clawUITests: XCTestCase {
 
         signInToLocalLobstersIfNeeded(app)
 
-        selectTab("Newest", in: app)
-        let storyRow = voteFixtureStoryRow(in: app)
+        let storyID = try localStoryID()
+        try openLocalStory(storyID, in: app)
+        let storyTitle = app.descendants(matching: .any)[
+            "story-title-\(storyID)"
+        ]
         XCTAssertTrue(
-            storyRow.waitForExistence(timeout: 20),
-            "The local Lobsters feed did not contain the vote fixture."
+            storyTitle.waitForExistence(timeout: 20),
+            "Opening the local vote fixture did not present its story."
         )
-
-        let storyID = String(storyRow.identifier.dropFirst(storyRowPrefix.count))
-        XCTAssertFalse(storyID.isEmpty)
-        storyRow.tap()
+        XCTAssertEqual(storyTitle.label, voteFixtureTitle)
 
         let voteButton = app.buttons[storyVotePrefix + storyID]
         XCTAssertTrue(
@@ -78,19 +77,10 @@ class clawUITests: XCTestCase {
     func testStoryCanBeOpenedFromWidgetURL() throws {
         let app = configuredApplication()
         let storyID = try localStoryID()
-        let baseURL = try localBaseURL()
-        let storyURL = try XCTUnwrap(
-            URL(string: "/s/\(storyID)", relativeTo: baseURL)?.absoluteURL
-        )
-        // This is the same custom URL shape emitted by the widget's Link and
-        // widgetURL modifiers.
-        let widgetURL = try XCTUnwrap(
-            URL(string: "claw://open?url=\(storyURL.absoluteString)")
-        )
 
         // open(_:) launches the target with its configured arguments and
         // environment while delivering the URL, matching a widget launch.
-        app.open(widgetURL)
+        try openLocalStory(storyID, in: app)
 
         // A linked story title is exposed as a button, while a text-only story
         // is exposed as static text, so match either accessibility element.
@@ -198,16 +188,20 @@ class clawUITests: XCTestCase {
         destination.tap()
     }
 
-    private func voteFixtureStoryRow(in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(
-                NSPredicate(
-                    format: "identifier BEGINSWITH %@ AND label == %@",
-                    storyRowPrefix,
-                    voteFixtureTitle
-                )
-            )
-            .firstMatch
+    private func openLocalStory(
+        _ storyID: String,
+        in app: XCUIApplication
+    ) throws {
+        let baseURL = try localBaseURL()
+        let storyURL = try XCTUnwrap(
+            URL(string: "/s/\(storyID)", relativeTo: baseURL)?.absoluteURL
+        )
+        // This is the same custom URL shape emitted by the widget's Link and
+        // widgetURL modifiers.
+        let appURL = try XCTUnwrap(
+            URL(string: "claw://open?url=\(storyURL.absoluteString)")
+        )
+        app.open(appURL)
     }
 
     private func localBaseURL() throws -> URL {

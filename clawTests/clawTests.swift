@@ -565,7 +565,9 @@ class clawTests: XCTestCase {
             accessGroup: nil
         )
         let sessionConfiguration = URLSessionConfiguration.ephemeral
-        sessionConfiguration.timeoutIntervalForRequest = 2
+        // A cold Simulator can take several seconds to launch its networking
+        // process on CI even after the host-side readiness check succeeds.
+        sessionConfiguration.timeoutIntervalForRequest = 15
         let loader = LobstersPageLoader(
             session: URLSession(configuration: sessionConfiguration),
             credentialStore: store
@@ -766,7 +768,9 @@ class clawTests: XCTestCase {
         }
 
         let probeConfiguration = URLSessionConfiguration.ephemeral
-        probeConfiguration.timeoutIntervalForRequest = 2
+        // A cold Simulator can take several seconds to launch its networking
+        // process on CI even after the host-side readiness check succeeds.
+        probeConfiguration.timeoutIntervalForRequest = 15
         let probe = LobstersPageLoader(
             session: URLSession(configuration: probeConfiguration),
             credentialStore: LobstersCredentialStore(
