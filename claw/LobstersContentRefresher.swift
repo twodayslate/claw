@@ -10,9 +10,16 @@ final class LobstersContentRefresher {
     private var refreshTask: Task<Void, Never>?
     private var refreshRequested = false
 
-    func invalidate(reloadWidgets: Bool = true) {
-        StoryFetcher.cachedStories.removeAll()
-        TagStoryFetcher.cachedStories.removeAll()
+    func invalidate(
+        reloadWidgets: Bool = true,
+        clearingLiveContent: Bool = false
+    ) {
+        if clearingLiveContent {
+            Self.clearLiveContent()
+        } else {
+            StoryFetcher.cachedStories.removeAll()
+            TagStoryFetcher.cachedStories.removeAll()
+        }
 
         if reloadWidgets {
             WidgetCenter.shared.reloadAllTimelines()
@@ -37,6 +44,13 @@ final class LobstersContentRefresher {
                 invalidate(reloadWidgets: false)
             }
         }
+    }
+
+    static func clearLiveContent() {
+        HottestFetcher.shared.invalidateContent()
+        NewestFetcher.shared.invalidateContent()
+        StoryFetcher.invalidateLiveContent()
+        TagStoryFetcher.invalidateLiveContent()
     }
 
     private static func refreshHottest() async {

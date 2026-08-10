@@ -32,6 +32,15 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
         isLoadingMore = false
     }
 
+    /// Removes content associated with a server origin while preventing its
+    /// in-flight loads from publishing after the origin changes.
+    func invalidateContent() {
+        supersedePendingLoads()
+        items.removeAll()
+        page = 1
+        hasAttemptedLoad = false
+    }
+
     func loadSupersedingPendingLoads() async throws {
         supersedePendingLoads()
         try await load()

@@ -346,7 +346,7 @@ final class LobstersSession: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
-        contentRefresher.invalidate()
+        contentRefresher.invalidate(clearingLiveContent: true)
 
         if isEntitled {
             await start(force: true)

@@ -277,7 +277,7 @@ struct StoryView: View {
                     ProgressView()
                 } else {
                     Label(
-                        "\(comment.score)",
+                        comment.displayedScore,
                         systemImage: "arrow.up"
                     )
                     .foregroundStyle(comment.user_upvoted == true ? Color.accentColor : Color.gray)
@@ -287,7 +287,7 @@ struct StoryView: View {
             .disabled(activeCommentActionID != nil || lobstersSession.activeAction != nil)
             .accessibilityLabel(comment.user_upvoted == true ? "Remove comment upvote" : "Upvote comment")
         } else {
-            Text("\(Image(systemName: "arrow.up")) \(comment.score)")
+            Text("\(Image(systemName: "arrow.up")) \(comment.displayedScore)")
                 .foregroundColor(.gray)
         }
     }
@@ -375,7 +375,9 @@ struct StoryView: View {
               updatedStory.user_upvoted != upvoted else {
             return
         }
-        updatedStory.score += upvoted ? 1 : -1
+        if updatedStory.score_is_hidden != true {
+            updatedStory.score += upvoted ? 1 : -1
+        }
         updatedStory.user_upvoted = upvoted
         story.story = updatedStory
     }
@@ -388,7 +390,9 @@ struct StoryView: View {
               updatedStory.comments[index].user_upvoted != upvoted else {
             return
         }
-        updatedStory.comments[index].score += upvoted ? 1 : -1
+        if updatedStory.comments[index].score_is_hidden != true {
+            updatedStory.comments[index].score += upvoted ? 1 : -1
+        }
         updatedStory.comments[index].user_upvoted = upvoted
         story.story = updatedStory
     }

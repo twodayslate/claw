@@ -55,6 +55,7 @@ struct StoryHTMLParser {
             title: fields.title,
             url: isSelfPost ? "" : fields.destinationURL.absoluteString,
             score: fields.score,
+            score_is_hidden: fields.scoreIsHidden,
             flags: 0,
             comment_count: comments.count,
             description: description,
@@ -87,6 +88,7 @@ struct StoryHTMLParser {
             let permalink = absoluteURL(from: href, relativeTo: pageURL)
                 ?? URL(string: "/c/\(shortID)", relativeTo: pageURL)!.absoluteURL
             let scoreElement = try element.select("div.voters .upvoter").first()
+            let score = try LobstersHTMLParser.score(from: scoreElement)
 
             return Comment(
                 short_id: shortID,
@@ -95,7 +97,8 @@ struct StoryHTMLParser {
                 last_edited_at: date,
                 is_deleted: statusText.contains("deleted"),
                 is_moderated: statusText.contains("moderated") || statusText.contains("moderator"),
-                score: try LobstersHTMLParser.number(from: scoreElement),
+                score: score.value,
+                score_is_hidden: score.isHidden,
                 flags: element.hasClass("flagged") ? 1 : 0,
                 url: permalink.absoluteString,
                 comment: try commentText?.html() ?? "",

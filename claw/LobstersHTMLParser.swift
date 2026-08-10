@@ -13,6 +13,7 @@ struct LobstersStoryFields: Sendable {
     let storyURL: URL
     let createdAt: String
     let score: Int
+    let scoreIsHidden: Bool
     let submitter: String
     let userIsAuthor: Bool
     let tags: [String]
@@ -73,13 +74,16 @@ enum LobstersHTMLParser {
         let byline = try element.select("div.byline").first()
         let bylineText = try byline?.text().lowercased() ?? ""
 
+        let score = try score(from: element.select("div.voters .upvoter").first())
+
         return LobstersStoryFields(
             shortID: shortID,
             title: title,
             destinationURL: destinationURL,
             storyURL: storyURL,
             createdAt: try timestamp(from: byline?.select("time").first()),
-            score: try number(from: element.select("div.voters .upvoter").first()),
+            score: score.value,
+            scoreIsHidden: score.isHidden,
             submitter: try username(in: byline) ?? "",
             userIsAuthor: bylineText.contains("authored by"),
             tags: try element.select("ul.tags a").array().map { try $0.text() },
@@ -112,6 +116,19 @@ enum LobstersHTMLParser {
         let candidate = title.isEmpty ? try element.text() : title
         let digits = candidate.filter { $0.isNumber || $0 == "-" }
         return Int(digits) ?? 0
+    }
+
+    static func score(from element: Element?) throws -> (value: Int, isHidden: Bool) {
+        guard let element else {
+            return (0, false)
+        }
+        let title = try element.attr("title")
+        let candidate = title.isEmpty ? try element.text() : title
+        let digits = candidate.filter { $0.isNumber || $0 == "-" }
+        guard let value = Int(digits) else {
+            return (0, !candidate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        return (value, false)
     }
 
     static func timestamp(from element: Element?) throws -> String {

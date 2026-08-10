@@ -17,7 +17,7 @@ struct RedactedCommentColorPickerPreview: View {
                     HStack {
                         Text(comment.comment.commenting_user)
                         Spacer()
-                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.score)").foregroundColor(.gray)
+                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.displayedScore)").foregroundColor(.gray)
                     }
                     .foregroundColor(.gray)
                     .redacted(reason: .placeholder)

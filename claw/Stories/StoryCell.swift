@@ -29,7 +29,7 @@ struct StoryCell: View {
                 if settings.layout > .comfortable {
                     VStack(alignment: .center) {
                         Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                        Text("\(story.score)").foregroundColor(.gray)
+                        Text(story.displayedScore).foregroundColor(.gray)
                     }
                 }
                 

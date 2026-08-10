@@ -142,7 +142,7 @@ struct SmallestHottestWidgetView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                         Spacer(minLength: 0)
-                        Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
+                        Text("\(Image(systemName: "arrow.up")) \(story.displayedScore)").font(.footnote)
                     }
                     .foregroundColor(.gray)
                     .widgetURL(URL(string: "claw://open?url=\(story.short_id_url)"))
@@ -225,7 +225,7 @@ struct LargeStoryView: View {
                     Text("\(story.submitter_user)").font(.caption)
                     Text("\(story.time_ago)").font(.caption)
                     Spacer(minLength: 0)
-                    Text("\(Image(systemName: "arrow.up")) \(story.score)").font(.footnote)
+                    Text("\(Image(systemName: "arrow.up")) \(story.displayedScore)").font(.footnote)
                 }.foregroundColor(.gray)
             }
         } else {

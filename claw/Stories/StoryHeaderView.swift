@@ -49,7 +49,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                                                     : Color(UIColor.systemGray3)
                                             )
                                     }
-                                    Text("\(story.score)")
+                                    Text(story.displayedScore)
                                         .foregroundColor(isUpvoted ? .accentColor : .gray)
                                 }
                                 .frame(minWidth: 32, minHeight: 44)
@@ -62,7 +62,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                         } else {
                             VStack(alignment: .center) {
                                 Text("\(Image(systemName: "arrowtriangle.up.fill"))").foregroundColor(Color(UIColor.systemGray3))
-                                Text("\(story.score)").foregroundColor(.gray)
+                                Text(story.displayedScore).foregroundColor(.gray)
                             }
                         }
                         

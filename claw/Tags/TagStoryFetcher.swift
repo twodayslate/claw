@@ -41,6 +41,14 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         }
     }
 
+    static func invalidateLiveContent() {
+        cachedStories.removeAll()
+        liveFetchers.removeAll { $0.value == nil }
+        for fetcher in liveFetchers.compactMap(\.value) {
+            fetcher.invalidateContent()
+        }
+    }
+
     override func load() async throws {
         if isLoading {
             return

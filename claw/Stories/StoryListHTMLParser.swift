@@ -62,6 +62,7 @@ struct StoryListHTMLParser {
             title: fields.title,
             url: isSelfPost ? "" : fields.destinationURL.absoluteString,
             score: fields.score,
+            score_is_hidden: fields.scoreIsHidden,
             flags: element.hasClass("flagged") ? 1 : 0,
             comment_count: try LobstersHTMLParser.number(from: commentsElement),
             description: description,

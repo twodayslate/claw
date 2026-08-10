@@ -175,6 +175,44 @@ class clawTests: XCTestCase {
         XCTAssertEqual(story.comment_count, 0)
     }
 
+    func testStoryHTMLParserPreservesHiddenScores() throws {
+        let html = """
+        <ol class="stories">
+          <li data-shortid="hidden1" class="story flagged">
+            <div class="voters"><a class="upvoter">~</a></div>
+            <div class="details">
+              <span class="link"><a class="u-url" href="https://example.com/hidden">Hidden scores</a></span>
+              <div class="byline"><a href="/~alice">alice</a><time data-at-unix="1785326400"></time></div>
+            </div>
+          </li>
+        </ol>
+        <ol class="comments">
+          <li class="comments_subtree">
+            <div id="c_hidden2" data-shortid="hidden2" class="comment">
+              <div class="voters"><button class="upvoter" title="~">~</button></div>
+              <div class="details">
+                <div class="byline"><a href="/~bob">bob</a><a href="/c/hidden2"><time data-at-unix="1785326460"></time></a></div>
+                <div class="comment_text"><p>Hidden comment score</p></div>
+              </div>
+            </div>
+          </li>
+        </ol>
+        """
+
+        let story = try StoryHTMLParser.parse(
+            html,
+            pageURL: URL(string: "https://lobste.rs/s/hidden1/hidden_scores")!
+        )
+        let comment = try XCTUnwrap(story.comments.first)
+
+        XCTAssertEqual(story.score, 0)
+        XCTAssertEqual(story.score_is_hidden, true)
+        XCTAssertEqual(story.displayedScore, "~")
+        XCTAssertEqual(comment.score, 0)
+        XCTAssertEqual(comment.score_is_hidden, true)
+        XCTAssertEqual(comment.displayedScore, "~")
+    }
+
     func testStoryListHTMLParserParsesRenderedWebpage() throws {
         let html = """
         <html>
@@ -565,6 +603,45 @@ class clawTests: XCTestCase {
         XCTAssertFalse(fetcher.isCurrentContentGeneration(priorGeneration))
         XCTAssertFalse(fetcher.isLoading)
         XCTAssertFalse(fetcher.isLoadingMore)
+    }
+
+    @MainActor
+    func testClearingLiveContentRemovesModelsFromThePriorOrigin() {
+        let story = NewestStory.placeholder
+        let tagFetcher = TagStoryFetcher(tags: ["test"])
+        let storyFetcher = StoryFetcher("old01")
+        let detail = Story(
+            short_id: "old01",
+            short_id_url: "http://localhost:3000/s/old01",
+            created_at: "2026-07-29T12:00:00.000+0000",
+            title: "Old origin",
+            url: "https://example.com/old",
+            score: 1,
+            flags: 0,
+            comment_count: 0,
+            description: "",
+            comments_url: "http://localhost:3000/s/old01",
+            submitter_user: "alice",
+            user_is_author: false,
+            tags: ["test"],
+            comments: []
+        )
+
+        HottestFetcher.shared.items = [story]
+        NewestFetcher.shared.items = [story]
+        tagFetcher.items = [story]
+        storyFetcher.story = detail
+        StoryFetcher.cachedStories = [detail]
+        TagStoryFetcher.cachedStories[["test"]] = [story]
+
+        LobstersContentRefresher.clearLiveContent()
+
+        XCTAssertTrue(HottestFetcher.shared.items.isEmpty)
+        XCTAssertTrue(NewestFetcher.shared.items.isEmpty)
+        XCTAssertTrue(tagFetcher.items.isEmpty)
+        XCTAssertNil(storyFetcher.story)
+        XCTAssertTrue(StoryFetcher.cachedStories.isEmpty)
+        XCTAssertTrue(TagStoryFetcher.cachedStories.isEmpty)
     }
 
     @MainActor

@@ -22,6 +22,7 @@ protocol GenericStory: Codable, Hashable, Identifiable {
     var title: String { get }
     var url: String { get }
     var score: Int { get }
+    var score_is_hidden: Bool? { get }
     var flags: Int { get }
     var comment_count: Int { get }
     var description: String { get }
@@ -34,6 +35,10 @@ protocol GenericStory: Codable, Hashable, Identifiable {
 extension GenericStory {
     var id: String {
         return short_id
+    }
+
+    var displayedScore: String {
+        score_is_hidden == true ? "~" : String(score)
     }
     
     var time_ago: String {

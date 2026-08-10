@@ -20,6 +20,7 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var title: String
     var url: String
     var score: Int
+    var score_is_hidden: Bool? = nil
     var flags: Int
     var comment_count: Int
     var description: String
@@ -95,6 +96,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var is_deleted: Bool
     var is_moderated: Bool
     var score: Int
+    var score_is_hidden: Bool? = nil
     var flags: Int
     var url: String
     var comment: String
@@ -105,6 +107,10 @@ struct Comment: Codable, Hashable, Identifiable {
     var can_delete: Bool? = nil
     var can_reply: Bool? = nil
     var can_vote: Bool? = nil
+
+    var displayedScore: String {
+        score_is_hidden == true ? "~" : String(score)
+    }
 
     static var placeholder: Comment {
         Comment(short_id: "", short_id_url: "", created_at: "2020-09-17T08:35:19.000-05:00", last_edited_at: "2020-09-17T08:35:19.000-05:00", is_deleted: false, is_moderated: false, score: Int.random(in: 3..<25), flags: 0, url: "", comment: ["Hello World!", "To be, or not to be! That is the question!"].randomElement() ?? "", commenting_user: "user")
@@ -149,9 +155,22 @@ class StoryFetcher: ObservableObject {
         }
     }
 
+    static func invalidateLiveContent() {
+        cachedStories.removeAll()
+        liveFetchers.removeAll { $0.value == nil }
+        for fetcher in liveFetchers.compactMap(\.value) {
+            fetcher.invalidateContent()
+        }
+    }
+
     private func supersedePendingLoads() {
         contentGeneration &+= 1
         isReloading = false
+    }
+
+    private func invalidateContent() {
+        supersedePendingLoads()
+        story = nil
     }
 
     private func loadSupersedingPendingLoads() async throws {
