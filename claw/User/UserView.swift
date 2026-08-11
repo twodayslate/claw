@@ -27,96 +27,122 @@ struct UserView: View {
     }
     
     var body: some View {
-        List {
-            if let user = self.user {
-                HStack(alignment: .center) {
-                    Spacer()
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if let user = self.user {
                     UserAvatarLoader(user: user)
-                    Spacer()
-                }
-                if let karma = user.karma {
-                    HStack {
-                        Text("Karma").bold()
-                        Text("\(karma)")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical)
+
+                    if let karma = user.karma {
+                        HStack {
+                            Text("Karma").bold()
+                            Text("\(karma)")
+                        }
+                        .padding()
+                        Divider().padding(.leading)
                     }
-                }
-                if let username = user.github_username, let url = URL(string: "https://github.com/" + username) {
-                    Button(action: {
-                        if settings.browser == .inAppSafari {
-                            urlToOpen.url = url
-                        } else {
-                            UIApplication.shared.open(url)
-                        }
-                    }, label: {
-                        HStack {
-                            Text("GitHub").bold()
-                            Text(username).foregroundColor(.accentColor)
-                        }
-                    })
-                }
-                if let username = user.twitter_username, let url = URL(string: "https://twitter.com/\(username)") {
-                    Button(action: {
-                        if settings.browser == .inAppSafari {
-                            urlToOpen.url = url
-                        } else {
-                            UIApplication.shared.open(url)
-                        }
-                    }, label: {
-                        HStack {
-                            Text("Twitter").bold()
-                            Text("@" + username).foregroundColor(.accentColor)
-                        }
-                    })
-                    
-                }
-                if let keybase = user.keybase_signatures {
-                    HStack {
-                        Text("Keybase").bold()
-                        VStack(alignment: .leading) {
-                            ForEach(keybase) { auth in
-                                HStack {
-                                    Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
-                                        let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username)!
-                                        if settings.browser == .inAppSafari {
-                                            urlToOpen.url = keybase_url
-                                        } else {
-                                            UIApplication.shared.open(keybase_url)
-                                        }
-                                    })
-                                    Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
-                                        if let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username  + "/sigchain#" + auth.sig_hash) {
+                    if let username = user.github_username, let url = URL(string: "https://github.com/" + username) {
+                        Button(action: {
+                            if settings.browser == .inAppSafari {
+                                urlToOpen.url = url
+                            } else {
+                                UIApplication.shared.open(url)
+                            }
+                        }, label: {
+                            HStack {
+                                Text("GitHub").bold()
+                                Text(username).foregroundColor(.accentColor)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        })
+                        .buttonStyle(.plain)
+                        .padding()
+                        Divider().padding(.leading)
+                    }
+                    if let username = user.twitter_username, let url = URL(string: "https://twitter.com/\(username)") {
+                        Button(action: {
+                            if settings.browser == .inAppSafari {
+                                urlToOpen.url = url
+                            } else {
+                                UIApplication.shared.open(url)
+                            }
+                        }, label: {
+                            HStack {
+                                Text("Twitter").bold()
+                                Text("@" + username).foregroundColor(.accentColor)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        })
+                        .buttonStyle(.plain)
+                        .padding()
+                        Divider().padding(.leading)
+                    }
+                    if let keybase = user.keybase_signatures {
+                        HStack(alignment: .top) {
+                            Text("Keybase").bold()
+                            VStack(alignment: .leading) {
+                                ForEach(keybase) { auth in
+                                    HStack {
+                                        Text("@" + auth.kb_username).foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
+                                            let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username)!
                                             if settings.browser == .inAppSafari {
                                                 urlToOpen.url = keybase_url
                                             } else {
                                                 UIApplication.shared.open(keybase_url)
                                             }
-                                        }
-                                    })
+                                        })
+                                        Text("\(Image(systemName: "checkmark.shield.fill"))").foregroundColor(.accentColor).onTapGesture(count: 1, perform: {
+                                            if let keybase_url = URL(string: "https://keybase.io/" + auth.kb_username  + "/sigchain#" + auth.sig_hash) {
+                                                if settings.browser == .inAppSafari {
+                                                    urlToOpen.url = keybase_url
+                                                } else {
+                                                    UIApplication.shared.open(keybase_url)
+                                                }
+                                            }
+                                        })
+                                    }
                                 }
                             }
                         }
+                        .padding()
+                        Divider().padding(.leading)
+                    }
+                    if !user.about.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("About").bold()
+                            HTMLView(html: user.about.trimmingCharacters(in: .whitespacesAndNewlines))
+                        }
+                        .padding()
                     }
                 }
-                if !user.about.isEmpty {
-                    VStack(alignment: .leading) {
-                        Text("About").bold()
-                        HTMLView(html: user.about.trimmingCharacters(in: .whitespacesAndNewlines))
-                    }
-                }
-            }
-            Section("Stories") {
+
+                Text("Stories")
+                    .font(style: .title2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                Divider().padding(.leading)
+
                 if stories.items.isEmpty && (!stories.hasAttemptedLoad || stories.isLoading) {
                     ForEach(0..<3) { _ in
                         StoryListCellView(story: NewestStory.placeholder)
                             .redacted(reason: .placeholder)
                             .allowsHitTesting(false)
+                        Divider().padding(.leading)
                     }
                 } else if stories.items.isEmpty {
                     Label("No submitted stories", systemImage: "newspaper")
                         .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding()
                 } else {
                     ForEach(stories.items) { story in
                         StoryListCellView(story: story)
+                            .id(story)
                             .task {
                                 do {
                                     try await stories.more(story)
@@ -126,6 +152,7 @@ struct UserView: View {
                                     self.error = error
                                 }
                             }
+                        Divider().padding(.leading)
                     }
                 }
 
@@ -135,6 +162,7 @@ struct UserView: View {
                         ProgressView()
                         Spacer()
                     }
+                    .padding()
                 }
             }
         }
