@@ -84,6 +84,24 @@ jobs:
             fixture.url = "https://example.com/claw-ui-vote-fixture"
             fixture.tags = [tag]
           end
+          profile_story = Story.find_or_initialize_by(
+            title: "Claw UI Profile Story Fixture"
+          )
+          profile_story.user = test_user
+          profile_story.url = "https://example.com/claw-ui-profile-story-fixture"
+          profile_story.description = ""
+          profile_story.tags = [tag]
+          profile_story.save!
+          12.times do |index|
+            scroll_story = Story.find_or_initialize_by(
+              title: "Claw UI Profile Scroll Fixture #{index + 1}"
+            )
+            scroll_story.user = test_user
+            scroll_story.url = "https://example.com/claw-ui-profile-scroll-#{index + 1}"
+            scroll_story.description = ""
+            scroll_story.tags = [tag]
+            scroll_story.save!
+          end
           Vote.where(user: test_user, story: story, comment_id: nil).delete_all
           RUBY
 
@@ -97,6 +115,17 @@ jobs:
             exit 1
           fi
           echo "CLAW_UI_TEST_STORY_ID=$story_id" >> "$GITHUB_ENV"
+
+          profile_story_id="$(
+            docker compose run --rm -T app bin/rails runner \
+              'puts Story.find_by!(title: "Claw UI Profile Story Fixture").short_id' \
+              | tail -n 1
+          )"
+          if [[ ! "$profile_story_id" =~ ^[a-z0-9]+$ ]]; then
+            echo "Unable to determine the profile fixture short ID: $profile_story_id"
+            exit 1
+          fi
+          echo "CLAW_UI_TEST_PROFILE_STORY_ID=$profile_story_id" >> "$GITHUB_ENV"
 
       - name: Start Lobsters
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
@@ -181,6 +210,7 @@ jobs:
             -resultBundlePath results/ClawTests.xcresult \
             CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
             CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
+            CLAW_UI_TEST_PROFILE_STORY_ID="$CLAW_UI_TEST_PROFILE_STORY_ID" \
             test
 
       - name: Capture Lobsters diagnostics

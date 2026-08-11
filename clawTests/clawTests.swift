@@ -41,6 +41,23 @@ class clawTests: XCTestCase {
         XCTAssertEqual(TabBarMinimizePreference.onScroll.behavior, .onScrollDown)
     }
 
+    func testUserStoriesURLsUseTheUserFeedAndPaginationRoutes() {
+        XCTAssertEqual(
+            APIConfiguration.shared.userStoriesURL(
+                username: "alice",
+                page: 1
+            ).path,
+            "/~alice/stories.json"
+        )
+        XCTAssertEqual(
+            APIConfiguration.shared.userStoriesURL(
+                username: "alice",
+                page: 2
+            ).path,
+            "/~alice/stories/page/2.json"
+        )
+    }
+
     func testStoryHTMLParserParsesNestedComments() throws {
         let html = """
         <html>

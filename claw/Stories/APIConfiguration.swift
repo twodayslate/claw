@@ -143,6 +143,13 @@ final class APIConfiguration: Sendable {
         }
         return url(path: "/t/\(tagPath)/page/\(page)")
     }
+
+    func userStoriesURL(username: String, page: Int) -> URL {
+        if page <= 1 {
+            return url(path: "/~\(username)/stories.json")
+        }
+        return url(path: "/~\(username)/stories/page/\(page).json")
+    }
     
     func storyURL(shortId: String) -> URL {
         url(path: "/s/\(shortId)")

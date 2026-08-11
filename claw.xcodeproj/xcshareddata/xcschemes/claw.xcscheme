@@ -92,6 +92,11 @@
             value = "$(CLAW_UI_TEST_STORY_ID)"
             isEnabled = "YES">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "CLAW_UI_TEST_PROFILE_STORY_ID"
+            value = "$(CLAW_UI_TEST_PROFILE_STORY_ID)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
