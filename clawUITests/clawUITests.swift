@@ -123,15 +123,29 @@ class clawUITests: XCTestCase {
 
         let profileScrollView = app.scrollViews.firstMatch
         XCTAssertTrue(profileScrollView.waitForExistence(timeout: 5))
+        let profileAvatar = app.descendants(matching: .any)[
+            "user-profile-avatar"
+        ]
+        XCTAssertTrue(
+            profileAvatar.waitForExistence(timeout: 5),
+            "The user's profile avatar was not visible."
+        )
         profileScrollView.swipeUp()
         profileScrollView.swipeUp()
 
-        let titleAvatar = app.descendants(matching: .any)[
-            "user-title-avatar"
-        ]
         XCTAssertTrue(
-            titleAvatar.waitForExistence(timeout: 5),
+            profileAvatar.waitForExistence(timeout: 5),
             "The user's avatar did not move into the title after scrolling."
+        )
+        XCTAssertLessThan(
+            profileAvatar.frame.width,
+            50,
+            "The profile avatar did not shrink to its title size."
+        )
+        XCTAssertLessThan(
+            profileAvatar.frame.midY,
+            120,
+            "The same profile avatar did not move into the navigation title."
         )
 
         scroll(profileScrollView, untilHittable: profileStory)

@@ -1,6 +1,17 @@
 import SwiftUI
 import BetterSafariView
 
+private struct UserAvatarSourcePreferenceKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>?
+
+    static func reduce(
+        value: inout Anchor<CGRect>?,
+        nextValue: () -> Anchor<CGRect>?
+    ) {
+        value = nextValue() ?? value
+    }
+}
+
 struct UserView: View {
     @State var user: NewestUser?
     @StateObject private var userFetcher: UserFetcher
@@ -10,6 +21,7 @@ struct UserView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var error: Error?
     @State private var avatarCollapseProgress: CGFloat = 0
+    @State private var titleAvatarFrame: CGRect?
     
     @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
@@ -37,15 +49,21 @@ struct UserView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if let user = self.user {
-                    UserAvatarLoader(
-                        user: user,
-                        size: Layout.profileAvatarSize
-                    )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical)
-                        .opacity(1 - avatarCollapseProgress)
-                        .scaleEffect(1 - (0.15 * avatarCollapseProgress))
-                        .accessibilityIdentifier("user-profile-avatar")
+                    HStack {
+                        Spacer()
+                        Color.clear
+                            .frame(
+                                width: Layout.profileAvatarSize,
+                                height: Layout.profileAvatarSize
+                            )
+                            .anchorPreference(
+                                key: UserAvatarSourcePreferenceKey.self,
+                                value: .bounds
+                            ) { $0 }
+                            .accessibilityHidden(true)
+                        Spacer()
+                    }
+                    .padding(.vertical)
 
                     if let karma = user.karma {
                         HStack {
@@ -189,28 +207,38 @@ struct UserView: View {
         }
         .navigationBarTitle(self.username ?? "")
         .toolbar {
-            if let user = self.user, avatarCollapseProgress > 0 {
+            if self.user != nil {
                 ToolbarItem(placement: .principal) {
                     HStack(
                         spacing: Layout.titleAvatarSpacing * avatarCollapseProgress
                     ) {
-                        UserAvatarLoader(
-                            user: user,
-                            size: Layout.titleAvatarSize
-                        )
-                        .frame(
-                            width: Layout.titleAvatarSize * avatarCollapseProgress,
-                            height: Layout.titleAvatarSize
-                        )
-                        .scaleEffect(avatarCollapseProgress)
-                        .opacity(avatarCollapseProgress)
-                        .accessibilityIdentifier("user-title-avatar")
-                        .accessibilityHidden(avatarCollapseProgress < 0.9)
+                        Color.clear
+                            .frame(
+                                width: Layout.titleAvatarSize,
+                                height: Layout.titleAvatarSize
+                            )
+                            .onGeometryChange(for: CGRect.self) { geometry in
+                                geometry.frame(in: .global)
+                            } action: { frame in
+                                titleAvatarFrame = frame
+                            }
+                            .frame(width: Layout.titleAvatarSize * avatarCollapseProgress)
+                            .accessibilityHidden(true)
 
                         Text(self.username ?? "")
                             .font(style: .headline)
                     }
                 }
+            }
+        }
+        .overlayPreferenceValue(UserAvatarSourcePreferenceKey.self) { sourceAnchor in
+            if let user = self.user {
+                UserAvatarPortal(
+                    user: user,
+                    sourceAnchor: sourceAnchor,
+                    destinationFrame: titleAvatarFrame,
+                    progress: avatarCollapseProgress
+                )
             }
         }
         .onReceive(didReselect) { _ in
@@ -259,6 +287,57 @@ struct UserView: View {
                 )
             ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
         })
+    }
+}
+
+private struct UserAvatarPortal: View {
+    let user: NewestUser
+    let sourceAnchor: Anchor<CGRect>?
+    let destinationFrame: CGRect?
+    let progress: CGFloat
+
+    var body: some View {
+        GeometryReader { geometry in
+            if let source = sourceAnchor.map({ geometry[$0] }),
+               let destinationFrame {
+                let globalFrame = geometry.frame(in: .global)
+                let destination = destinationFrame.offsetBy(
+                    dx: -globalFrame.minX,
+                    dy: -globalFrame.minY
+                )
+                let frame = interpolatedFrame(
+                    from: source,
+                    to: destination,
+                    progress: progress
+                )
+
+                UserAvatarLoader(user: user, size: frame.width)
+                    .position(x: frame.midX, y: frame.midY)
+                    .accessibilityIdentifier("user-profile-avatar")
+            } else if let sourceAnchor {
+                let frame = geometry[sourceAnchor]
+
+                UserAvatarLoader(user: user, size: frame.width)
+                    .position(x: frame.midX, y: frame.midY)
+                    .accessibilityIdentifier("user-profile-avatar")
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func interpolatedFrame(
+        from source: CGRect,
+        to destination: CGRect,
+        progress: CGFloat
+    ) -> CGRect {
+        let progress = min(max(progress, 0), 1)
+
+        return CGRect(
+            x: source.minX + ((destination.minX - source.minX) * progress),
+            y: source.minY + ((destination.minY - source.minY) * progress),
+            width: source.width + ((destination.width - source.width) * progress),
+            height: source.height + ((destination.height - source.height) * progress)
+        )
     }
 }
 
