@@ -298,31 +298,36 @@ private struct UserAvatarPortal: View {
 
     var body: some View {
         GeometryReader { geometry in
-            if let source = sourceAnchor.map({ geometry[$0] }),
-               let destinationFrame {
-                let globalFrame = geometry.frame(in: .global)
-                let destination = destinationFrame.offsetBy(
-                    dx: -globalFrame.minX,
-                    dy: -globalFrame.minY
-                )
-                let frame = interpolatedFrame(
-                    from: source,
-                    to: destination,
-                    progress: progress
-                )
-
-                UserAvatarLoader(user: user, size: frame.width)
-                    .position(x: frame.midX, y: frame.midY)
-                    .accessibilityIdentifier("user-profile-avatar")
-            } else if let sourceAnchor {
-                let frame = geometry[sourceAnchor]
-
+            if let frame = avatarFrame(in: geometry) {
                 UserAvatarLoader(user: user, size: frame.width)
                     .position(x: frame.midX, y: frame.midY)
                     .accessibilityIdentifier("user-profile-avatar")
             }
         }
         .allowsHitTesting(false)
+    }
+
+    private func avatarFrame(in geometry: GeometryProxy) -> CGRect? {
+        let source = sourceAnchor.map { geometry[$0] }
+        let destination = destinationFrame.map { frame in
+            let globalFrame = geometry.frame(in: .global)
+            return frame.offsetBy(
+                dx: -globalFrame.minX,
+                dy: -globalFrame.minY
+            )
+        }
+
+        if let source, let destination {
+            return interpolatedFrame(
+                from: source,
+                to: destination,
+                progress: progress
+            )
+        }
+
+        // LazyVStack eventually removes the source marker. Once collapsed,
+        // the toolbar destination must keep the shared avatar alive by itself.
+        return source ?? destination
     }
 
     private func interpolatedFrame(

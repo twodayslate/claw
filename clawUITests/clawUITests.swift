@@ -153,6 +153,15 @@ class clawUITests: XCTestCase {
             profileStory.isHittable,
             "The signed-in user's submitted story was not visible."
         )
+        XCTAssertTrue(
+            profileAvatar.waitForExistence(timeout: 5),
+            "The title avatar disappeared after its profile row was recycled."
+        )
+        XCTAssertLessThan(
+            profileAvatar.frame.midY,
+            120,
+            "The title avatar left the navigation title after prolonged scrolling."
+        )
         profileStory.tap()
 
         let loadedStory = app.descendants(matching: .any)[

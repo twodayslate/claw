@@ -92,7 +92,7 @@ jobs:
           profile_story.description = ""
           profile_story.tags = [tag]
           profile_story.save!
-          4.times do |index|
+          12.times do |index|
             scroll_story = Story.find_or_initialize_by(
               title: "Claw UI Profile Scroll Fixture #{index + 1}"
             )
