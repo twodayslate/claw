@@ -130,6 +130,25 @@ class clawUITests: XCTestCase {
             profileAvatar.waitForExistence(timeout: 5),
             "The user's profile avatar was not visible."
         )
+        let expandedAvatarWidth = profileAvatar.frame.width
+        let dragStart = profileScrollView.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+        )
+        dragStart.press(
+            forDuration: 0.1,
+            thenDragTo: dragStart.withOffset(CGVector(dx: 0, dy: -30))
+        )
+
+        XCTAssertLessThan(
+            profileAvatar.frame.width,
+            expandedAvatarWidth,
+            "The profile avatar did not begin shrinking after a short scroll."
+        )
+        XCTAssertGreaterThan(
+            profileAvatar.frame.width,
+            50,
+            "The profile avatar reached its title size too early."
+        )
         profileScrollView.swipeUp()
         profileScrollView.swipeUp()
 

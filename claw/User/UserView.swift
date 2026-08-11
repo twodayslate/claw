@@ -20,7 +20,8 @@ struct UserView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
     @State private var error: Error?
-    @State private var avatarCollapseProgress: CGFloat = 0
+    @State private var avatarScrollOffset: CGFloat = 0
+    @State private var initialAvatarFrame: CGRect?
     @State private var titleAvatarFrame: CGRect?
     
     @Environment(Settings.self) var settings
@@ -56,6 +57,14 @@ struct UserView: View {
                                 width: Layout.profileAvatarSize,
                                 height: Layout.profileAvatarSize
                             )
+                            .onGeometryChange(for: CGRect.self) { geometry in
+                                geometry.frame(in: .global)
+                            } action: { frame in
+                                guard avatarScrollOffset <= 0 else {
+                                    return
+                                }
+                                initialAvatarFrame = frame
+                            }
                             .anchorPreference(
                                 key: UserAvatarSourcePreferenceKey.self,
                                 value: .bounds
@@ -198,12 +207,9 @@ struct UserView: View {
             }
         }
         .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
-            let offset = geometry.contentOffset.y + geometry.contentInsets.top
-            let collapseDistance = Layout.profileAvatarSize
-                - (2 * Layout.titleAvatarSize)
-            return min(max(offset / collapseDistance, 0), 1)
-        }) { _, progress in
-            avatarCollapseProgress = progress
+            geometry.contentOffset.y + geometry.contentInsets.top
+        }) { _, offset in
+            avatarScrollOffset = offset
         }
         .navigationBarTitle(self.username ?? "")
         .toolbar {
@@ -287,6 +293,18 @@ struct UserView: View {
                 )
             ).preferredControlAccentColor(settings.accentColor).dismissButtonStyle(.close)
         })
+    }
+
+    private var avatarCollapseProgress: CGFloat {
+        guard let initialAvatarFrame, let titleAvatarFrame else {
+            return 0
+        }
+
+        let collapseDistance = max(
+            initialAvatarFrame.midY - titleAvatarFrame.midY,
+            1
+        )
+        return min(max(avatarScrollOffset / collapseDistance, 0), 1)
     }
 }
 
