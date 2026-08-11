@@ -9,9 +9,16 @@ struct UserView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
     @State private var error: Error?
+    @State private var avatarCollapseProgress: CGFloat = 0
     
     @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
+
+    private enum Layout {
+        static let profileAvatarSize: CGFloat = 100
+        static let titleAvatarSize: CGFloat = 28
+        static let titleAvatarSpacing: CGFloat = 8
+    }
     
     init(_ user: NewestUser) {
         self._userFetcher = StateObject(wrappedValue: UserFetcher(user.username))
@@ -30,9 +37,15 @@ struct UserView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if let user = self.user {
-                    UserAvatarLoader(user: user)
+                    UserAvatarLoader(
+                        user: user,
+                        size: Layout.profileAvatarSize
+                    )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical)
+                        .opacity(1 - avatarCollapseProgress)
+                        .scaleEffect(1 - (0.15 * avatarCollapseProgress))
+                        .accessibilityIdentifier("user-profile-avatar")
 
                     if let karma = user.karma {
                         HStack {
@@ -166,7 +179,40 @@ struct UserView: View {
                 }
             }
         }
+        .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
+            let offset = geometry.contentOffset.y + geometry.contentInsets.top
+            let collapseDistance = Layout.profileAvatarSize
+                - (2 * Layout.titleAvatarSize)
+            return min(max(offset / collapseDistance, 0), 1)
+        }) { _, progress in
+            avatarCollapseProgress = progress
+        }
         .navigationBarTitle(self.username ?? "")
+        .toolbar {
+            if let user = self.user, avatarCollapseProgress > 0 {
+                ToolbarItem(placement: .principal) {
+                    HStack(
+                        spacing: Layout.titleAvatarSpacing * avatarCollapseProgress
+                    ) {
+                        UserAvatarLoader(
+                            user: user,
+                            size: Layout.titleAvatarSize
+                        )
+                        .frame(
+                            width: Layout.titleAvatarSize * avatarCollapseProgress,
+                            height: Layout.titleAvatarSize
+                        )
+                        .scaleEffect(avatarCollapseProgress)
+                        .opacity(avatarCollapseProgress)
+                        .accessibilityIdentifier("user-title-avatar")
+                        .accessibilityHidden(avatarCollapseProgress < 0.9)
+
+                        Text(self.username ?? "")
+                            .font(style: .headline)
+                    }
+                }
+            }
+        }
         .onReceive(didReselect) { _ in
             DispatchQueue.main.async {
                 dismiss()

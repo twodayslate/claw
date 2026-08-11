@@ -120,7 +120,21 @@ class clawUITests: XCTestCase {
             .matching(identifier: storyIdentifier)
             .matching(NSPredicate(format: "label == %@", profileFixtureTitle))
             .firstMatch
-        scroll(app.collectionViews.firstMatch, untilHittable: profileStory)
+
+        let profileScrollView = app.scrollViews.firstMatch
+        XCTAssertTrue(profileScrollView.waitForExistence(timeout: 5))
+        profileScrollView.swipeUp()
+        profileScrollView.swipeUp()
+
+        let titleAvatar = app.descendants(matching: .any)[
+            "user-title-avatar"
+        ]
+        XCTAssertTrue(
+            titleAvatar.waitForExistence(timeout: 5),
+            "The user's avatar did not move into the title after scrolling."
+        )
+
+        scroll(profileScrollView, untilHittable: profileStory)
         XCTAssertTrue(
             profileStory.isHittable,
             "The signed-in user's submitted story was not visible."

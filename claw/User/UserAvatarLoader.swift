@@ -5,9 +5,11 @@ import SwiftUI
 struct UserAvatarLoader: View {
     var user: NewestUser
     var imageUrl: URL
+    var size: CGFloat
     
-    init(user: NewestUser) {
+    init(user: NewestUser, size: CGFloat = 100) {
         self.user = user
+        self.size = size
         
         if let url = APIConfiguration.shared.userAvatarURL(avatarPath: user.avatar_url) {
             self.imageUrl = url
@@ -25,11 +27,14 @@ struct UserAvatarLoader: View {
                 .imageScale(.large)
                 .redacted(reason: .placeholder)
         }
-        .frame(width: 100, height: 100, alignment: .center)
+        .frame(width: size, height: size, alignment: .center)
         .overlay(
-            Circle().stroke(Color(UIColor.separator), lineWidth: 3.0)
+            Circle().stroke(
+                Color(UIColor.separator),
+                lineWidth: max(1, size * 0.03)
+            )
         )
         .clipShape(Circle())
-        .shadow(radius: 5.0)
+        .shadow(radius: size * 0.05)
     }
 }
