@@ -3,23 +3,27 @@ import BetterSafariView
 
 struct UserView: View {
     @State var user: NewestUser?
-    @ObservedObject var userFetcher: UserFetcher
+    @StateObject private var userFetcher: UserFetcher
+    @StateObject private var stories: UserStoryFetcher
     var username: String?
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
+    @State private var error: Error?
     
     @Environment(Settings.self) var settings
     @EnvironmentObject var urlToOpen: ObservableURL
     
     init(_ user: NewestUser) {
-        self.userFetcher = UserFetcher(self.username ?? "")
+        self._userFetcher = StateObject(wrappedValue: UserFetcher(user.username))
+        self._stories = StateObject(wrappedValue: UserStoryFetcher(username: user.username))
         self.user = user
         self.username = user.username
     }
     
     init(_ username: String) {
         self.username = username
-        self.userFetcher = UserFetcher(username)
+        self._userFetcher = StateObject(wrappedValue: UserFetcher(username))
+        self._stories = StateObject(wrappedValue: UserStoryFetcher(username: username))
     }
     
     var body: some View {
@@ -100,8 +104,42 @@ struct UserView: View {
                     }
                 }
             }
+            Section("Stories") {
+                if stories.items.isEmpty && (!stories.hasAttemptedLoad || stories.isLoading) {
+                    ForEach(0..<3) { _ in
+                        StoryListCellView(story: NewestStory.placeholder)
+                            .redacted(reason: .placeholder)
+                            .allowsHitTesting(false)
+                    }
+                } else if stories.items.isEmpty {
+                    Label("No submitted stories", systemImage: "newspaper")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(stories.items) { story in
+                        StoryListCellView(story: story)
+                            .task {
+                                do {
+                                    try await stories.more(story)
+                                } catch is CancellationError {
+                                    return
+                                } catch {
+                                    self.error = error
+                                }
+                            }
+                    }
+                }
+
+                if stories.isLoadingMore {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                }
+            }
         }
-        .navigationBarTitle(self.username ?? "").onReceive(didReselect) { _ in
+        .navigationBarTitle(self.username ?? "")
+        .onReceive(didReselect) { _ in
             DispatchQueue.main.async {
                 dismiss()
             }
@@ -112,11 +150,31 @@ struct UserView: View {
                     return
                 }
                 self.user = try await self.userFetcher.load()
+            } catch is CancellationError {
+                return
             } catch {
-                // todo: handle error
-                print(error)
+                self.error = error
             }
         }
+        .task {
+            do {
+                try await stories.loadIfEmpty()
+            } catch is CancellationError {
+                return
+            } catch {
+                self.error = error
+            }
+        }
+        .refreshable {
+            do {
+                try await stories.reload()
+            } catch is CancellationError {
+                return
+            } catch {
+                self.error = error
+            }
+        }
+        .errorAlert(error: $error)
         // this is necessary until multiple sheets can be displayed at one time. See #22
         .safariView(item: $urlToOpen.url, content: { url in
             SafariView(

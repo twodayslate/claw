@@ -11,6 +11,7 @@ class clawUITests: XCTestCase {
 
     private let storyVotePrefix = "story-vote-"
     private let voteFixtureTitle = "Claw UI Vote Fixture"
+    private let profileFixtureTitle = "Claw UI Profile Story Fixture"
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -95,7 +96,7 @@ class clawUITests: XCTestCase {
         XCTAssertEqual(storyTitle.label, voteFixtureTitle)
     }
 
-    func testSignedInUsernameOpensProfile() throws {
+    func testSignedInProfileShowsSubmittedStoryAndOpensIt() throws {
         let app = configuredApplication()
         app.launch()
 
@@ -112,6 +113,29 @@ class clawUITests: XCTestCase {
             app.navigationBars["test"].waitForExistence(timeout: 10),
             "Tapping the signed-in username did not open its profile."
         )
+
+        let storyID = try localProfileStoryID()
+        let storyIdentifier = "story-row-\(storyID)"
+        let profileStory = app.staticTexts
+            .matching(identifier: storyIdentifier)
+            .matching(NSPredicate(format: "label == %@", profileFixtureTitle))
+            .firstMatch
+        scroll(app.collectionViews.firstMatch, untilHittable: profileStory)
+        XCTAssertTrue(
+            profileStory.isHittable,
+            "The signed-in user's submitted story was not visible."
+        )
+        profileStory.tap()
+
+        let loadedStory = app.descendants(matching: .any)[
+            "story-title-\(storyID)"
+        ]
+        XCTAssertTrue(
+            loadedStory.waitForExistence(timeout: 20),
+            "Tapping the profile story did not load its local story page."
+        )
+        XCTAssertEqual(loadedStory.label, profileFixtureTitle)
+        XCTAssertTrue(app.navigationBars.buttons["test"].exists)
     }
 
     func testLaunchPerformance() throws {
@@ -229,6 +253,20 @@ class clawUITests: XCTestCase {
         return storyID
     }
 
+    private func localProfileStoryID() throws -> String {
+        let storyID = try XCTUnwrap(
+            ProcessInfo.processInfo.environment[
+                "CLAW_UI_TEST_PROFILE_STORY_ID"
+            ]
+        )
+        XCTAssertFalse(storyID.isEmpty)
+        XCTAssertFalse(
+            storyID.contains("/"),
+            "The profile story fixture must be a Lobsters short ID."
+        )
+        return storyID
+    }
+
     private func waitForLabel(
         _ label: String,
         on element: XCUIElement,
@@ -243,5 +281,14 @@ class clawUITests: XCTestCase {
             .completed,
             "Expected \(element.identifier) to become “\(label)”."
         )
+    }
+
+    private func scroll(
+        _ container: XCUIElement,
+        untilHittable element: XCUIElement
+    ) {
+        for _ in 0..<8 where !element.isHittable {
+            container.swipeUp()
+        }
     }
 }
