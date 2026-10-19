@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  XCODE_VERSION: "26.6"
+  XCODE_VERSION: "27.1"
   SIMULATOR_MODEL: "iPhone 17 Pro"
   SIMULATOR_OS: "26.2"
   LOBSTERS_DIRECTORY: .ci/lobsters
