@@ -63,7 +63,35 @@ jobs:
             File.write(path, YAML.dump(compose))
           ' docker-compose.yaml
 
+      - name: Configure Docker for unattended public image pulls
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          ruby -rjson -rtmpdir -rfileutils - <<'RUBY'
+          source = ENV.fetch("DOCKER_CONFIG", File.join(Dir.home, ".docker"))
+          destination = Dir.mktmpdir("claw-docker-", ENV.fetch("RUNNER_TEMP"))
+          path = File.join(source, "config.json")
+          config = File.exist?(path) ? JSON.parse(File.read(path)) : {}
+          config.delete("credsStore")
+          config.delete("credHelpers")
+          # An explicit anonymous entry also prevents Docker from auto-detecting
+          # the macOS Keychain helper when the runner has no interactive session.
+          config["auths"] = {"https://index.docker.io/v1/" => {}}
+          File.write(File.join(destination, "config.json"), JSON.generate(config))
+          # Preserve the selected daemon and locally installed Compose/Buildx.
+          contexts = File.join(source, "contexts")
+          FileUtils.cp_r(contexts, destination) if File.directory?(contexts)
+          plugins = File.join(source, "cli-plugins")
+          if File.directory?(plugins)
+            File.symlink(File.realpath(plugins), File.join(destination, "cli-plugins"))
+          end
+          File.open(ENV.fetch("GITHUB_ENV"), "a") do |file|
+            file.puts "DOCKER_CONFIG=#{destination}"
+          end
+          RUBY
+
       - name: Build latest Lobsters image
+        timeout-minutes: 30
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         run: docker compose build --pull --no-cache app
 
