@@ -136,7 +136,9 @@ class clawUITests: XCTestCase {
         )
         dragStart.press(
             forDuration: 0.1,
-            thenDragTo: dragStart.withOffset(CGVector(dx: 0, dy: -30))
+            thenDragTo: dragStart.withOffset(CGVector(dx: 0, dy: -30)),
+            withVelocity: .slow,
+            thenHoldForDuration: 1
         )
 
         XCTAssertLessThan(
@@ -191,7 +193,13 @@ class clawUITests: XCTestCase {
             "Tapping the profile story did not load its local story page."
         )
         XCTAssertEqual(loadedStory.label, profileFixtureTitle)
-        XCTAssertTrue(app.navigationBars.buttons["test"].exists)
+        let profileBackButton = app.navigationBars.buttons["test"]
+        let backButton = profileBackButton.exists
+            ? profileBackButton
+            : app.buttons["BackButton"]
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5))
+        backButton.tap()
+        XCTAssertTrue(app.navigationBars["test"].waitForExistence(timeout: 5))
     }
 
     func testLaunchPerformance() throws {
@@ -254,7 +262,11 @@ class clawUITests: XCTestCase {
     }
 
     private func selectTab(_ label: String, in app: XCUIApplication) {
-        let destination = app.tabBars.buttons[label]
+        // The iPhone Duo's side tab rail lives outside the tab bar.
+        let tabBarDestination = app.tabBars.buttons[label]
+        let destination = tabBarDestination.exists
+            ? tabBarDestination
+            : app.buttons[label]
         if !destination.exists {
             // iOS 26 collapses the tab bar after the Settings form scrolls.
             // Pressing the selected compact tab expands the other choices.
@@ -265,7 +277,10 @@ class clawUITests: XCTestCase {
                 selectedTab.tap()
             }
         }
-        XCTAssertTrue(destination.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            destination.waitForExistence(timeout: 5),
+            "Missing tab \(label): \(app.debugDescription)"
+        )
         destination.tap()
     }
 

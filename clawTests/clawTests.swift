@@ -67,7 +67,7 @@ class clawTests: XCTestCase {
                 <div class="story_liner h-entry">
                   <div class="voters"><a class="upvoter" title="42">42</a></div>
                   <div class="details">
-                    <span class="link"><a class="u-url" href="https://example.com/article">An article</a></span>
+                    <h2 class="link h-cite u-repost-of"><a class="u-url" href="https://example.com/article">An article</a></h2>
                     <ul class="tags"><li><a>swift</a></li><li><a>ios</a></li></ul>
                     <div class="byline">
                       <span>authored by</span>
@@ -239,7 +239,7 @@ class clawTests: XCTestCase {
                 <div class="story_liner">
                   <div class="voters"><a class="upvoter" title="42">42</a></div>
                   <div class="details">
-                    <span class="link"><a class="u-url" href="https://example.com/article">An article</a></span>
+                    <h2 class="link h-cite u-repost-of"><a class="u-url" href="https://example.com/article">An article</a></h2>
                     <ul class="tags"><li><a>swift</a></li><li><a>ios</a></li></ul>
                     <details class="story_content"><summary>Preview text</summary></details>
                     <div class="byline">
@@ -272,6 +272,38 @@ class clawTests: XCTestCase {
         XCTAssertTrue(story.user_is_author)
         XCTAssertEqual(story.tags, ["swift", "ios"])
         XCTAssertEqual(story.description, "Preview text")
+    }
+
+    func testStoryParsersSupportLegacyAndHeadingTitleContainers() throws {
+        // Lobsters switched story titles from span.link to h2.link in
+        // 7718b811 (2026-10-30). Cached pages can still use the old markup.
+        let rows = ["span", "h2"].enumerated().map { index, container in
+            """
+            <li class="story" data-shortid="story\(index)">
+              <div class="details">
+                <\(container) class="link h-cite u-repost-of">
+                  <a class="u-url" href="/s/story\(index)/title">Title \(index)</a>
+                </\(container)>
+                <ul class="tags"><li><a>swift</a></li></ul>
+                <div class="byline"><a href="/~alice">alice</a></div>
+              </div>
+            </li>
+            """
+        }
+        let pageURL = URL(string: "http://localhost:3000/")!
+        let stories = try StoryListHTMLParser.parse(
+            "<ol class='stories'>\(rows.joined())</ol>",
+            pageURL: pageURL
+        )
+        XCTAssertEqual(stories.map(\.title), ["Title 0", "Title 1"])
+        XCTAssertEqual(stories.map(\.short_id), ["story0", "story1"])
+        for (index, row) in rows.enumerated() {
+            let story = try StoryHTMLParser.parse(row, pageURL: pageURL)
+            XCTAssertEqual(story.title, "Title \(index)")
+            XCTAssertEqual(story.url, "")
+            XCTAssertEqual(story.submitter_user, "alice")
+            XCTAssertEqual(story.tags, ["swift"])
+        }
     }
 
     func testStoryListHTMLParserAllowsEmptyFeed() throws {
@@ -735,15 +767,29 @@ class clawTests: XCTestCase {
             pageURL: page.response.url ?? baseURL
         )
 
-        if let first = stories.first {
-            let detailURL = APIConfiguration.shared.storyURL(shortId: first.short_id)
-            let detail = try await loader.load(detailURL)
-            let story = try await StoryHTMLParser.parseOffMain(
-                detail.html,
-                pageURL: detail.response.url ?? detailURL
+        let first = try XCTUnwrap(
+            stories.first,
+            "The local compatibility test needs at least one seeded story."
+        )
+        let tag = try XCTUnwrap(first.tags.first)
+        for feedURL in [
+            APIConfiguration.shared.newestWebpageURL(),
+            APIConfiguration.shared.tagStoryWebpageURL(tags: [tag])
+        ] {
+            let feed = try await loader.load(feedURL)
+            let feedStories = try StoryListHTMLParser.parse(
+                feed.html,
+                pageURL: feed.response.url ?? feedURL
             )
-            XCTAssertEqual(story.short_id, first.short_id)
+            XCTAssertFalse(feedStories.isEmpty, "Expected stories at \(feedURL.path)")
         }
+        let detailURL = APIConfiguration.shared.storyURL(shortId: first.short_id)
+        let detail = try await loader.load(detailURL)
+        let story = try await StoryHTMLParser.parseOffMain(
+            detail.html,
+            pageURL: detail.response.url ?? detailURL
+        )
+        XCTAssertEqual(story.short_id, first.short_id)
     }
 
     @MainActor
