@@ -54,7 +54,7 @@ enum LobstersHTMLParser {
     ) throws -> LobstersStoryFields? {
         let shortID = try element.attr("data-shortid")
         guard !shortID.isEmpty,
-              let titleElement = try element.select("span.link a.u-url").first() else {
+              let titleElement = try element.select(".link a.u-url").first() else {
             return nil
         }
 

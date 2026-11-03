@@ -5,7 +5,15 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  schedule:
+    # 02:17 EST / 03:17 EDT; avoid the busiest start-of-hour queue.
+    - cron: "17 7 * * *"
   workflow_dispatch:
+    inputs:
+      only_if_upstream_changed:
+        description: Skip Claw/Lobsters revisions that have already passed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -22,8 +30,56 @@ env:
   COMPOSE_PROJECT_NAME: claw-lobsters-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
+  check-upstream:
+    name: Check Lobsters revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      lobsters_sha: ${{ steps.upstream.outputs.sha }}
+      cache_key: ${{ steps.upstream.outputs.cache_key }}
+      should_test: ${{ steps.decision.outputs.should_test }}
+    steps:
+      - name: Resolve current Lobsters revision
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLAW_SHA: ${{ github.sha }}
+        run: |
+          sha="$(gh api repos/lobsters/lobsters/commits/main --jq .sha)"
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unable to resolve the Lobsters main revision"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "cache_key=lobsters-tested-v1-$CLAW_SHA-$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Look up successful compatibility check
+        id: tested
+        uses: actions/cache/restore@v6
+        with:
+          path: .ci/lobsters-tested
+          key: ${{ steps.upstream.outputs.cache_key }}
+          lookup-only: true
+
+      - name: Decide whether to run the suite
+        id: decision
+        env:
+          CHANGES_ONLY: ${{ github.event_name == 'schedule' || inputs.only_if_upstream_changed == true }}
+          ALREADY_PASSED: ${{ steps.tested.outputs.cache-hit }}
+          LOBSTERS_SHA: ${{ steps.upstream.outputs.sha }}
+        run: |
+          if [[ "$CHANGES_ONLY" == "true" && "$ALREADY_PASSED" == "true" ]]; then
+            echo "should_test=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: this Claw revision already passed against Lobsters \`$LOBSTERS_SHA\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "should_test=true" >> "$GITHUB_OUTPUT"
+            echo "Running the full suite against Lobsters \`$LOBSTERS_SHA\`." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   integration:
     name: Build and Integration Test
+    needs: check-upstream
+    if: needs.check-upstream.outputs.should_test == 'true'
     runs-on: self-hosted
     timeout-minutes: 90
 
@@ -31,11 +87,11 @@ jobs:
       - name: Checkout Claw
         uses: actions/checkout@v6
 
-      - name: Checkout latest Lobsters
+      - name: Checkout resolved Lobsters revision
         uses: actions/checkout@v6
         with:
           repository: lobsters/lobsters
-          ref: main
+          ref: ${{ needs.check-upstream.outputs.lobsters_sha }}
           fetch-depth: 1
           path: ${{ env.LOBSTERS_DIRECTORY }}
 
@@ -156,13 +212,27 @@ jobs:
           echo "CLAW_UI_TEST_PROFILE_STORY_ID=$profile_story_id" >> "$GITHUB_ENV"
 
       - name: Start Lobsters
+        timeout-minutes: 5
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         shell: bash
         run: |
-          docker compose up --detach --force-recreate app
-          address="$(docker compose port app 3000)"
-          port="${address##*:}"
+          make docker-serve > "$RUNNER_TEMP/lobsters-serve.log" 2>&1 &
+          server_pid=$!
+          port=""
+          for _ in {1..120}; do
+            address="$(docker compose port app 3000 2>/dev/null || true)"
+            port="${address##*:}"
+            if [[ "$port" =~ ^[0-9]+$ ]]; then
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$RUNNER_TEMP/lobsters-serve.log"
+              exit 1
+            fi
+            sleep 2
+          done
           if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            cat "$RUNNER_TEMP/lobsters-serve.log"
             echo "Unable to determine the Lobsters host port from: $address"
             exit 1
           fi
@@ -272,3 +342,26 @@ jobs:
               -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
               down --volumes --rmi local --remove-orphans
           fi
+
+  record-success:
+    name: Record successful compatibility check
+    needs: [check-upstream, integration]
+    # Never mark a failed/cancelled run as tested. Keeping this on the same
+    # runner OS as the lookup also keeps the cache format consistent.
+    if: needs.integration.result == 'success' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Write tested revisions
+        env:
+          CLAW_SHA: ${{ github.sha }}
+          LOBSTERS_SHA: ${{ needs.check-upstream.outputs.lobsters_sha }}
+        run: |
+          mkdir -p .ci/lobsters-tested
+          printf '%s\n%s\n' "$CLAW_SHA" "$LOBSTERS_SHA" > .ci/lobsters-tested/revisions
+
+      - name: Save successful compatibility check
+        uses: actions/cache/save@v6
+        with:
+          path: .ci/lobsters-tested
+          key: ${{ needs.check-upstream.outputs.cache_key }}
