@@ -260,7 +260,7 @@ class clawTests: XCTestCase {
         let stories = try StoryListHTMLParser.parse(
             html,
             pageURL: URL(string: "https://lobste.rs/")!
-        )
+        ).stories
         let story = try XCTUnwrap(stories.first)
 
         XCTAssertEqual(story.short_id, "abc123")
@@ -294,7 +294,7 @@ class clawTests: XCTestCase {
         let stories = try StoryListHTMLParser.parse(
             "<ol class='stories'>\(rows.joined())</ol>",
             pageURL: pageURL
-        )
+        ).stories
         XCTAssertEqual(stories.map(\.title), ["Title 0", "Title 1"])
         XCTAssertEqual(stories.map(\.short_id), ["story0", "story1"])
         for (index, row) in rows.enumerated() {
@@ -310,7 +310,7 @@ class clawTests: XCTestCase {
         let stories = try StoryListHTMLParser.parse(
             "<html><body><ol class='stories list'></ol></body></html>",
             pageURL: URL(string: "http://localhost:3000/")!
-        )
+        ).stories
         XCTAssertTrue(stories.isEmpty)
     }
 
@@ -331,7 +331,7 @@ class clawTests: XCTestCase {
         }
     }
 
-    func testStoryListHTMLParserRejectsPartiallyIncompatibleMarkup() throws {
+    func testStoryListHTMLParserPreservesPartiallyCompatibleMarkup() throws {
         let html = """
         <ol class="stories">
           <li class="story" data-shortid="valid">
@@ -343,17 +343,12 @@ class clawTests: XCTestCase {
         </ol>
         """
 
-        XCTAssertThrowsError(
-            try StoryListHTMLParser.parse(
-                html,
-                pageURL: URL(string: "http://localhost:3000/")!
-            )
-        ) { error in
-            XCTAssertEqual(error as? StoryListHTMLParserError, .incompatibleStoryMarkup)
-        }
+        let result = try StoryListHTMLParser.parse(html, pageURL: URL(string: "http://localhost:3000/")!)
+        XCTAssertEqual(result.stories.map(\.short_id), ["valid"])
+        XCTAssertEqual(result.skippedStoryCount, 1)
     }
 
-    func testStoryListHTMLParserRejectsStoryMissingShortID() throws {
+    func testStoryListHTMLParserSkipsStoryMissingShortID() throws {
         let html = """
         <ol class="stories">
           <li class="story" data-shortid="valid">
@@ -369,14 +364,9 @@ class clawTests: XCTestCase {
         </ol>
         """
 
-        XCTAssertThrowsError(
-            try StoryListHTMLParser.parse(
-                html,
-                pageURL: URL(string: "http://localhost:3000/")!
-            )
-        ) { error in
-            XCTAssertEqual(error as? StoryListHTMLParserError, .incompatibleStoryMarkup)
-        }
+        let result = try StoryListHTMLParser.parse(html, pageURL: URL(string: "http://localhost:3000/")!)
+        XCTAssertEqual(result.stories.map(\.short_id), ["valid"])
+        XCTAssertEqual(result.skippedStoryCount, 1)
     }
 
     func testStoryListHTMLParserRejectsStoryMissingDestination() throws {
@@ -681,7 +671,7 @@ class clawTests: XCTestCase {
         tagFetcher.items = [story]
         storyFetcher.story = detail
         StoryFetcher.cachedStories = [detail]
-        TagStoryFetcher.cachedStories[["test"]] = [story]
+        TagStoryFetcher.cachedStories[["test"]] = ParsedStoryList(stories: [story], skippedStoryCount: 1)
 
         LobstersContentRefresher.clearLiveContent()
 
@@ -762,10 +752,12 @@ class clawTests: XCTestCase {
         } catch let error as URLError where error.code == .cannotConnectToHost {
             throw XCTSkip("The disposable local Lobsters server is not running.")
         }
-        let stories = try await StoryListHTMLParser.parseOffMain(
+        let parsedFeed = try await StoryListHTMLParser.parseOffMain(
             page.html,
             pageURL: page.response.url ?? baseURL
         )
+        XCTAssertEqual(parsedFeed.skippedStoryCount, 0)
+        let stories = parsedFeed.stories
 
         let first = try XCTUnwrap(
             stories.first,
@@ -781,7 +773,8 @@ class clawTests: XCTestCase {
                 feed.html,
                 pageURL: feed.response.url ?? feedURL
             )
-            XCTAssertFalse(feedStories.isEmpty, "Expected stories at \(feedURL.path)")
+            XCTAssertEqual(feedStories.skippedStoryCount, 0)
+            XCTAssertFalse(feedStories.stories.isEmpty, "Expected stories at \(feedURL.path)")
         }
         let detailURL = APIConfiguration.shared.storyURL(shortId: first.short_id)
         let detail = try await loader.load(detailURL)
@@ -790,6 +783,9 @@ class clawTests: XCTestCase {
             pageURL: detail.response.url ?? detailURL
         )
         XCTAssertEqual(story.short_id, first.short_id)
+        XCTAssertEqual(story.title, first.title)
+        XCTAssertEqual(story.submitter_user, first.submitter_user)
+        XCTAssertEqual(story.comments_unavailable, false)
     }
 
     @MainActor
@@ -1569,4 +1565,174 @@ class clawTests: XCTestCase {
         }
     }
 
+}
+
+// Historical input plus deliberate changes exercise the parser's contract,
+// independently of whatever markup the latest local server happens to render.
+extension clawTests {
+    private func historicalStoryHTML() throws -> String {
+        let url = try XCTUnwrap(Bundle(for: clawTests.self).url(
+            forResource: "story-before-heading", withExtension: "html", subdirectory: "Fixtures"
+        ))
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    func testHistoricalMarkupAndHarmlessLayoutMutationsPreserveContent() throws {
+        let original = try historicalStoryHTML()
+        let variants = [
+            original,
+            original.replacingOccurrences(of: "<span class=\"link\">", with: "<h2 class=\"link\">")
+                .replacingOccurrences(of: "</a></span>", with: "</a></h2>"),
+            original.replacingOccurrences(of: "<span class=\"link\">", with: "<section><span class=\"link\">")
+                .replacingOccurrences(of: "</a></span>", with: "</a></span></section>"),
+            original.replacingOccurrences(of: "<div", with: "<section")
+                .replacingOccurrences(of: "</div>", with: "</section>")
+        ]
+        let pageURL = URL(string: "http://localhost:3000/s/abc123/an_article")!
+        for html in variants {
+            let feed = try StoryListHTMLParser.parse(html, pageURL: pageURL)
+            XCTAssertEqual(feed.skippedStoryCount, 0)
+            XCTAssertEqual(feed.stories.map(\.short_id), ["abc123"])
+            let story = try StoryHTMLParser.parse(html, pageURL: pageURL)
+            XCTAssertEqual(story.title, "An article")
+            XCTAssertEqual(story.url, "https://example.com/article")
+            XCTAssertEqual(story.submitter_user, "alice")
+            XCTAssertEqual(story.tags, ["swift", "ios"])
+            XCTAssertEqual(story.score, 42)
+            XCTAssertEqual(story.comments_unavailable, false)
+            XCTAssertEqual(story.comments.map(\.short_id), ["parent1", "child1", "deleted1"])
+            XCTAssertEqual(story.comments.first { $0.short_id == "child1" }?.parent_comment, "parent1")
+            XCTAssertNil(story.comments.first { $0.short_id == "deleted1" }?.parent_comment)
+            XCTAssertTrue(story.comments.first?.comment.contains("Parent") == true)
+            XCTAssertTrue(story.comments.last?.is_deleted == true)
+        }
+    }
+
+    func testMissingOptionalMetadataDoesNotInventValues() throws {
+        let html = """
+        <ol class="stories"><li class="story" data-shortid="minimal">
+          <h2 class="link"><a class="u-url" href="/s/minimal/title">Minimal story</a></h2>
+        </li></ol><ol class="comments"></ol>
+        """
+        let url = URL(string: "http://localhost:3000/")!
+        let feed = try StoryListHTMLParser.parse(html, pageURL: url)
+        let row = try XCTUnwrap(feed.stories.first)
+        XCTAssertEqual(feed.skippedStoryCount, 0)
+        XCTAssertEqual(row.title, "Minimal story")
+        XCTAssertEqual(row.created_at, "")
+        XCTAssertEqual(row.time_ago, "")
+        XCTAssertEqual(row.displayedScore, "—")
+        XCTAssertEqual(row.score_is_unavailable, true)
+        XCTAssertEqual(row.comment_count_is_unavailable, true)
+        XCTAssertEqual(row.submitter_user, "")
+        let detail = try StoryHTMLParser.parse(html, pageURL: url)
+        XCTAssertEqual(detail.comments_unavailable, false)
+        XCTAssertEqual(detail.comment_count, 0)
+        XCTAssertEqual(detail.comment_count_is_unavailable, false)
+    }
+
+    func testUnknownFeedMarkupAndLoginErrorPagesAreNotEmptyFeeds() throws {
+        for html in [
+            "<html><form action='/login'><input name='password'></form></html>",
+            "<html><h1>Service unavailable</h1></html>",
+            "<ol class='stories'><article>Changed story markup</article></ol>",
+            "<ol class='stories'><li class='renamed' data-shortid='abc123'></li></ol>"
+        ] {
+            XCTAssertThrowsError(try StoryListHTMLParser.parse(html, pageURL: URL(string: "http://localhost:3000/")!))
+            XCTAssertThrowsError(try StoryHTMLParser.parse(html, pageURL: URL(string: "http://localhost:3000/s/abc123")!))
+        }
+    }
+
+    func testBrokenCommentsKeepStoryReadableWithoutPublishingAnIncorrectTree() throws {
+        let html = try historicalStoryHTML()
+        let variants = [
+            html.replacingOccurrences(of: "class=\"comments\"", with: "class=\"changed-comments\""),
+            html.replacingOccurrences(of: "class=\"comment_text\"", with: "class=\"changed-body\""),
+            html.replacingOccurrences(of: "comments_subtree", with: "changed-subtree"),
+            html.replacingOccurrences(of: "comments_subtree", with: "changed-subtree")
+                .replacingOccurrences(of: "<body>", with: "<body><div class='comments_subtree'>")
+                .replacingOccurrences(of: "</body>", with: "</div></body>"),
+            html.replacingOccurrences(of: "data-shortid=\"parent1\"", with: "data-other-id=\"parent1\""),
+            html.replacingOccurrences(of: "data-shortid=\"child1\"", with: "data-shortid=\"parent1\""),
+            html.replacingOccurrences(of: "class=\"comment upvoted\"", with: "class=\"changed-comment\"")
+        ]
+        for variant in variants {
+            let story = try StoryHTMLParser.parse(variant, pageURL: URL(string: "http://localhost:3000/s/abc123")!)
+            XCTAssertEqual(story.title, "An article")
+            XCTAssertTrue(story.description.contains("Story body"))
+            XCTAssertEqual(story.comments_unavailable, true)
+            XCTAssertEqual(story.comment_count_is_unavailable, true)
+            XCTAssertTrue(story.comments.isEmpty)
+        }
+    }
+
+    func testDuplicateAndUnrecognizedFeedRowsAreReported() throws {
+        let html = """
+        <ol class="stories">
+          <li class="story" data-shortid="good"><h2 class="link"><a class="u-url" href="/s/good/title">Good</a></h2></li>
+          <li class="story" data-shortid="good"><h2 class="link"><a class="u-url" href="/s/good/title">Duplicate</a></h2></li>
+          <li class="changed-story">Unrecognized</li>
+          <div class="last_read_newest">Last Read</div>
+        </ol>
+        """
+        let result = try StoryListHTMLParser.parse(html, pageURL: URL(string: "http://localhost:3000/")!)
+        XCTAssertEqual(result.stories.map(\.title), ["Good"])
+        XCTAssertEqual(result.skippedStoryCount, 2)
+        let wrapped = html.replacingOccurrences(of: "<ol class=\"stories\">", with: "<ol class=\"stories\"><section>")
+            .replacingOccurrences(of: "</ol>", with: "</section></ol>")
+        let wrappedResult = try StoryListHTMLParser.parse(wrapped, pageURL: URL(string: "http://localhost:3000/")!)
+        XCTAssertEqual(wrappedResult.stories.map(\.title), ["Good"])
+        XCTAssertEqual(wrappedResult.skippedStoryCount, 2)
+    }
+}
+
+extension clawTests {
+    @MainActor
+    func testLocalParserCompatibilityContentAndMutations() async throws {
+        let config = APIConfiguration.shared
+        guard ["localhost", "127.0.0.1"].contains(config.baseURL.host ?? "") else {
+            throw XCTSkip("Compatibility traffic is restricted to the disposable local server.")
+        }
+        let loader = LobstersPageLoader(storedCredentialPolicy: .never)
+        let feedURL = config.newestWebpageURL()
+        let page = try await loader.load(feedURL)
+        let result = try StoryListHTMLParser.parse(page.html, pageURL: feedURL)
+        XCTAssertEqual(result.skippedStoryCount, 0, "Current upstream markup must parse completely")
+        let row = try XCTUnwrap(result.stories.first { $0.title == "Claw Parser Compatibility Fixture" },
+            "Seed the local server with .ci/seed-parser-fixture.rb")
+        XCTAssertEqual(row.submitter_user, "System")
+        XCTAssertEqual(row.tags, ["test"])
+        XCTAssertEqual(row.url, "")
+        XCTAssertFalse(row.created_at.isEmpty)
+        let detailURL = config.storyURL(shortId: row.short_id)
+        let detail = try await loader.load(detailURL)
+        let story = try StoryHTMLParser.parse(detail.html, pageURL: detail.response.url ?? detailURL)
+        XCTAssertEqual(story.title, row.title)
+        XCTAssertEqual(story.short_id, row.short_id)
+        XCTAssertEqual(story.comments_unavailable, false)
+        XCTAssertTrue(story.description.contains("<strong>stable story body</strong>"))
+        XCTAssertEqual(story.comments.count, 3)
+        let parent = try XCTUnwrap(story.comments.first { $0.comment.contains("Parser parent") })
+        let child = try XCTUnwrap(story.comments.first { $0.comment.contains("Parser child") })
+        let secondRoot = try XCTUnwrap(story.comments.first { $0.comment.contains("Parser second root") })
+        XCTAssertEqual(parent.commenting_user, "System")
+        XCTAssertNil(parent.parent_comment)
+        XCTAssertNil(secondRoot.parent_comment)
+        XCTAssertEqual(child.parent_comment, parent.short_id)
+        XCTAssertTrue(parent.comment.contains("<strong>body</strong>"))
+
+        // Mutate actual upstream HTML in memory; no production traffic and no
+        // fixture-specific behavior added to the shipped application.
+        let document = try SwiftSoup.parse(page.html)
+        let malformed = try XCTUnwrap(document.select(".story").first())
+        let removedID = try malformed.attr("data-shortid")
+        try malformed.select(".link a.u-url").remove()
+        let partial = try StoryListHTMLParser.parse(document.outerHtml(), pageURL: feedURL)
+        XCTAssertEqual(partial.skippedStoryCount, 1)
+        XCTAssertEqual(partial.stories.map(\.short_id), result.stories.filter { $0.short_id != removedID }.map(\.short_id))
+        let changedComments = detail.html.replacingOccurrences(of: "comment_text", with: "changed_comment_body")
+        let degraded = try StoryHTMLParser.parse(changedComments, pageURL: detailURL)
+        XCTAssertEqual(degraded.title, row.title)
+        XCTAssertEqual(degraded.comments_unavailable, true)
+    }
 }

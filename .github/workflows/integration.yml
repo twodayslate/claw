@@ -27,7 +27,6 @@ env:
   SIMULATOR_MODEL: "iPhone 17 Pro"
   SIMULATOR_OS: "26.2"
   LOBSTERS_DIRECTORY: .ci/lobsters
-  COMPOSE_PROJECT_NAME: claw-lobsters-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   check-upstream:
@@ -38,7 +37,9 @@ jobs:
       lobsters_sha: ${{ steps.upstream.outputs.sha }}
       cache_key: ${{ steps.upstream.outputs.cache_key }}
       should_test: ${{ steps.decision.outputs.should_test }}
+      matrix: ${{ steps.upstream.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v6
       - name: Resolve current Lobsters revision
         id: upstream
         env:
@@ -51,7 +52,19 @@ jobs:
             exit 1
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "cache_key=lobsters-tested-v1-$CLAW_SHA-$sha" >> "$GITHUB_OUTPUT"
+          release_sha="$(tr -d '\n' < .github/released-claw-ref)"
+          if [[ ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "released-claw-ref must pin a full commit SHA"
+            exit 1
+          fi
+          coverage="development"
+          matrix="$(jq -cn --arg ref "$CLAW_SHA" '{include: [{name: "development", ref: $ref}]}')"
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            coverage="development-and-release"
+            matrix="$(jq -c --arg ref "$release_sha" '.include += [{name: "release-baseline", ref: $ref}]' <<< "$matrix")"
+          fi
+          echo "cache_key=lobsters-tested-v2-$coverage-$CLAW_SHA-$release_sha-$sha" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
       - name: Look up successful compatibility check
         id: tested
@@ -77,15 +90,31 @@ jobs:
           fi
 
   integration:
-    name: Build and Integration Test
+    name: ${{ matrix.name == 'development' && 'Build and Integration Test' || 'Released App Compatibility' }}
     needs: check-upstream
     if: needs.check-upstream.outputs.should_test == 'true'
     runs-on: self-hosted
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.check-upstream.outputs.matrix) }}
+    env:
+      COMPOSE_PROJECT_NAME: claw-lobsters-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.name }}
 
     steps:
       - name: Checkout Claw
         uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.ref }}
+
+      # Keep the fixture contract from the workflow revision when testing an
+      # older app checkout. Never overwrite that checkout's parser or tests.
+      - name: Checkout compatibility harness
+        uses: actions/checkout@v6
+        with:
+          path: .ci/harness
+          sparse-checkout: .ci
 
       - name: Checkout resolved Lobsters revision
         uses: actions/checkout@v6
@@ -99,6 +128,8 @@ jobs:
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         run: |
           {
+            echo "### ${{ matrix.name }} compatibility"
+            echo "Claw commit: \`${{ matrix.ref }}\`"
             echo "### Lobsters under test"
             echo
             echo "Commit: \`$(git rev-parse HEAD)\`"
@@ -116,6 +147,12 @@ jobs:
             compose.fetch("services").fetch("app")["ports"] = [
               {"target" => 3000, "host_ip" => "127.0.0.1"}
             ]
+            # Development regenerates inline partials on disk. Multiple Puma
+            # workers can race and truncate those generated view files.
+            app = compose.fetch("services").fetch("app")
+            app["environment"] ||= {}
+            app["environment"]["PUMA_WORKERS"] = "0"
+            app["environment"]["RAILS_MAX_THREADS"] = "1"
             File.write(path, YAML.dump(compose))
           ' docker-compose.yaml
 
@@ -210,6 +247,10 @@ jobs:
             exit 1
           fi
           echo "CLAW_UI_TEST_PROFILE_STORY_ID=$profile_story_id" >> "$GITHUB_ENV"
+
+      - name: Seed parser compatibility fixture
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        run: docker compose run --rm -T app bin/rails runner - < ../harness/.ci/seed-parser-fixture.rb
 
       - name: Start Lobsters
         timeout-minutes: 5
@@ -329,7 +370,7 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
-          name: integration-test-results
+          name: integration-test-results-${{ matrix.name }}
           path: results
           if-no-files-found: ignore
 

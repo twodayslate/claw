@@ -15,8 +15,10 @@ struct NewestStory: GenericStory, Codable, Identifiable, Hashable {
     var url: String
     var score: Int
     var score_is_hidden: Bool? = nil
+    var score_is_unavailable: Bool? = nil
     var flags: Int
     var comment_count: Int
+    var comment_count_is_unavailable: Bool? = nil
     var description: String
     var comments_url: String
     var submitter_user: String

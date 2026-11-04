@@ -21,14 +21,17 @@ struct Story: GenericStory, Codable, Hashable, Identifiable {
     var url: String
     var score: Int
     var score_is_hidden: Bool? = nil
+    var score_is_unavailable: Bool? = nil
     var flags: Int
     var comment_count: Int
+    var comment_count_is_unavailable: Bool? = nil
     var description: String
     var comments_url: String
     var submitter_user: String
     var user_is_author: Bool
     var tags: [String]
     var comments: [Comment]
+    var comments_unavailable: Bool? = nil
     var user_upvoted: Bool = false
     var can_comment: Bool = false
     
@@ -97,6 +100,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var is_moderated: Bool
     var score: Int
     var score_is_hidden: Bool? = nil
+    var score_is_unavailable: Bool? = nil
     var flags: Int
     var url: String
     var comment: String
@@ -109,7 +113,7 @@ struct Comment: Codable, Hashable, Identifiable {
     var can_vote: Bool? = nil
 
     var displayedScore: String {
-        score_is_hidden == true ? "~" : String(score)
+        score_is_unavailable == true ? "—" : (score_is_hidden == true ? "~" : String(score))
     }
 
     static var placeholder: Comment {
@@ -128,6 +132,7 @@ class StoryFetcher: ObservableObject {
     }
 
     @Published var story: Story? = nil
+    @Published var loadFailed = false
 
     public var short_id: String? = nil
     public var pageURL: URL? = nil
@@ -171,6 +176,7 @@ class StoryFetcher: ObservableObject {
     private func invalidateContent() {
         supersedePendingLoads()
         story = nil
+        loadFailed = false
     }
 
     private func loadSupersedingPendingLoads() async throws {
@@ -234,6 +240,7 @@ class StoryFetcher: ObservableObject {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
 
@@ -247,12 +254,14 @@ class StoryFetcher: ObservableObject {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
         guard isCurrentContentGeneration(generation) else {
             return
         }
         self.story = parsedStory
+        loadFailed = false
 
         StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
         StoryFetcher.cachedStories.append(parsedStory)

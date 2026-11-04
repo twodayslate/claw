@@ -7,8 +7,10 @@ struct Provider: TimelineProvider {
     @ObservedObject var hottest = HottestFetcher()
     
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
-        let stories = HottestWidgetCache.load() ?? hottest.items
-        let entry = SimpleEntry(date: Date(), stories: stories)
+        let cachedStories = HottestWidgetCache.load()
+        let entry = SimpleEntry(date: Date(), stories: cachedStories ?? hottest.items,
+                                isIncomplete: cachedStories == nil && hottest.skippedStoryCount > 0,
+                                loadFailed: hottest.loadFailed)
         completion(entry)
     }
     
@@ -16,15 +18,22 @@ struct Provider: TimelineProvider {
         var entries: [SimpleEntry] = []
 
         Task {
+            var isIncomplete = false
+            var loadFailed = false
             do {
                 try await hottest.load()
-                HottestWidgetCache.save(hottest.items)
+                isIncomplete = hottest.skippedStoryCount > 0
+                if !isIncomplete {
+                    HottestWidgetCache.save(hottest.items)
+                }
             } catch {
+                loadFailed = true
                 hottest.items = HottestWidgetCache.load() ?? []
             }
 
             let now = Date()
-            let entry = SimpleEntry(date: now, stories: hottest.items)
+            let entry = SimpleEntry(date: now, stories: hottest.items,
+                                    isIncomplete: isIncomplete, loadFailed: loadFailed)
             entries.append(entry)
             let refreshDate = Calendar.current.date(
                 byAdding: .hour,
@@ -71,6 +80,8 @@ private enum HottestWidgetCache {
 struct SimpleEntry: TimelineEntry {
     let date: Date
     let stories: [NewestStory]?
+    var isIncomplete = false
+    var loadFailed = false
 }
 
 extension View {
@@ -95,7 +106,10 @@ struct hottest_widgetEntryView : View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            if family == .systemSmall {
+            if entry.loadFailed && entry.stories?.isEmpty != false {
+                Label("Stories unavailable", systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+            } else if family == .systemSmall {
                 SmallestHottestWidgetView(entry: entry)
             } else if family == .systemMedium {
                 MediumHottestWidgetView(entry: entry)
@@ -103,6 +117,15 @@ struct hottest_widgetEntryView : View {
                 LargeHottestWidgetView(entry: entry)
             } else {
                 Text(entry.date, style: .time)
+            }
+            if entry.isIncomplete {
+                Label("Some stories unavailable", systemImage: "exclamationmark.triangle")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else if entry.loadFailed && entry.stories?.isEmpty == false {
+                Label("Unable to refresh", systemImage: "arrow.clockwise")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

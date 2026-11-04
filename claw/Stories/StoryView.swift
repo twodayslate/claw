@@ -27,12 +27,14 @@ struct StoryView: View {
     
     var title: String {
         if let story = self.story.story{
+            if story.comment_count_is_unavailable == true { return String(localized: "Comments") }
             if story.comment_count == 1 {
                 return "1 comment"
             }
             return "\(story.comment_count) comments"
         }
         if let story = from_newest {
+            if story.comment_count_is_unavailable == true { return String(localized: "Comments") }
             if story.comment_count == 1 {
                 return "1 comment"
             }
@@ -83,8 +85,16 @@ struct StoryView: View {
                     else if let story = from_newest  {
                         StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
                             .environmentObject(observableSheet)
+                    } else if story.loadFailed {
+                        ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
                     } else {
                         StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
+                    }
+                    if story.loadFailed {
+                        Label("Unable to load the story. Pull to refresh to try again.", systemImage: "arrow.clockwise")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .padding()
                     }
                     Divider()
                     if canAddComment {
@@ -98,12 +108,20 @@ struct StoryView: View {
                         .padding()
                     }
                     if let my_story = story.story {
-                        if  my_story.comments.count > 0 {
+                        if my_story.comments_unavailable == true {
+                            Label("Comments could not be loaded. Pull to refresh to try again.", systemImage: "exclamationmark.triangle")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .padding()
+                                .accessibilityIdentifier("story-comments-unavailable")
+                        } else if my_story.comments.count > 0 {
                             HierarchyList(data: my_story.sorted_comments, header: { comment in
                                 HStack(alignment: .center) {
-                                    SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
-                                        Text(comment.comment.commenting_user)
-                                            .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
+                                    if !comment.comment.commenting_user.isEmpty {
+                                        SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
+                                            Text(comment.comment.commenting_user)
+                                                .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
+                                        }
                                     }
                                     Spacer()
                                     commentVoteButton(comment.comment)
@@ -130,8 +148,12 @@ struct StoryView: View {
                                 Spacer()
                             }.padding()
                         }
+                    } else if story.loadFailed {
+                        EmptyView()
                     } else if let story = self.from_newest {
-                        if story.comment_count > 0 {
+                        if story.comment_count_is_unavailable == true {
+                            ProgressView().frame(maxWidth: .infinity).padding()
+                        } else if story.comment_count > 0 {
                             LazyVStack(alignment: .leading) {
                                 ForEach(1..<(story.comment_count+1)) { count in
                                     VStack(alignment: .leading) {

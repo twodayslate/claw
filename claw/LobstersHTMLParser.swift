@@ -14,6 +14,7 @@ struct LobstersStoryFields: Sendable {
     let createdAt: String
     let score: Int
     let scoreIsHidden: Bool
+    let scoreIsUnavailable: Bool
     let submitter: String
     let userIsAuthor: Bool
     let tags: [String]
@@ -71,10 +72,10 @@ enum LobstersHTMLParser {
         }
 
         let storyURL = absoluteURL("/s/\(shortID)", relativeTo: pageURL)
-        let byline = try element.select("div.byline").first()
+        let byline = try element.select(".byline").first()
         let bylineText = try byline?.text().lowercased() ?? ""
 
-        let score = try score(from: element.select("div.voters .upvoter").first())
+        let score = try score(from: element.select(".voters .upvoter").first())
 
         return LobstersStoryFields(
             shortID: shortID,
@@ -84,6 +85,7 @@ enum LobstersHTMLParser {
             createdAt: try timestamp(from: byline?.select("time").first()),
             score: score.value,
             scoreIsHidden: score.isHidden,
+            scoreIsUnavailable: score.isUnavailable,
             submitter: try username(in: byline) ?? "",
             userIsAuthor: bylineText.contains("authored by"),
             tags: try element.select("ul.tags a").array().map { try $0.text() },
@@ -108,32 +110,30 @@ enum LobstersHTMLParser {
         return nil
     }
 
-    static func number(from element: Element?) throws -> Int {
-        guard let element else {
-            return 0
-        }
-        let title = try element.attr("title")
-        let candidate = title.isEmpty ? try element.text() : title
-        let digits = candidate.filter { $0.isNumber || $0 == "-" }
-        return Int(digits) ?? 0
+    static func commentCount(from element: Element?) throws -> Int? {
+        guard let element else { return nil }
+        let text = try element.text().trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.lowercased() == "no comments" { return 0 }
+        guard let first = text.split(separator: " ").first,
+              let count = Int(first), count >= 0 else { return nil }
+        return count
     }
 
-    static func score(from element: Element?) throws -> (value: Int, isHidden: Bool) {
+    static func score(from element: Element?) throws -> (value: Int, isHidden: Bool, isUnavailable: Bool) {
         guard let element else {
-            return (0, false)
+            return (0, false, true)
         }
         let title = try element.attr("title")
-        let candidate = title.isEmpty ? try element.text() : title
-        let digits = candidate.filter { $0.isNumber || $0 == "-" }
-        guard let value = Int(digits) else {
-            return (0, !candidate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        }
-        return (value, false)
+        let candidate = (title.isEmpty ? try element.text() : title)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if candidate == "~" { return (0, true, false) }
+        guard let value = Int(candidate) else { return (0, false, true) }
+        return (value, false, false)
     }
 
     static func timestamp(from element: Element?) throws -> String {
         if let unixString = try element?.attr("data-at-unix"),
-           let unixTime = TimeInterval(unixString) {
+           let unixTime = TimeInterval(unixString), unixTime.isFinite {
             return formattedDate(Date(timeIntervalSince1970: unixTime))
         }
 
@@ -145,7 +145,7 @@ enum LobstersHTMLParser {
             return dateString
         }
 
-        return formattedDate(Date())
+        return ""
     }
 
     static func formattedDate(_ date: Date) -> String {

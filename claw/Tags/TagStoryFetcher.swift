@@ -13,22 +13,28 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         }
     }
 
-    static var cachedStories = [[String]: [NewestStory]]()
+    static var cachedStories = [[String]: ParsedStoryList]()
     private static var liveFetchers = [WeakReference]()
     
     var tags: [String] {
         didSet {
             supersedePendingLoads()
+            loadFailed = false
             self.page = 1
             if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
-                self.items = cachedStories
+                self.items = cachedStories.stories
+                self.skippedStoryCount = cachedStories.skippedStoryCount
             } else {
                 self.items = []
+                self.skippedStoryCount = 0
             }
         }
     }
 
-    init(tags: [String] = []) {
+    private let pageLoader: LobstersPageLoader
+
+    init(tags: [String] = [], pageLoader: LobstersPageLoader = .shared) {
+        self.pageLoader = pageLoader
         self.tags = tags
         super.init()
         Self.liveFetchers.append(WeakReference(self))
@@ -55,7 +61,6 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         }
         let generation = captureContentGeneration()
         hasAttemptedLoad = true
-        page = 1
         isLoading = true
         defer {
             if isCurrentContentGeneration(generation) {
@@ -63,30 +68,34 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             }
         }
 
-        if let cachedStories = TagStoryFetcher.cachedStories[self.tags], self.items != cachedStories {
-            self.items = cachedStories
+        if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
+            self.items = cachedStories.stories
+            self.skippedStoryCount = cachedStories.skippedStoryCount
         }
 
-        let url = APIConfiguration.shared.tagStoryWebpageURL(tags: self.tags, page: self.page)
+        let url = APIConfiguration.shared.tagStoryWebpageURL(tags: self.tags, page: 1)
         let page: LoadedLobstersPage
         do {
-            page = try await LobstersPageLoader.shared.load(url)
+            page = try await pageLoader.load(url)
         } catch LobstersPageLoaderError.unsuccessfulStatusCode(404) {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
             // A saved tag can be absent when a Debug build switches to the local
             // test server. Treat that valid local state as an empty feed.
-            TagStoryFetcher.cachedStories[self.tags] = []
+            TagStoryFetcher.cachedStories[self.tags] = ParsedStoryList(stories: [], skippedStoryCount: 0)
             self.items = []
+            self.skippedStoryCount = 0
+            self.loadFailed = false
             return
         } catch {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
-        let decodedLists: [NewestStory]
+        let decodedLists: ParsedStoryList
         do {
             decodedLists = try await StoryListHTMLParser.parseOffMain(
                 page.html,
@@ -96,6 +105,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
         guard isCurrentContentGeneration(generation) else {
@@ -107,8 +117,10 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             TagStoryFetcher.cachedStories.removeAll()
         }
         TagStoryFetcher.cachedStories[self.tags] = decodedLists
-        self.items = decodedLists
-        self.page += 1
+        self.items = decodedLists.stories
+        self.skippedStoryCount = decodedLists.skippedStoryCount
+        self.loadFailed = false
+        self.page = 2
     }
 
     override func more(_ story: NewestStory? = nil) async throws {
@@ -124,9 +136,9 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         }
 
         let url = APIConfiguration.shared.tagStoryWebpageURL(tags: self.tags, page: self.page)
-        let stories: [NewestStory]
+        let stories: ParsedStoryList
         do {
-            let page = try await LobstersPageLoader.shared.load(url)
+            let page = try await pageLoader.load(url)
             stories = try await StoryListHTMLParser.parseOffMain(
                 page.html,
                 pageURL: page.response.url ?? url
@@ -135,17 +147,22 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
         guard isCurrentContentGeneration(generation) else {
             return
         }
-        for story in stories {
+        for story in stories.stories {
             if !self.items.contains(story) {
                 self.items.append(story)
             }
         }
-        TagStoryFetcher.cachedStories[self.tags] = self.items
+        self.skippedStoryCount += stories.skippedStoryCount
+        self.loadFailed = false
+        TagStoryFetcher.cachedStories[self.tags] = ParsedStoryList(
+            stories: self.items, skippedStoryCount: self.skippedStoryCount
+        )
         self.page += 1
     }
 }

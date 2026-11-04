@@ -10,6 +10,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var isReloading = false
     @Published var isLoading = false
     @Published var hasAttemptedLoad = false
+    @Published var skippedStoryCount = 0
+    @Published var loadFailed = false
 
     public internal(set) var page: Int = 1
     private var contentGeneration: UInt = 0
@@ -37,6 +39,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     func invalidateContent() {
         supersedePendingLoads()
         items.removeAll()
+        skippedStoryCount = 0
+        loadFailed = false
         page = 1
         hasAttemptedLoad = false
     }

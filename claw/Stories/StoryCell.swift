@@ -47,17 +47,23 @@ struct StoryCell: View {
                         TagList(tags: story.tags)
                     }
                     HStack {
-                        SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
-                            Text("via ").foregroundColor(Color.secondary) +
-                            Text(story.submitter_user)
-                                .foregroundColor(story.user_is_author == true ? .blue : .gray) +
-                            Text(" " +
-                                 story.time_ago).foregroundColor(Color.secondary)
+                        if !story.submitter_user.isEmpty {
+                            SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
+                                Text("via ").foregroundColor(Color.secondary) +
+                                Text(story.submitter_user)
+                                    .foregroundColor(story.user_is_author == true ? .blue : .gray) +
+                                Text(" " +
+                                     story.time_ago).foregroundColor(Color.secondary)
+                            }
+                            .font(style: .subheadline)
+                        } else if !story.time_ago.isEmpty {
+                            Text(story.time_ago).foregroundStyle(.secondary)
                         }
-                        .font(style: .subheadline)
                         Spacer()
                         SGNavigationLink(destination: StoryView(story), withChevron: false) {
-                            if story.comment_count == 1 {
+                            if story.comment_count_is_unavailable == true {
+                                Text("Comments").foregroundColor(.secondary)
+                            } else if story.comment_count == 1 {
                                 Text("1 comment").foregroundColor(Color.secondary)
                             } else {
                                 Text("\(story.comment_count) comments").foregroundColor(Color.secondary)

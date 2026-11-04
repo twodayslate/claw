@@ -30,13 +30,17 @@ struct TagStoryView: View {
                         Divider().id(0).padding(0).padding([.leading])
                     }
                    
+                    StoryFeedStatusView(
+                        skippedStoryCount: stories.skippedStoryCount,
+                        loadFailed: stories.loadFailed && !stories.items.isEmpty
+                    )
                     if stories.items.isEmpty && (!stories.hasAttemptedLoad || stories.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     } else if stories.items.isEmpty {
-                        StoryFeedEmptyView()
+                        StoryFeedEmptyView(loadFailed: stories.loadFailed)
                     } else {
                         ForEach(stories.items) { story in
                             StoryListCellView(story: story).id(story).task {
