@@ -859,6 +859,133 @@ class clawTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalSessionRecoversWhenRetainedWebViewLosesCookie() async throws {
+        let configuration = APIConfiguration.shared
+        let baseURL = configuration.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.login-cookie-recovery.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feedClient = LobstersWebViewClient(dataStore: dataStore)
+        let storyClient = LobstersWebViewClient(dataStore: dataStore)
+        let coordinator = LobstersSessionCoordinator()
+        let pageLoader = LobstersPageLoader(
+            credentialStore: credentialStore,
+            storedCredentialPolicy: .always
+        )
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: feedClient,
+            storyWebClient: storyClient,
+            coordinator: coordinator
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        session.beginLogin()
+        _ = try await feedClient.load(configuration.loginURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            """
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            email.value = 'test';
+            password.value = 'test';
+            setTimeout(() => email.form.requestSubmit(), 0);
+            return true;
+            """
+        )
+        for _ in 0..<200 where !session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated)
+        let storedCookie = try XCTUnwrap(credentialStore.loadCookie(for: baseURL))
+
+        // An anonymous response that started before login can expire WebKit's
+        // cookie after login completes. The Keychain credential is still valid.
+        for cookie in await feedClient.allCookies()
+        where cookie.name == LobstersCredentialStore.cookieName {
+            await feedClient.deleteCookie(cookie)
+        }
+        _ = try await storyClient.load(configuration.hottestWebpageURL())
+        for _ in 0..<200 {
+            let cookies = await feedClient.allCookies()
+            if !session.isAuthenticated || cookies.contains(where: {
+                $0.name == LobstersCredentialStore.cookieName
+            }) {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated, "An anonymous retained page must not discard a valid login.")
+        XCTAssertEqual(try credentialStore.loadCookie(for: baseURL), storedCookie)
+        let cookies = await feedClient.allCookies()
+        XCTAssertTrue(cookies.contains { $0.name == LobstersCredentialStore.cookieName })
+
+        let restored = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            storyWebClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            coordinator: coordinator
+        )
+        restored.setEntitlementAvailable(true)
+        await restored.start()
+        XCTAssertEqual(restored.username, "test", "The recovered login must survive a new session.")
+
+        _ = try await feedClient.load(configuration.settingsURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            LobstersWebActions.logout
+        )
+        for _ in 0..<200 where session.state != .signedOut {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(session.state, .signedOut, "An explicit website logout must not recover the old cookie.")
+        XCTAssertNil(try credentialStore.loadCookie(for: baseURL))
+        await restored.signOut()
+        await session.signOut()
+    }
+
+    @MainActor
+    func testLocalSessionRejectsInvalidSavedCookie() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.invalid-login.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName,
+            .value: "invalid-local-test-session",
+            .domain: try XCTUnwrap(baseURL.host),
+            .path: "/"
+        ]))
+        try credentialStore.saveCookie(cookie, for: baseURL)
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: LobstersPageLoader(
+                credentialStore: credentialStore,
+                storedCredentialPolicy: .always
+            ),
+            webClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            storyWebClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            coordinator: LobstersSessionCoordinator()
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        XCTAssertEqual(session.state, .signedOut)
+        XCTAssertNil(try credentialStore.loadCookie(for: baseURL))
+    }
+
+    @MainActor
     func testLocalSessionReloadsRetainedAnonymousStoryAfterLogin() async throws {
         let configuration = APIConfiguration.shared
         let baseURL = configuration.baseURL

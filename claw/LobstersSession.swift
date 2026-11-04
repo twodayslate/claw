@@ -118,6 +118,9 @@ final class LobstersSession: ObservableObject {
             self?.errorMessage = error.localizedDescription
             self?.restoreSelectedPageIfRequested()
         }
+        webClient.onLogoutRequested = { [weak self] in
+            self?.logoutRequestedFromWebpage()
+        }
         storyWebClient.onPageLoaded = { [weak self, weak storyWebClient] _ in
             guard let storyWebClient else {
                 return
@@ -869,7 +872,12 @@ final class LobstersSession: ObservableObject {
     }
 
     private func validateSession(generation: UInt) async throws {
-        let page = try await pageLoader.load(baseURL)
+        // A cached anonymous page is not evidence that a newly saved login has
+        // expired. Validate against the server with the Keychain credential.
+        let page = try await pageLoader.load(URLRequest(
+            url: baseURL,
+            cachePolicy: .reloadIgnoringLocalCacheData
+        ))
         guard isEntitled, isCurrentSession(generation) else {
             return
         }
@@ -882,6 +890,16 @@ final class LobstersSession: ObservableObject {
         guard let username else {
             try await clearSession(reloadWidgets: true)
             return
+        }
+
+        // A response started before login can remove the shared WebKit cookie.
+        // Only reinstall it after the server has confirmed the saved session.
+        if let cookie = try credentialStore.loadCookie(for: baseURL)?.makeCookie() {
+            await webClient.setCookie(cookie)
+            await storyWebClient.setCookie(cookie)
+            guard isEntitled, isCurrentSession(generation) else {
+                return
+            }
         }
 
         let previousUsername = self.username
@@ -938,7 +956,10 @@ final class LobstersSession: ObservableObject {
                     return
                 }
                 if isAuthenticated {
-                    try await clearSession(reloadWidgets: true)
+                    try await recoverSessionAfterAnonymousPage(
+                        in: client,
+                        generation: generation
+                    )
                 }
                 return
             }
@@ -951,7 +972,10 @@ final class LobstersSession: ObservableObject {
                 StoredLobstersCookie($0, for: baseURL) != nil
             }) else {
                 if isAuthenticated {
-                    try await clearSession(reloadWidgets: true)
+                    try await recoverSessionAfterAnonymousPage(
+                        in: client,
+                        generation: generation
+                    )
                 }
                 return
             }
@@ -984,6 +1008,35 @@ final class LobstersSession: ObservableObject {
             return
         } catch {
             if isCurrentSession(generation) {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func recoverSessionAfterAnonymousPage(
+        in client: LobstersWebViewClient,
+        generation: UInt
+    ) async throws {
+        try await validateSession(generation: generation)
+        guard isCurrentSession(generation), isAuthenticated else {
+            return
+        }
+        client.reloadIfNeeded()
+    }
+
+    private func logoutRequestedFromWebpage() {
+        // A user submitting Lobsters' own logout form must not have their old
+        // cookie recovered. App-initiated logout already performs this cleanup.
+        guard activeAction != .signOut, let username else {
+            return
+        }
+        sessionGeneration &+= 1
+        coordinatedAuthenticationUsername = nil
+        state = .signingOut(username: username)
+        Task {
+            do {
+                try await clearSession(reloadWidgets: true)
+            } catch {
                 errorMessage = error.localizedDescription
             }
         }

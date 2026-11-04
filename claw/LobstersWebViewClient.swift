@@ -45,6 +45,7 @@ final class LobstersWebViewClient: NSObject {
 
     var onPageLoaded: ((URL) -> Void)?
     var onError: ((Error) -> Void)?
+    var onLogoutRequested: (() -> Void)?
 
     private let configurationProvider: APIConfiguration
     private let dataStore: WKWebsiteDataStore
@@ -571,7 +572,7 @@ extension LobstersWebViewClient: WKNavigationDelegate {
     func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
-        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void
     ) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.cancel)
@@ -588,6 +589,10 @@ extension LobstersWebViewClient: WKNavigationDelegate {
         }
 
         targetURL = url
+        if navigationAction.request.httpMethod == "POST", url.path == "/logout" {
+            Self.logger.info("Website logout form submitted")
+            onLogoutRequested?()
+        }
         decisionHandler(.allow)
     }
 
