@@ -250,7 +250,7 @@ struct SettingsView: View {
                 .environmentObject(lobstersSession)
         }
         .alert(
-            "Lobsters Login Error",
+            "Lobsters Error",
             isPresented: Binding(
                 get: { lobstersSession.errorMessage != nil },
                 set: { isPresented in

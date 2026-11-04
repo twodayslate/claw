@@ -88,6 +88,8 @@ final class LobstersSession: ObservableObject {
     private var coordinatedAuthenticationUsername: String?
     private var signOutRequested = false
     private var signOutWaiters = [CheckedContinuation<Void, Never>]()
+    private var validationTask: (generation: UInt, task: Task<Void, Error>)?
+    private var lastValidatedAt: Date?
 
     init(
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
@@ -541,6 +543,11 @@ final class LobstersSession: ObservableObject {
         let generation = sessionGeneration
         Task {
             do {
+                // Scene activation can fire repeatedly around sheets and system
+                // prompts. A freshly confirmed login does not need another GET.
+                if let lastValidatedAt, Date().timeIntervalSince(lastValidatedAt) < 60 {
+                    return
+                }
                 try await validateSession(generation: generation)
             } catch {
                 if isCurrentSession(generation) {
@@ -872,6 +879,18 @@ final class LobstersSession: ObservableObject {
     }
 
     private func validateSession(generation: UInt) async throws {
+        if let validationTask, validationTask.generation == generation {
+            return try await validationTask.task.value
+        }
+        let task = Task { try await performSessionValidation(generation: generation) }
+        validationTask = (generation, task)
+        defer {
+            if validationTask?.generation == generation { validationTask = nil }
+        }
+        try await task.value
+    }
+
+    private func performSessionValidation(generation: UInt) async throws {
         // A cached anonymous page is not evidence that a newly saved login has
         // expired. Validate against the server with the Keychain credential.
         let page = try await pageLoader.load(URLRequest(
@@ -911,6 +930,7 @@ final class LobstersSession: ObservableObject {
             storyWebClient.reloadIfNeeded()
         }
         state = .signedIn(username: username)
+        lastValidatedAt = Date()
         if let cookie = await sessionCookie() {
             await coordinator.didAuthenticate(
                 username: username,
@@ -990,6 +1010,7 @@ final class LobstersSession: ObservableObject {
                 storyWebClient.reloadIfNeeded()
             }
             state = .signedIn(username: username)
+            lastValidatedAt = Date()
             await coordinator.didAuthenticate(
                 username: username,
                 cookie: sessionCookie,

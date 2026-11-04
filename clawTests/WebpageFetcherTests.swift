@@ -7,6 +7,78 @@ import XCTest
 @testable import claw
 
 final class WebpageFetcherTests: XCTestCase {
+    func testRateLimitRetryHeadersAndExpiry() throws {
+        let url = URL(string: "http://localhost:3000/")!
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let cases: [([String: String], TimeInterval)] = [
+            (["Retry-After": "12"], 12),
+            (["Retry-After": "Tue, 14 Nov 2023 22:14:20 GMT"], 60),
+            (["RateLimit-Reset": "1700000030"], 30),
+            (["Retry-After": "5", "RateLimit-Reset": "1700000030"], 30),
+            (["Retry-After": "invalid"], 60),
+            (["RateLimit-Reset": "1699999999"], 60)
+        ]
+        for (headers, expected) in cases {
+            let response = HTTPURLResponse(url: url, statusCode: 429, httpVersion: nil, headerFields: headers)!
+            let throttle = LobstersRequestThrottle(minimumInterval: 0)
+            XCTAssertNotNil(throttle.observe(response, now: now))
+            XCTAssertThrowsError(try throttle.check(url, now: now))
+            XCTAssertNoThrow(try throttle.check(url, now: now.addingTimeInterval(expected)))
+            XCTAssertEqual(LobstersRequestThrottle.retryDate(for: response, now: now), now.addingTimeInterval(expected))
+            XCTAssertNoThrow(try throttle.check(URL(string: "http://localhost:3001/")!, now: now))
+        }
+    }
+
+    @MainActor
+    func testRateLimitStopsQueuedRequestsAcrossLoaders() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let throttle = LobstersRequestThrottle(minimumInterval: 0.1)
+        let first = LobstersPageLoader(session: session, storedCredentialPolicy: .never, throttle: throttle)
+        let second = LobstersPageLoader(session: session, storedCredentialPolicy: .never, throttle: throttle)
+        let url = URL(string: "http://localhost:3000/")!
+        var requestCount = 0
+        WebpageURLProtocol.requestHandler = { request in
+            requestCount += 1
+            return (HTTPURLResponse(url: request.url!, statusCode: 429, httpVersion: nil, headerFields: ["Retry-After": "60"])!, Data())
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            session.invalidateAndCancel()
+        }
+        let requests = [
+            Task { try await first.data(from: url) },
+            Task { try await second.data(from: url.appendingPathComponent("avatar")) },
+            Task { Data(try await first.load(url).html.utf8) }
+        ]
+        for request in requests {
+            do {
+                _ = try await request.value
+                XCTFail("Expected a rate-limit error")
+            } catch LobstersPageLoaderError.rateLimited {
+                // One server response must stop the rest of the queued burst.
+            }
+        }
+        XCTAssertEqual(requestCount, 1)
+    }
+
+    @MainActor
+    func testRequestPacingAndCancellation() async throws {
+        let throttle = LobstersRequestThrottle(minimumInterval: 0.1)
+        let url = URL(string: "http://localhost:3000/")!
+        try await throttle.acquire(url)
+        let cancelled = Task { try await throttle.acquire(url) }
+        cancelled.cancel()
+        do {
+            try await cancelled.value
+            XCTFail("A cancelled request must not run")
+        } catch is CancellationError {}
+        let start = ContinuousClock.now
+        try await throttle.acquire(url)
+        XCTAssertGreaterThanOrEqual(start.duration(to: .now), .milliseconds(80))
+    }
+
     @MainActor
     func testFetchBuildsHTMLRequest() async throws {
         let configuration = URLSessionConfiguration.ephemeral

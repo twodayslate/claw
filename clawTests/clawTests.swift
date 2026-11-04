@@ -859,6 +859,76 @@ class clawTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalRateLimitPreservesLoginAndStopsFurtherRequests() async throws {
+        let configuration = APIConfiguration.shared
+        let baseURL = configuration.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.rate-limit.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let throttle = LobstersRequestThrottle(minimumInterval: 1)
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feedClient = LobstersWebViewClient(dataStore: dataStore, throttle: throttle)
+        let storyClient = LobstersWebViewClient(dataStore: dataStore, throttle: throttle)
+        let pageLoader = LobstersPageLoader(
+            credentialStore: credentialStore,
+            storedCredentialPolicy: .always,
+            throttle: throttle
+        )
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: feedClient,
+            storyWebClient: storyClient,
+            avatarLoader: LobstersAvatarLoader(pageLoader: pageLoader),
+            coordinator: LobstersSessionCoordinator()
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        session.beginLogin()
+        _ = try await feedClient.load(configuration.loginURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            """
+            const email = document.getElementById('email');
+            email.value = 'test';
+            document.getElementById('password').value = 'test';
+            setTimeout(() => email.form.requestSubmit(), 0);
+            return true;
+            """
+        )
+        for _ in 0..<200 where !session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated)
+        let cookie = try XCTUnwrap(credentialStore.loadCookie(for: baseURL))
+        let navigationCount = feedClient.completedNavigationCount
+        do {
+            _ = try await feedClient.load(baseURL.appendingPathComponent("_claw_test/rate_limit"))
+            XCTFail("The local fixture must return upstream's HTTP 429 response")
+        } catch LobstersPageLoaderError.rateLimited {}
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertEqual(session.username, "test")
+        XCTAssertEqual(try credentialStore.loadCookie(for: baseURL), cookie)
+        XCTAssertEqual(feedClient.completedNavigationCount, navigationCount,
+                       "A throttle page must never be captured as an anonymous login")
+        XCTAssertTrue(session.errorMessage?.contains("temporarily limiting requests") == true)
+        do {
+            _ = try await pageLoader.load(baseURL)
+            XCTFail("Native requests must honor a cooldown learned by WebKit")
+        } catch LobstersPageLoaderError.rateLimited {}
+        do {
+            _ = try await storyClient.load(configuration.newestWebpageURL())
+            XCTFail("Other WebViews must honor the same cooldown")
+        } catch LobstersPageLoaderError.rateLimited {}
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertEqual(try credentialStore.loadCookie(for: baseURL), cookie)
+    }
+
+    @MainActor
     func testLocalSessionRecoversWhenRetainedWebViewLosesCookie() async throws {
         let configuration = APIConfiguration.shared
         let baseURL = configuration.baseURL

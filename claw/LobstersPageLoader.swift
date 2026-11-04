@@ -38,6 +38,7 @@ enum LobstersPageLoaderError: LocalizedError {
     case invalidResponse
     case unsuccessfulStatusCode(Int)
     case cannotDecodeContent
+    case rateLimited(retryAt: Date)
 
     var errorDescription: String? {
         switch self {
@@ -47,7 +48,93 @@ enum LobstersPageLoaderError: LocalizedError {
             return "The Lobsters webpage returned HTTP \(statusCode)."
         case .cannotDecodeContent:
             return "The Lobsters webpage could not be decoded."
+        case .rateLimited(let retryAt):
+            return "Lobsters is temporarily limiting requests. Please try again after \(retryAt.formatted(date: .omitted, time: .standard))."
         }
+    }
+}
+
+/// Shared by native requests and WebKit document navigations. A throttled page
+/// is not an anonymous session, and retrying it immediately only extends the burst.
+final class LobstersRequestThrottle: @unchecked Sendable {
+    static let shared = LobstersRequestThrottle()
+
+    private let lock = NSLock()
+    private let minimumInterval: TimeInterval
+    private var nextRequest = [String: Date]()
+    private var cooldowns = [String: Date]()
+
+    init(minimumInterval: TimeInterval = 1) {
+        self.minimumInterval = minimumInterval
+    }
+
+    private func origin(_ url: URL) -> String {
+        "\(url.scheme?.lowercased() ?? "")://\(url.host?.lowercased() ?? ""):\(url.port ?? (url.scheme == "https" ? 443 : 80))"
+    }
+
+    func check(_ url: URL, now: Date = Date()) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        if let deadline = cooldowns[origin(url)], deadline > now {
+            throw LobstersPageLoaderError.rateLimited(retryAt: deadline)
+        }
+    }
+
+    func acquire(_ url: URL) async throws {
+        while true {
+            try Task.checkCancellation()
+            let delay = try reserve(url)
+            if delay <= 0 { return }
+            try await Task.sleep(for: .seconds(delay))
+        }
+    }
+
+    private func reserve(_ url: URL) throws -> TimeInterval {
+        lock.lock()
+        defer { lock.unlock() }
+        let now = Date()
+        let key = origin(url)
+        if let deadline = cooldowns[key], deadline > now {
+            throw LobstersPageLoaderError.rateLimited(retryAt: deadline)
+        }
+        if let next = nextRequest[key], next > now {
+            return next.timeIntervalSince(now)
+        }
+        nextRequest[key] = now.addingTimeInterval(minimumInterval)
+        return 0
+    }
+
+    @discardableResult
+    func observe(_ response: HTTPURLResponse, now: Date = Date()) -> LobstersPageLoaderError? {
+        guard response.statusCode == 429, let url = response.url else { return nil }
+        let deadline = Self.retryDate(for: response, now: now)
+        lock.lock()
+        let key = origin(url)
+        let retryAt = max(cooldowns[key] ?? deadline, deadline)
+        cooldowns[key] = retryAt
+        lock.unlock()
+        return .rateLimited(retryAt: retryAt)
+    }
+
+    static func retryDate(for response: HTTPURLResponse, now: Date) -> Date {
+        var deadlines = [Date]()
+        if let value = response.value(forHTTPHeaderField: "Retry-After") {
+            if let seconds = TimeInterval(value), seconds.isFinite, seconds >= 0 {
+                deadlines.append(now.addingTimeInterval(seconds))
+            } else {
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+                if let date = formatter.date(from: value) { deadlines.append(date) }
+            }
+        }
+        // Lobsters' Rack::Attack responder sends an absolute Unix timestamp.
+        if let value = response.value(forHTTPHeaderField: "RateLimit-Reset"),
+           let epoch = TimeInterval(value), epoch.isFinite {
+            deadlines.append(Date(timeIntervalSince1970: epoch))
+        }
+        return deadlines.filter { $0 > now }.max() ?? now.addingTimeInterval(60)
     }
 }
 
@@ -93,11 +180,13 @@ final class LobstersPageLoader: @unchecked Sendable {
     private let session: URLSession
     private let credentialStore: LobstersCredentialStore
     private let storedCredentialPolicy: LobstersStoredCredentialPolicy
+    private let throttle: LobstersRequestThrottle
 
     init(
         session: URLSession? = nil,
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
-        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement
+        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement,
+        throttle: LobstersRequestThrottle = .shared
     ) {
         if let session {
             self.session = session
@@ -109,6 +198,7 @@ final class LobstersPageLoader: @unchecked Sendable {
         }
         self.credentialStore = credentialStore
         self.storedCredentialPolicy = storedCredentialPolicy
+        self.throttle = throttle
     }
 
     func load(_ url: URL) async throws -> LoadedLobstersPage {
@@ -147,7 +237,9 @@ final class LobstersPageLoader: @unchecked Sendable {
     }
 
     func data(from url: URL) async throws -> Data {
-        let (data, response) = try await data(for: URLRequest(url: url))
+        var request = URLRequest(url: url)
+        await request.setUserAgent()
+        let (data, response) = try await data(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw LobstersPageLoaderError.invalidResponse
         }
@@ -160,7 +252,13 @@ final class LobstersPageLoader: @unchecked Sendable {
     private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         for attempt in 0..<3 {
             do {
-                return try await performDataTask(for: request)
+                if let url = request.url { try await throttle.acquire(url) }
+                let result = try await performDataTask(for: request)
+                if let response = result.1 as? HTTPURLResponse,
+                   let error = throttle.observe(response) {
+                    throw error
+                }
+                return result
             } catch {
                 let method = request.httpMethod?.uppercased() ?? "GET"
                 guard attempt < 2,

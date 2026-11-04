@@ -50,6 +50,8 @@ final class LobstersWebViewClient: NSObject {
     private let configurationProvider: APIConfiguration
     private let dataStore: WKWebsiteDataStore
     private let reloadsAfterWebContentProcessTermination: Bool
+    private let throttle: LobstersRequestThrottle
+    private var lastNavigationError: Error?
     private var targetURL: URL?
     private var activeNavigation: WKNavigation?
     private(set) var completedNavigationCount = 0
@@ -84,11 +86,13 @@ final class LobstersWebViewClient: NSObject {
     init(
         configurationProvider: APIConfiguration = .shared,
         dataStore: WKWebsiteDataStore? = nil,
-        reloadsAfterWebContentProcessTermination: Bool = true
+        reloadsAfterWebContentProcessTermination: Bool = true,
+        throttle: LobstersRequestThrottle = .shared
     ) {
         self.configurationProvider = configurationProvider
         self.dataStore = dataStore ?? LobstersWebsiteDataStore.shared
         self.reloadsAfterWebContentProcessTermination = reloadsAfterWebContentProcessTermination
+        self.throttle = throttle
         super.init()
     }
 
@@ -430,6 +434,7 @@ final class LobstersWebViewClient: NSObject {
         let deadline = clock.now.advanced(by: timeout)
 
         while clock.now < deadline {
+            if let lastNavigationError { throw lastNavigationError }
             if completedNavigationCount > navigationCount, !webView.isLoading {
                 return
             }
@@ -519,6 +524,7 @@ final class LobstersWebViewClient: NSObject {
     }
 
     private func requireConfiguredPage() throws {
+        try throttle.check(configurationProvider.baseURL)
         guard configurationProvider.isLobstersURL(currentURL),
               Self.hasLoadedPage(
                   targetURL: targetURL,
@@ -562,10 +568,18 @@ final class LobstersWebViewClient: NSObject {
             targetURL = nil
         }
     }
+
+    private func rejectNavigation(_ error: Error) {
+        lastNavigationError = error
+        completeWaiters(for: activeNavigation, result: .failure(error))
+        failNavigation(activeNavigation)
+        onError?(error)
+    }
 }
 
 extension LobstersWebViewClient: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        lastNavigationError = nil
         activeNavigation = navigation
     }
 
@@ -588,10 +602,35 @@ extension LobstersWebViewClient: WKNavigationDelegate {
             return
         }
 
-        targetURL = url
-        if navigationAction.request.httpMethod == "POST", url.path == "/logout" {
-            Self.logger.info("Website logout form submitted")
-            onLogoutRequested?()
+        Task { @MainActor in
+            do {
+                try await throttle.acquire(url)
+                targetURL = url
+                if navigationAction.request.httpMethod == "POST", url.path == "/logout" {
+                    Self.logger.info("Website logout form submitted")
+                    onLogoutRequested?()
+                }
+                decisionHandler(.allow)
+            } catch {
+                rejectNavigation(error)
+                decisionHandler(.cancel)
+            }
+        }
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationResponse: WKNavigationResponse,
+        decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void
+    ) {
+        if navigationResponse.isForMainFrame,
+           let response = navigationResponse.response as? HTTPURLResponse,
+           let error = throttle.observe(response) {
+            // Do not let a throttle response reach session capture as an
+            // anonymous HTML page and trigger another validation/reload.
+            rejectNavigation(error)
+            decisionHandler(.cancel)
+            return
         }
         decisionHandler(.allow)
     }

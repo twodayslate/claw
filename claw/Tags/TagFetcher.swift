@@ -54,10 +54,7 @@ class TagFetcher: ObservableObject {
         }
         let url = APIConfiguration.shared.tagsURL()
         
-        var request = URLRequest(url: url)
-        await request.setUserAgent()
-        
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let data = try await LobstersPageLoader.shared.data(from: url)
         
         let decodedLists = try JSONDecoder().decode([Tag].self, from: data)
         
