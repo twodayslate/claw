@@ -9,6 +9,56 @@ import WebKit
 
 final class WebpageFetcherTests: XCTestCase {
     @MainActor
+    func testExpiredCookiesRequireLoginOnForeground() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Session tests only run against local Lobsters.")
+        }
+        let store = LobstersCredentialStore(service: "claw.tests.expiry.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "expiring-local-fixture",
+            .domain: baseURL.host!, .path: "/", .expires: Date().addingTimeInterval(10)
+        ]))
+        try store.saveCookie(cookie, for: baseURL)
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feed = LobstersWebViewClient(dataStore: dataStore)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        defer { WebpageURLProtocol.requestHandler = nil; network.invalidateAndCancel() }
+        WebpageURLProtocol.requestHandler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+             Data("<html><body data-username='test'></body></html>".utf8))
+        }
+        let loader = LobstersPageLoader(session: network, credentialStore: store,
+            storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
+        let session = LobstersSession(credentialStore: store, pageLoader: loader,
+            webClient: feed, storyWebClient: LobstersWebViewClient(dataStore: dataStore),
+            avatarLoader: LobstersAvatarLoader(pageLoader: loader), coordinator: LobstersSessionCoordinator())
+        session.setEntitlementAvailable(true)
+        await session.start()
+        XCTAssertTrue(session.isAuthenticated)
+        // Exercise foreground validation after its 60-second freshness window
+        // and the cookie expiry have both elapsed.
+        try await Task.sleep(for: .seconds(61))
+        XCTAssertNil(try store.loadCookie(for: baseURL))
+        let remainingCookies = await feed.allCookies()
+        XCTAssertFalse(remainingCookies.contains { cookie in
+            guard let stored = StoredLobstersCookie(cookie, for: baseURL) else { return false }
+            return !stored.isExpired
+        })
+        session.errorMessage = "An earlier temporary verification error"
+        session.applicationDidBecomeActive()
+        for _ in 0..<100 where session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(session.state, .signedOut, "Expired cookies must request login again")
+        XCTAssertNil(session.errorMessage)
+        XCTAssertNil(try store.loadCookie(for: baseURL))
+    }
+
+    @MainActor
     func testUnverifiedPagesAndErrorsKeepBrowserCookiesAndSavedLogin() async throws {
         let baseURL = APIConfiguration.shared.baseURL
         let store = LobstersCredentialStore(service: "claw.tests.preserve.\(UUID())", accessGroup: nil)

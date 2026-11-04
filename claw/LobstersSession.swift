@@ -896,8 +896,9 @@ final class LobstersSession: ObservableObject {
     }
 
     private func performSessionValidation(generation: UInt) async throws {
-        // Only a protected route redirecting to Lobsters' actual login form
-        // confirms invalidation. Missing identity markup alone proves nothing.
+        // If a usable cookie remains, only a protected route redirecting to
+        // Lobsters' actual login form confirms server-side invalidation.
+        // Missing identity markup alone proves nothing.
         let browserCookie = await sessionCookie().flatMap { StoredLobstersCookie($0, for: baseURL) }
         let savedCookie = try credentialStore.loadCookie(for: baseURL)
         var candidates = [StoredLobstersCookie]()
@@ -905,8 +906,13 @@ final class LobstersSession: ObservableObject {
         where !candidates.contains(where: { $0.value == cookie.value }) {
             candidates.append(cookie)
         }
-        guard isEntitled, isCurrentSession(generation), !candidates.isEmpty else {
-            throw SessionError.unverifiedSession
+        guard isEntitled, isCurrentSession(generation) else { return }
+        guard !candidates.isEmpty else {
+            // Both copies may expire while the app is backgrounded. There is
+            // no remaining credential to preserve or verify with the server.
+            errorMessage = nil
+            try await clearSession(reloadWidgets: true)
+            return
         }
         var confirmed: (page: LoadedLobstersPage, username: String, cookie: StoredLobstersCookie)?
         for credential in candidates {
