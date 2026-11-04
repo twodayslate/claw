@@ -4,9 +4,135 @@
 //
 
 import XCTest
+import WebKit
 @testable import claw
 
 final class WebpageFetcherTests: XCTestCase {
+    @MainActor
+    func testUnverifiedPagesAndErrorsKeepBrowserCookiesAndSavedLogin() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        let store = LobstersCredentialStore(service: "claw.tests.preserve.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "saved-local-session",
+            .domain: baseURL.host!, .path: "/", .expires: Date().addingTimeInterval(3600)
+        ]))
+        let preference = try XCTUnwrap(HTTPCookie(properties: [
+            .name: "test_preference", .value: "keep-me", .domain: baseURL.host!, .path: "/"
+        ]))
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feed = LobstersWebViewClient(dataStore: dataStore)
+        let story = LobstersWebViewClient(dataStore: dataStore)
+        await feed.setCookie(cookie)
+        await feed.setCookie(preference)
+        // Keychain may still contain an older cookie after WebKit rotates it.
+        let olderCookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "older-copy",
+            .domain: baseURL.host!, .path: "/"
+        ]))
+        try store.saveCookie(olderCookie, for: baseURL)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+        }
+        var html = "<html><body data-username='test'></body></html>"
+        var status = 200
+        var networkError: Error?
+        WebpageURLProtocol.requestHandler = { request in
+            if request.value(forHTTPHeaderField: "Cookie") == "lobster_trap=anonymous-replacement" {
+                let loginForm = "<form action='/login' method='post'><input name='email'><input name='password' type='password'></form>"
+                return (HTTPURLResponse(url: APIConfiguration.shared.loginURL(), statusCode: 200,
+                                        httpVersion: nil, headerFields: nil)!, Data(loginForm.utf8))
+            }
+            if request.url?.path == "/settings" {
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Cookie"), "lobster_trap=saved-local-session")
+            }
+            if let networkError { throw networkError }
+            return (HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        let loader = LobstersPageLoader(session: network, credentialStore: store,
+                                       storedCredentialPolicy: .never,
+                                       throttle: LobstersRequestThrottle(minimumInterval: 0))
+        let session = LobstersSession(credentialStore: store, pageLoader: loader,
+                                     webClient: feed, storyWebClient: story,
+                                     avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+                                     coordinator: LobstersSessionCoordinator())
+        session.setEntitlementAvailable(true)
+        await session.start()
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertEqual(try store.loadCookie(for: baseURL)?.value, cookie.value)
+
+        let anonymousReplacement = try XCTUnwrap(HTTPCookie(properties: [
+            .name: cookie.name, .value: "anonymous-replacement", .domain: baseURL.host!, .path: "/"
+        ]))
+        await feed.setCookie(anonymousReplacement)
+        await session.start(force: true)
+        XCTAssertTrue(session.isAuthenticated, "Rejecting the browser cookie must still try the valid recovery copy")
+        XCTAssertEqual(try store.loadCookie(for: baseURL)?.value, cookie.value)
+        let recovered = await feed.allCookies()
+        XCTAssertTrue(recovered.contains { $0.name == cookie.name && $0.value == cookie.value })
+
+        html = "<html><body>Unexpected maintenance page</body></html>"
+        for code in [200, 403, 500] {
+            status = code
+            await session.start(force: true)
+            XCTAssertTrue(session.isAuthenticated, "HTTP \(code) must not clear a confirmed login")
+            XCTAssertEqual(try store.loadCookie(for: baseURL)?.value, cookie.value)
+            let cookies = await feed.allCookies()
+            XCTAssertTrue(cookies.contains { $0.name == cookie.name && $0.value == cookie.value })
+            XCTAssertTrue(cookies.contains { $0.name == preference.name && $0.value == preference.value })
+        }
+        networkError = URLError(.notConnectedToInternet)
+        await session.start(force: true)
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertNotNil(try store.loadCookie(for: baseURL))
+        networkError = nil
+        status = 429
+        await session.start(force: true)
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertNotNil(try store.loadCookie(for: baseURL))
+
+        session.setEntitlementAvailable(false)
+        XCTAssertNotNil(try store.loadCookie(for: baseURL), "Entitlement changes are not sign-out")
+        let retainedCookies = await feed.allCookies()
+        XCTAssertTrue(retainedCookies.contains { $0.name == cookie.name })
+    }
+
+    @MainActor
+    func testNativeHTMLAndDataRequestsReuseLoginOnlyOnConfiguredOrigin() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        let store = LobstersCredentialStore(service: "claw.tests.native-cookie.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "native-cookie",
+            .domain: baseURL.host!, .path: "/"
+        ]))
+        try store.saveCookie(cookie, for: baseURL)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: network, credentialStore: store,
+                                       storedCredentialPolicy: .always,
+                                       throttle: LobstersRequestThrottle(minimumInterval: 0))
+        WebpageURLProtocol.requestHandler = { request in
+            let expected = APIConfiguration.shared.isLobstersURL(request.url) ? "lobster_trap=native-cookie" : nil
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Cookie"), expected)
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("{}".utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+        }
+        _ = try await loader.load(baseURL)
+        _ = try await loader.data(from: APIConfiguration.shared.userStoriesURL(username: "test", page: 1))
+        var other = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        other.port = (other.port ?? 80) + 1
+        _ = try await loader.data(from: try XCTUnwrap(other.url))
+    }
+
     func testRateLimitRetryHeadersAndExpiry() throws {
         let url = URL(string: "http://localhost:3000/")!
         let now = Date(timeIntervalSince1970: 1_700_000_000)

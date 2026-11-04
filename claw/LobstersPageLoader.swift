@@ -215,12 +215,7 @@ final class LobstersPageLoader: @unchecked Sendable {
         }
         await request.setUserAgent()
 
-        if storedCredentialPolicy.allowsStoredCredentials,
-           request.value(forHTTPHeaderField: "Cookie") == nil,
-           let url = request.url,
-           let cookie = try credentialStore.loadCookie(for: url) {
-            request.setValue(cookie.requestHeaderValue, forHTTPHeaderField: "Cookie")
-        }
+        try attachStoredCookie(to: &request)
 
         let (data, response) = try await data(for: request)
         guard let response = response as? HTTPURLResponse else {
@@ -239,6 +234,7 @@ final class LobstersPageLoader: @unchecked Sendable {
     func data(from url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         await request.setUserAgent()
+        try attachStoredCookie(to: &request)
         let (data, response) = try await data(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw LobstersPageLoaderError.invalidResponse
@@ -247,6 +243,16 @@ final class LobstersPageLoader: @unchecked Sendable {
             throw LobstersPageLoaderError.unsuccessfulStatusCode(response.statusCode)
         }
         return data
+    }
+
+    private func attachStoredCookie(to request: inout URLRequest) throws {
+        guard storedCredentialPolicy.allowsStoredCredentials,
+              request.value(forHTTPHeaderField: "Cookie") == nil,
+              let url = request.url,
+              APIConfiguration.shared.isLobstersURL(url),
+              let cookie = try credentialStore.loadCookie(for: url),
+              !cookie.isSecure || url.scheme == "https" else { return }
+        request.setValue(cookie.requestHeaderValue, forHTTPHeaderField: "Cookie")
     }
 
     private func data(for request: URLRequest) async throws -> (Data, URLResponse) {

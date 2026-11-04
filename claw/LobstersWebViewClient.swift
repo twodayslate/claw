@@ -10,7 +10,9 @@ import WebKit
 
 @MainActor
 private enum LobstersWebsiteDataStore {
-    static let shared = WKWebsiteDataStore.nonPersistent()
+    // WebKit owns the complete website cookie jar, including cookie rotation
+    // and expiry. Keep it across launches instead of recreating a private jar.
+    static let shared = WKWebsiteDataStore.default()
 }
 
 @MainActor
