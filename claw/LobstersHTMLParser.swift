@@ -22,6 +22,15 @@ struct LobstersStoryFields: Sendable {
 }
 
 enum LobstersHTMLParser {
+    static func containsLoginForm(_ html: String) throws -> Bool {
+        let document = try SwiftSoup.parse(html)
+        guard let form = try document.select("form[action='/login'][method='post']").first() else {
+            return false
+        }
+        return try !form.select("input[name='email']").isEmpty()
+            && !form.select("input[name='password'][type='password']").isEmpty()
+    }
+
     private static let outputDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

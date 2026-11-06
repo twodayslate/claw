@@ -343,14 +343,16 @@ class clawUITests: XCTestCase {
         on element: XCUIElement,
         timeout: TimeInterval = 20
     ) {
+        // The label changes optimistically. Wait for the server confirmation
+        // and the control to re-enable before attempting the opposite vote.
         let expectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@", label),
+            predicate: NSPredicate(format: "label == %@ AND enabled == true", label),
             object: element
         )
         XCTAssertEqual(
             XCTWaiter.wait(for: [expectation], timeout: timeout),
             .completed,
-            "Expected \(element.identifier) to become “\(label)”."
+            "Expected \(element.identifier) to finish voting and become “\(label)”."
         )
     }
 

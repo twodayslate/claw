@@ -19,6 +19,8 @@ final class LobstersAvatarLoader {
 
     private let pageLoader: LobstersPageLoader
     private var cache = [CacheKey: Avatar]()
+    private var pending = [CacheKey: Task<Avatar?, Error>]()
+    private var missing = Set<CacheKey>()
 
     init(pageLoader: LobstersPageLoader = .shared) {
         self.pageLoader = pageLoader
@@ -33,7 +35,17 @@ final class LobstersAvatarLoader {
         if let cached = cache[key] {
             return cached
         }
+        if missing.contains(key) { return nil }
+        if let task = pending[key] { return try await task.value }
+        let task = Task { try await fetchAvatar(profileURL: profileURL) }
+        pending[key] = task
+        defer { pending[key] = nil }
+        let avatar = try await task.value
+        if let avatar { cache[key] = avatar } else { missing.insert(key) }
+        return avatar
+    }
 
+    private func fetchAvatar(profileURL: URL) async throws -> Avatar? {
         let page = try await pageLoader.load(profileURL)
         guard let avatarURL = try await Task.detached(priority: .utility, operation: {
             try LobstersHTMLParser.avatarURL(from: page.html, pageURL: profileURL)
@@ -46,7 +58,6 @@ final class LobstersAvatarLoader {
             return nil
         }
         let avatar = Avatar(url: avatarURL, image: makeTabBarAvatar(from: image))
-        cache[key] = avatar
         return avatar
     }
 

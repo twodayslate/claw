@@ -114,7 +114,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: .ci/harness
-          sparse-checkout: .ci
+          sparse-checkout: |
+            .ci
+            .github
 
       - name: Checkout resolved Lobsters revision
         uses: actions/checkout@v6
@@ -251,6 +253,9 @@ jobs:
       - name: Seed parser compatibility fixture
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         run: docker compose run --rm -T app bin/rails runner - < ../harness/.ci/seed-parser-fixture.rb
+
+      - name: Install local rate-limit regression fixture
+        run: cp .ci/harness/.github/lobsters-rate-limit-fixture.rb "$LOBSTERS_DIRECTORY/config/initializers/claw_rate_limit_fixture.rb"
 
       - name: Start Lobsters
         timeout-minutes: 5

@@ -18,7 +18,7 @@ class UserFetcher: ObservableObject {
     func load() async throws -> NewestUser {
         let url = APIConfiguration.shared.userURL(username: self.username)
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let data = try await LobstersPageLoader.shared.data(from: url)
         return try JSONDecoder().decode(NewestUser.self, from: data)
     }
 }
