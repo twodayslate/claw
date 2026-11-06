@@ -211,6 +211,9 @@ jobs:
           fi
           echo "CLAW_UI_TEST_PROFILE_STORY_ID=$profile_story_id" >> "$GITHUB_ENV"
 
+      - name: Install local rate-limit regression fixture
+        run: cp .github/lobsters-rate-limit-fixture.rb "$LOBSTERS_DIRECTORY/config/initializers/claw_rate_limit_fixture.rb"
+
       - name: Start Lobsters
         timeout-minutes: 5
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}

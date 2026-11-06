@@ -14,6 +14,12 @@ Lobsters has docker instructions: https://github.com/lobsters/lobsters/blob/mast
 
 Follow the instructions there and then just run `make docker-serve`
 
+Before running Claw's integration tests, copy
+`.github/lobsters-rate-limit-fixture.rb` into the disposable Lobsters checkout's
+`config/initializers/` directory and restart its server. This adds a local-only
+test endpoint using Lobsters' own throttle responder; the suite verifies that
+HTTP 429 preserves login and pauses subsequent requests. CI installs it automatically.
+
 ### Nightly compatibility tests
 
 The Build and Integration Test workflow checks `lobsters/lobsters` nightly at

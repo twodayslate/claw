@@ -175,8 +175,6 @@ struct ContentView: View {
                 if owned {
                     await lobstersSession.start()
                     lobstersSession.preparePage(for: _selection)
-                } else {
-                    await lobstersSession.signOut()
                 }
             }
         }
@@ -202,8 +200,6 @@ struct ContentView: View {
                 if storeModel.owned {
                     await lobstersSession.start()
                     lobstersSession.preparePage(for: _selection)
-                } else {
-                    await lobstersSession.signOut()
                 }
             } catch {
                 lobstersSession.setEntitlementAvailable(false)

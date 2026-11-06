@@ -42,6 +42,7 @@ final class LobstersSession: ObservableObject {
         case commentActionFailed
         case voteDidNotChange
         case logoutPageUnavailable
+        case unverifiedSession
 
         var errorDescription: String? {
             switch self {
@@ -59,6 +60,8 @@ final class LobstersSession: ObservableObject {
                 return "Lobsters did not confirm the vote change."
             case .logoutPageUnavailable:
                 return "The Lobsters webpage did not contain its logout form."
+            case .unverifiedSession:
+                return "Claw could not verify the Lobsters session. Your saved login has been kept. Please try again later."
             }
         }
     }
@@ -88,6 +91,8 @@ final class LobstersSession: ObservableObject {
     private var coordinatedAuthenticationUsername: String?
     private var signOutRequested = false
     private var signOutWaiters = [CheckedContinuation<Void, Never>]()
+    private var validationTask: (generation: UInt, task: Task<Void, Error>)?
+    private var lastValidatedAt: Date?
 
     init(
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
@@ -117,6 +122,9 @@ final class LobstersSession: ObservableObject {
         webClient.onError = { [weak self] error in
             self?.errorMessage = error.localizedDescription
             self?.restoreSelectedPageIfRequested()
+        }
+        webClient.onLogoutRequested = { [weak self] in
+            self?.logoutRequestedFromWebpage()
         }
         storyWebClient.onPageLoaded = { [weak self, weak storyWebClient] _ in
             guard let storyWebClient else {
@@ -172,24 +180,25 @@ final class LobstersSession: ObservableObject {
 
         isStarting = true
         hasStarted = true
-        state = .checking
+        let previousState = state
+        if !isAuthenticated { state = .checking }
         defer { isStarting = false }
         let generation = sessionGeneration
 
         do {
-            guard let storedCookie = try credentialStore.loadCookie(for: baseURL),
-                  let cookie = storedCookie.makeCookie() else {
-                if isCurrentSession(generation) {
-                    state = .signedOut
-                }
+            let browserCookie = await sessionCookie()
+            let savedCookie = try credentialStore.loadCookie(for: baseURL)?.makeCookie()
+            guard browserCookie != nil || savedCookie != nil else {
+                if isCurrentSession(generation) { state = .signedOut }
                 return
             }
-
-            await webClient.setCookie(cookie)
-            await storyWebClient.setCookie(cookie)
-            guard isCurrentSession(generation) else {
-                return
+            // Migrate the previous Keychain-only implementation into WebKit.
+            // Never overwrite either existing candidate before server validation.
+            if browserCookie == nil, let savedCookie {
+                await webClient.setCookie(savedCookie)
+                await storyWebClient.setCookie(savedCookie)
             }
+            guard isCurrentSession(generation) else { return }
             try await validateSession(generation: generation)
             guard isCurrentSession(generation) else {
                 return
@@ -200,7 +209,11 @@ final class LobstersSession: ObservableObject {
             guard isCurrentSession(generation) else {
                 return
             }
-            state = .unavailable(message: error.localizedDescription)
+            if case .signedIn = previousState {
+                state = previousState
+            } else {
+                state = .unavailable(message: error.localizedDescription)
+            }
             errorMessage = error.localizedDescription
         }
     }
@@ -219,6 +232,10 @@ final class LobstersSession: ObservableObject {
         isEntitled = available
         if !available {
             sessionGeneration &+= 1
+            hasStarted = false
+            state = .signedOut
+            webClient.webView.stopLoading()
+            storyWebClient.webView.stopLoading()
         }
     }
 
@@ -272,6 +289,10 @@ final class LobstersSession: ObservableObject {
     }
 
     func preparePage(for tab: TabSelection) {
+        if tab != .Settings { selectedTab = tab }
+        // Restoration must finish before a hidden page can send an anonymous
+        // request that replaces the persisted authenticated cookie.
+        guard isEntitled, hasStarted, !isStarting else { return }
         if tab == .Settings {
             // Keep the most recent feed warm while Settings is visible. On a
             // fresh launch there is no previous page, so prime Hottest.
@@ -311,6 +332,7 @@ final class LobstersSession: ObservableObject {
     }
 
     func prepareStory(shortID: String, commentsURL: URL?) {
+        guard isEntitled, hasStarted, !isStarting else { return }
         do {
             try storyWebClient.navigateIfNeeded(
                 to: storyURL(shortID: shortID, commentsURL: commentsURL)
@@ -538,6 +560,11 @@ final class LobstersSession: ObservableObject {
         let generation = sessionGeneration
         Task {
             do {
+                // Scene activation can fire repeatedly around sheets and system
+                // prompts. A freshly confirmed login does not need another GET.
+                if let lastValidatedAt, Date().timeIntervalSince(lastValidatedAt) < 60 {
+                    return
+                }
                 try await validateSession(generation: generation)
             } catch {
                 if isCurrentSession(generation) {
@@ -806,19 +833,7 @@ final class LobstersSession: ObservableObject {
         guard isCancelledLogin(generation: generation) else {
             return
         }
-        let cookies = await webClient.allCookies()
-        guard isCancelledLogin(generation: generation) else {
-            return
-        }
-        for cookie in cookies
-        where StoredLobstersCookie(cookie, for: baseURL) != nil {
-            await webClient.deleteCookie(cookie)
-        }
-        guard isCancelledLogin(generation: generation) else {
-            return
-        }
-        try? credentialStore.deleteCookie(for: baseURL)
-
+        // Dismissing a form is not signing out. Keep the website's cookies.
         do {
             try webClient.reset(to: selectedPageURL())
         } catch {
@@ -869,19 +884,84 @@ final class LobstersSession: ObservableObject {
     }
 
     private func validateSession(generation: UInt) async throws {
-        let page = try await pageLoader.load(baseURL)
-        guard isEntitled, isCurrentSession(generation) else {
-            return
+        if let validationTask, validationTask.generation == generation {
+            return try await validationTask.task.value
         }
-        let username = try await Task.detached(priority: .userInitiated, operation: {
-            try LobstersHTMLParser.username(from: page.html)
-        }).value
-        guard isEntitled, isCurrentSession(generation) else {
-            return
+        let task = Task { try await performSessionValidation(generation: generation) }
+        validationTask = (generation, task)
+        defer {
+            if validationTask?.generation == generation { validationTask = nil }
         }
-        guard let username else {
+        try await task.value
+    }
+
+    private func performSessionValidation(generation: UInt) async throws {
+        // If a usable cookie remains, only a protected route redirecting to
+        // Lobsters' actual login form confirms server-side invalidation.
+        // Missing identity markup alone proves nothing.
+        let browserCookie = await sessionCookie().flatMap { StoredLobstersCookie($0, for: baseURL) }
+        let savedCookie = try credentialStore.loadCookie(for: baseURL)
+        var candidates = [StoredLobstersCookie]()
+        for cookie in [browserCookie, savedCookie].compactMap({ $0 })
+        where !candidates.contains(where: { $0.value == cookie.value }) {
+            candidates.append(cookie)
+        }
+        guard isEntitled, isCurrentSession(generation) else { return }
+        guard !candidates.isEmpty else {
+            // Both copies may expire while the app is backgrounded. There is
+            // no remaining credential to preserve or verify with the server.
+            errorMessage = nil
             try await clearSession(reloadWidgets: true)
             return
+        }
+        var confirmed: (page: LoadedLobstersPage, username: String, cookie: StoredLobstersCookie)?
+        for credential in candidates {
+            var request = URLRequest(
+                url: APIConfiguration.shared.settingsURL(),
+                cachePolicy: .reloadIgnoringLocalCacheData
+            )
+            // This session already checked entitlement. A delayed entitlement
+            // snapshot must not turn verification into an anonymous request.
+            request.setValue(credential.requestHeaderValue, forHTTPHeaderField: "Cookie")
+            let page = try await pageLoader.load(request)
+            guard isEntitled, isCurrentSession(generation) else { return }
+            guard APIConfiguration.shared.isLobstersURL(page.response.url) else {
+                throw SessionError.unverifiedSession
+            }
+            if let username = try LobstersHTMLParser.username(from: page.html) {
+                confirmed = (page, username, credential)
+                break
+            }
+            guard page.response.url?.path == APIConfiguration.shared.loginURL().path,
+                  try LobstersHTMLParser.containsLoginForm(page.html) else {
+                throw SessionError.unverifiedSession
+            }
+            // The server rejected this candidate. Try the recovery copy before
+            // deciding that the login has really expired or been revoked.
+        }
+        guard let confirmed else {
+            try await clearSession(reloadWidgets: true)
+            return
+        }
+        let page = confirmed.page
+        let username = confirmed.username
+
+        // A response started before login can remove the shared WebKit cookie.
+        // Only reinstall it after the server has confirmed the saved session.
+        let responseCookies = HTTPCookie.cookies(
+            withResponseHeaderFields: page.response.allHeaderFields.reduce(into: [String: String]()) {
+                if let key = $1.key as? String, let value = $1.value as? String { $0[key] = value }
+            },
+            for: page.response.url ?? baseURL
+        )
+        let rotatedCookie = responseCookies.first { StoredLobstersCookie($0, for: baseURL) != nil }
+        if let cookie = rotatedCookie ?? confirmed.cookie.makeCookie() {
+            try credentialStore.saveCookie(cookie, for: baseURL)
+            await webClient.setCookie(cookie)
+            await storyWebClient.setCookie(cookie)
+            guard isEntitled, isCurrentSession(generation) else {
+                return
+            }
         }
 
         let previousUsername = self.username
@@ -893,6 +973,7 @@ final class LobstersSession: ObservableObject {
             storyWebClient.reloadIfNeeded()
         }
         state = .signedIn(username: username)
+        lastValidatedAt = Date()
         if let cookie = await sessionCookie() {
             await coordinator.didAuthenticate(
                 username: username,
@@ -938,7 +1019,10 @@ final class LobstersSession: ObservableObject {
                     return
                 }
                 if isAuthenticated {
-                    try await clearSession(reloadWidgets: true)
+                    try await recoverSessionAfterAnonymousPage(
+                        in: client,
+                        generation: generation
+                    )
                 }
                 return
             }
@@ -951,11 +1035,22 @@ final class LobstersSession: ObservableObject {
                 StoredLobstersCookie($0, for: baseURL) != nil
             }) else {
                 if isAuthenticated {
-                    try await clearSession(reloadWidgets: true)
+                    try await recoverSessionAfterAnonymousPage(
+                        in: client,
+                        generation: generation
+                    )
                 }
                 return
             }
 
+            if isAuthenticated,
+               let saved = try credentialStore.loadCookie(for: baseURL),
+               saved.value != sessionCookie.value {
+                // Another WebView can change the shared jar while this document
+                // still shows the old identity. Validate before replacing backup.
+                try await validateSession(generation: generation)
+                return
+            }
             try credentialStore.saveCookie(sessionCookie, for: baseURL)
             let previousUsername = self.username
             coordinatedAuthenticationUsername = nil
@@ -966,6 +1061,7 @@ final class LobstersSession: ObservableObject {
                 storyWebClient.reloadIfNeeded()
             }
             state = .signedIn(username: username)
+            lastValidatedAt = Date()
             await coordinator.didAuthenticate(
                 username: username,
                 cookie: sessionCookie,
@@ -984,6 +1080,42 @@ final class LobstersSession: ObservableObject {
             return
         } catch {
             if isCurrentSession(generation) {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func recoverSessionAfterAnonymousPage(
+        in client: LobstersWebViewClient,
+        generation: UInt
+    ) async throws {
+        let saved = try credentialStore.loadCookie(for: baseURL)
+        let browserCookies = await client.allCookies()
+        let hadSavedCookie = browserCookies.contains {
+            $0.name == saved?.name && $0.value == saved?.value
+        }
+        try await validateSession(generation: generation)
+        guard isCurrentSession(generation), isAuthenticated else {
+            return
+        }
+        // A missing identity marker with the correct cookie may be a markup
+        // change. Repeated reloads cannot fix that and would create a request loop.
+        if !hadSavedCookie { client.reloadIfNeeded() }
+    }
+
+    private func logoutRequestedFromWebpage() {
+        // A user submitting Lobsters' own logout form must not have their old
+        // cookie recovered. App-initiated logout already performs this cleanup.
+        guard activeAction != .signOut, let username else {
+            return
+        }
+        sessionGeneration &+= 1
+        coordinatedAuthenticationUsername = nil
+        state = .signingOut(username: username)
+        Task {
+            do {
+                try await clearSession(reloadWidgets: true)
+            } catch {
                 errorMessage = error.localizedDescription
             }
         }
@@ -1075,9 +1207,11 @@ final class LobstersSession: ObservableObject {
     fileprivate func applyCoordinatedSignOut(completeWaiters: Bool) async {
         sessionGeneration &+= 1
         restoreSelectedPageWhenPrimaryNavigationFinishes = false
-        for cookie in await webClient.allCookies()
-        where StoredLobstersCookie(cookie, for: baseURL) != nil {
-            await webClient.deleteCookie(cookie)
+        for client in [webClient, storyWebClient] {
+            for cookie in await client.allCookies()
+            where StoredLobstersCookie(cookie, for: baseURL) != nil {
+                await client.deleteCookie(cookie)
+            }
         }
 
         state = .signedOut
@@ -1095,7 +1229,8 @@ final class LobstersSession: ObservableObject {
     private func sessionCookie() async -> HTTPCookie? {
         let cookies = await webClient.allCookies()
         return cookies.first(where: {
-            StoredLobstersCookie($0, for: baseURL) != nil
+            guard let stored = StoredLobstersCookie($0, for: baseURL) else { return false }
+            return !stored.isExpired
         })
     }
 

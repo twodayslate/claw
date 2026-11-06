@@ -30,11 +30,10 @@ final class LobstersContentRefresher {
         }
 
         refreshTask = Task { [weak self] in
-            async let hottest: Void = Self.refreshHottest()
-            async let newest: Void = Self.refreshNewest()
-            async let stories: Void = StoryFetcher.reloadLiveFetchers()
-            async let tags: Void = TagStoryFetcher.reloadLiveFetchers()
-            _ = await (hottest, newest, stories, tags)
+            await Self.refreshHottest()
+            await Self.refreshNewest()
+            await StoryFetcher.reloadLiveFetchers()
+            await TagStoryFetcher.reloadLiveFetchers()
             guard let self else {
                 return
             }

@@ -634,6 +634,8 @@ class clawTests: XCTestCase {
         let storyWebView = storyClient.webView
 
         XCTAssertFalse(feedWebView === storyWebView)
+        XCTAssertTrue(feedWebView.configuration.websiteDataStore.isPersistent,
+                      "The production webpage cookie jar must survive app launches")
         XCTAssertTrue(
             feedWebView.configuration.websiteDataStore
                 === storyWebView.configuration.websiteDataStore
@@ -856,6 +858,270 @@ class clawTests: XCTestCase {
         } catch LobstersWebViewClient.ClientError.javaScriptTimedOut {
             // Expected: this must complete even when page JavaScript cannot.
         }
+    }
+
+    @MainActor
+    func testLocalRateLimitPreservesLoginAndStopsFurtherRequests() async throws {
+        let configuration = APIConfiguration.shared
+        let baseURL = configuration.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.rate-limit.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let throttle = LobstersRequestThrottle(minimumInterval: 1)
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feedClient = LobstersWebViewClient(dataStore: dataStore, throttle: throttle)
+        let storyClient = LobstersWebViewClient(dataStore: dataStore, throttle: throttle)
+        let pageLoader = LobstersPageLoader(
+            credentialStore: credentialStore,
+            storedCredentialPolicy: .always,
+            throttle: throttle
+        )
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: feedClient,
+            storyWebClient: storyClient,
+            avatarLoader: LobstersAvatarLoader(pageLoader: pageLoader),
+            coordinator: LobstersSessionCoordinator()
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        session.beginLogin()
+        _ = try await feedClient.load(configuration.loginURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            """
+            const email = document.getElementById('email');
+            email.value = 'test';
+            document.getElementById('password').value = 'test';
+            setTimeout(() => email.form.requestSubmit(), 0);
+            return true;
+            """
+        )
+        for _ in 0..<200 where !session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated)
+        let cookie = try XCTUnwrap(credentialStore.loadCookie(for: baseURL))
+        let navigationCount = feedClient.completedNavigationCount
+        do {
+            _ = try await feedClient.load(baseURL.appendingPathComponent("_claw_test/rate_limit"))
+            XCTFail("The local fixture must return upstream's HTTP 429 response")
+        } catch LobstersPageLoaderError.rateLimited {}
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertEqual(session.username, "test")
+        XCTAssertEqual(try credentialStore.loadCookie(for: baseURL), cookie)
+        XCTAssertEqual(feedClient.completedNavigationCount, navigationCount,
+                       "A throttle page must never be captured as an anonymous login")
+        XCTAssertTrue(session.errorMessage?.contains("temporarily limiting requests") == true)
+        do {
+            _ = try await pageLoader.load(baseURL)
+            XCTFail("Native requests must honor a cooldown learned by WebKit")
+        } catch LobstersPageLoaderError.rateLimited {}
+        do {
+            _ = try await storyClient.load(configuration.newestWebpageURL())
+            XCTFail("Other WebViews must honor the same cooldown")
+        } catch LobstersPageLoaderError.rateLimited {}
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertEqual(try credentialStore.loadCookie(for: baseURL), cookie)
+    }
+
+    @MainActor
+    func testLocalSessionRecoversWhenRetainedWebViewLosesCookie() async throws {
+        let configuration = APIConfiguration.shared
+        let baseURL = configuration.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.login-cookie-recovery.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let feedClient = LobstersWebViewClient(dataStore: dataStore)
+        let storyClient = LobstersWebViewClient(dataStore: dataStore)
+        let coordinator = LobstersSessionCoordinator()
+        let pageLoader = LobstersPageLoader(
+            credentialStore: credentialStore,
+            storedCredentialPolicy: .always
+        )
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: feedClient,
+            storyWebClient: storyClient,
+            coordinator: coordinator
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        session.beginLogin()
+        _ = try await feedClient.load(configuration.loginURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            """
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            email.value = 'test';
+            password.value = 'test';
+            setTimeout(() => email.form.requestSubmit(), 0);
+            return true;
+            """
+        )
+        for _ in 0..<200 where !session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertNotNil(try credentialStore.loadCookie(for: baseURL))
+
+        // An anonymous response that started before login can expire WebKit's
+        // cookie after login completes. The Keychain credential is still valid.
+        for cookie in await feedClient.allCookies()
+        where cookie.name == LobstersCredentialStore.cookieName {
+            await feedClient.deleteCookie(cookie)
+        }
+        _ = try await storyClient.load(configuration.hottestWebpageURL())
+        for _ in 0..<200 {
+            let cookies = await feedClient.allCookies()
+            if !session.isAuthenticated || cookies.contains(where: {
+                $0.name == LobstersCredentialStore.cookieName
+            }) {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(session.isAuthenticated, "An anonymous retained page must not discard a valid login.")
+        // Lobsters may rotate the cookie during authenticated validation.
+        XCTAssertNotNil(try credentialStore.loadCookie(for: baseURL))
+        let cookies = await feedClient.allCookies()
+        XCTAssertTrue(cookies.contains { $0.name == LobstersCredentialStore.cookieName })
+
+        let restored = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: pageLoader,
+            webClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            storyWebClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            coordinator: coordinator
+        )
+        restored.setEntitlementAvailable(true)
+        await restored.start()
+        XCTAssertEqual(restored.username, "test", "The recovered login must survive a new session.")
+
+        _ = try await feedClient.load(configuration.settingsURL())
+        _ = try await feedClient.callAsyncJavaScriptWaitingForNavigation(
+            LobstersWebActions.logout
+        )
+        for _ in 0..<200 where session.state != .signedOut {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(session.state, .signedOut, "An explicit website logout must not recover the old cookie.")
+        XCTAssertNil(try credentialStore.loadCookie(for: baseURL))
+        await restored.signOut()
+        await session.signOut()
+    }
+
+    @MainActor
+    func testLocalSessionRestoresFromPersistentBrowserCookiesWithoutKeychain() async throws {
+        let configuration = APIConfiguration.shared
+        let baseURL = configuration.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+        let store = LobstersCredentialStore(service: "claw.tests.persistent.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let identifier = UUID()
+        let browserStore = WKWebsiteDataStore(forIdentifier: identifier)
+        let feed = LobstersWebViewClient(dataStore: browserStore)
+        let loader = LobstersPageLoader(credentialStore: store, storedCredentialPolicy: .always)
+        let session = LobstersSession(
+            credentialStore: store, pageLoader: loader, webClient: feed,
+            storyWebClient: LobstersWebViewClient(dataStore: browserStore),
+            coordinator: LobstersSessionCoordinator()
+        )
+        session.setEntitlementAvailable(true)
+        session.preparePage(for: .Hottest)
+        XCTAssertFalse(feed.hasCreatedWebView, "A hidden page must not load before cookie restoration")
+        await session.start()
+        session.beginLogin()
+        _ = try await feed.load(configuration.loginURL())
+        _ = try await feed.callAsyncJavaScriptWaitingForNavigation(
+            """
+            const email = document.getElementById('email');
+            email.value = 'test';
+            document.getElementById('password').value = 'test';
+            setTimeout(() => email.form.requestSubmit(), 0);
+            return true;
+            """
+        )
+        for _ in 0..<200 where !session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(session.username, "test")
+        let preference = try XCTUnwrap(HTTPCookie(properties: [
+            .name: "tag_filters", .value: "test", .domain: baseURL.host!,
+            .path: "/", .expires: Date().addingTimeInterval(3600)
+        ]))
+        await feed.setCookie(preference)
+        try store.deleteCookie(for: baseURL)
+
+        let reopenedStore = WKWebsiteDataStore(forIdentifier: identifier)
+        let reopenedFeed = LobstersWebViewClient(dataStore: reopenedStore)
+        let restored = LobstersSession(
+            credentialStore: store, pageLoader: loader, webClient: reopenedFeed,
+            storyWebClient: LobstersWebViewClient(dataStore: reopenedStore),
+            coordinator: LobstersSessionCoordinator()
+        )
+        restored.setEntitlementAvailable(true)
+        await restored.start()
+        XCTAssertEqual(restored.username, "test", "The browser session must be sufficient to restore login")
+        XCTAssertNotNil(try store.loadCookie(for: baseURL))
+        let cookies = await reopenedFeed.allCookies()
+        XCTAssertTrue(cookies.contains { $0.name == preference.name && $0.value == preference.value })
+
+        await restored.signOut()
+        XCTAssertNil(try store.loadCookie(for: baseURL))
+        let signedOutCookies = await reopenedFeed.allCookies()
+        XCTAssertFalse(signedOutCookies.contains { $0.name == LobstersCredentialStore.cookieName })
+        XCTAssertTrue(signedOutCookies.contains { $0.name == preference.name }, "Sign-out need not erase website preferences")
+        await browserStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+    }
+
+    @MainActor
+    func testLocalSessionRejectsInvalidSavedCookie() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        guard ["localhost", "127.0.0.1"].contains(baseURL.host ?? "") else {
+            throw XCTSkip("Authenticated integration tests only run against local Lobsters.")
+        }
+        let credentialStore = LobstersCredentialStore(
+            service: "com.twodayslate.claw.tests.invalid-login.\(UUID().uuidString)",
+            accessGroup: nil
+        )
+        defer { try? credentialStore.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName,
+            .value: "invalid-local-test-session",
+            .domain: try XCTUnwrap(baseURL.host),
+            .path: "/"
+        ]))
+        try credentialStore.saveCookie(cookie, for: baseURL)
+        let session = LobstersSession(
+            credentialStore: credentialStore,
+            pageLoader: LobstersPageLoader(
+                credentialStore: credentialStore,
+                storedCredentialPolicy: .always
+            ),
+            webClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            storyWebClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            coordinator: LobstersSessionCoordinator()
+        )
+        session.setEntitlementAvailable(true)
+        await session.start()
+        XCTAssertEqual(session.state, .signedOut)
+        XCTAssertNil(try credentialStore.loadCookie(for: baseURL))
     }
 
     @MainActor
