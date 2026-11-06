@@ -39,7 +39,8 @@ final class WebpageFetcher {
 
     init(
         cookieStorage: HTTPCookieStorage? = nil,
-        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement
+        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement,
+        throttle: LobstersRequestThrottle = .shared
     ) {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = cookieStorage
@@ -52,14 +53,16 @@ final class WebpageFetcher {
         self.pageLoader = LobstersPageLoader(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore,
-            storedCredentialPolicy: storedCredentialPolicy
+            storedCredentialPolicy: storedCredentialPolicy,
+            throttle: throttle
         )
     }
 
     init(
         session: URLSession,
         cookieStorage: HTTPCookieStorage? = nil,
-        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement
+        storedCredentialPolicy: LobstersStoredCredentialPolicy = .verifiedEntitlement,
+        throttle: LobstersRequestThrottle = .shared
     ) {
         self.cookieStorage = cookieStorage
         let credentialStore = LobstersCredentialStore()
@@ -68,7 +71,8 @@ final class WebpageFetcher {
         self.pageLoader = LobstersPageLoader(
             session: session,
             credentialStore: credentialStore,
-            storedCredentialPolicy: storedCredentialPolicy
+            storedCredentialPolicy: storedCredentialPolicy,
+            throttle: throttle
         )
     }
 

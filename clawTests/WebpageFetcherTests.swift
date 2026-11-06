@@ -615,3 +615,87 @@ extension WebpageFetcherTests {
         XCTAssertEqual(first.page, 2)
     }
 }
+
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testStoryErrorReportsDistinguishFailuresAndClearOnRecovery() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let fetcher = StoryFetcher("errors", webpageFetcher: WebpageFetcher(
+            session: session, storedCredentialPolicy: .never,
+            throttle: LobstersRequestThrottle(minimumInterval: 0)))
+        var status = 503
+        var html = "<html>Temporary server error</html>"
+        var networkError: Error?
+        WebpageURLProtocol.requestHandler = { request in
+            if let networkError { throw networkError }
+            return (HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil,
+                headerFields: ["Retry-After": "60"])!, Data(html.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            session.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        do { try await fetcher.load(); XCTFail("Expected HTTP failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .http)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 503)
+        XCTAssertEqual(fetcher.loadFailure?.stage, .request)
+
+        status = 200
+        do { try await fetcher.load(); XCTFail("Expected story parsing failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .storyMarkup)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 200)
+        XCTAssertEqual(fetcher.loadFailure?.parserReason, "missingStory")
+
+        let header = "<ol class='stories'><li class='story' data-shortid='errors'><h2 class='link'><a class='u-url' href='/s/errors'>Readable</a></h2></li></ol>"
+        html = header + "<ol class='comments'><li>Changed comment markup</li></ol>"
+        try await fetcher.load()
+        XCTAssertFalse(fetcher.loadFailed)
+        XCTAssertEqual(fetcher.story?.title, "Readable")
+        XCTAssertEqual(fetcher.loadFailure?.kind, .commentMarkup)
+        XCTAssertEqual(fetcher.loadFailure?.stage, .commentsParsing)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 200)
+
+        html = header + "<ol class='comments'></ol>"
+        try await fetcher.load()
+        XCTAssertNil(fetcher.loadFailure)
+        XCTAssertFalse(fetcher.loadFailed)
+
+        networkError = URLError(.notConnectedToInternet)
+        do { try await fetcher.load(); XCTFail("Expected connection failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .network)
+        XCTAssertEqual(fetcher.loadFailure?.underlyingCode, URLError.notConnectedToInternet.rawValue)
+        XCTAssertEqual(fetcher.story?.title, "Readable", "Keep cached content on failure")
+        networkError = nil
+        status = 429
+        do { try await fetcher.load(); XCTFail("Expected rate limit") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .rateLimited)
+        XCTAssertNotNil(fetcher.loadFailure?.retryAt)
+        XCTAssertTrue(fetcher.loadFailure?.report.contains("HTTP 429") == true)
+        XCTAssertNotEqual(fetcher.loadFailure?.title, StoryLoadFailure(
+            error: StoryHTMLParserError.incompatibleComments, stage: .commentsParsing,
+            url: APIConfiguration.shared.baseURL).title)
+        StoryFetcher.invalidateLiveContent()
+        XCTAssertNil(fetcher.loadFailure)
+        XCTAssertFalse(fetcher.loadFailed)
+    }
+
+    func testStoryErrorReportExcludesSensitiveErrorAndURLData() throws {
+        let error = NSError(domain: NSURLErrorDomain, code: -1009, userInfo: [
+            NSLocalizedDescriptionKey: "secret-cookie secret-html",
+            NSURLErrorFailingURLErrorKey: URL(string: "http://localhost/s/errors?token=secret-token")!
+        ])
+        let failure = StoryLoadFailure(error: error, stage: .request,
+            url: URL(string: "http://secret-user:secret-password@localhost:3000/s/errors?token=secret-token#secret-fragment")!,
+            now: Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(failure.url, "http://localhost:3000/s/errors")
+        XCTAssertFalse(failure.report.contains("secret"))
+        XCTAssertTrue(failure.report.contains("Underlying error code: -1009"))
+        XCTAssertTrue(failure.report.contains("1970-01-01T00:00:00Z"))
+        XCTAssertTrue(failure.report.contains("App:"))
+        XCTAssertTrue(failure.report.contains("OS:"))
+    }
+}

@@ -121,6 +121,124 @@ struct Comment: Codable, Hashable, Identifiable {
     }
 }
 
+/// A small, allowlisted report: never include response HTML, cookies, headers,
+/// URL credentials/query/fragment, or an arbitrary error's description/userInfo.
+struct StoryLoadFailure: Equatable {
+    enum Stage: String {
+        case request, storyParsing, commentsParsing
+    }
+
+    enum Kind: String {
+        case rateLimited, http, network, storyMarkup, commentMarkup
+        case invalidResponse, decoding, other
+    }
+
+    let kind: Kind
+    let stage: Stage
+    let url: String
+    let occurredAt: Date
+    let statusCode: Int?
+    let retryAt: Date?
+    let underlyingCode: Int?
+    let errorType: String
+    let parserReason: String?
+
+    init(error: Error, stage: Stage, url: URL, statusCode: Int? = nil, now: Date = Date()) {
+        self.stage = stage
+        self.errorType = String(reflecting: type(of: error))
+        self.occurredAt = now
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: true)
+        components?.user = nil
+        components?.password = nil
+        components?.query = nil
+        components?.fragment = nil
+        self.url = components?.url?.absoluteString ?? "Unavailable"
+        var kind: Kind = stage == .request ? .other : (stage == .commentsParsing ? .commentMarkup : .storyMarkup)
+        var status = statusCode
+        var retry: Date?
+        var reason: String?
+        var underlying: Int?
+        if let error = error as? LobstersPageLoaderError {
+            switch error {
+            case .rateLimited(let date): kind = .rateLimited; retry = date
+            case .unsuccessfulStatusCode(let code): kind = .http; status = code
+            case .invalidResponse: kind = .invalidResponse
+            case .cannotDecodeContent: kind = .decoding
+            }
+        } else if let error = error as? WebpageFetcherError {
+            switch error {
+            case .unsuccessfulStatusCode(let code): kind = .http; status = code
+            case .invalidResponse: kind = .invalidResponse
+            case .cannotDecodeContent: kind = .decoding
+            }
+        } else if let error = error as? StoryHTMLParserError {
+            switch error {
+            case .missingStory: reason = "missingStory"
+            case .missingStoryID: reason = "missingStoryID"
+            case .missingTitle: reason = "missingTitle"
+            case .incompatibleComments: reason = "incompatibleComments"
+            }
+        } else {
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain { kind = .network }
+            underlying = nsError.code
+        }
+        self.kind = kind
+        self.statusCode = status
+        self.retryAt = retry
+        self.underlyingCode = underlying
+        self.parserReason = reason
+    }
+
+    var title: LocalizedStringResource {
+        switch kind {
+        case .rateLimited: "Lobsters Is Limiting Requests"
+        case .network: "Connection Problem"
+        case .http: "Lobsters Could Not Load This Story"
+        case .storyMarkup, .invalidResponse, .decoding: "Story Could Not Be Read"
+        case .commentMarkup: "Comments Could Not Be Read"
+        case .other: "Story Could Not Be Loaded"
+        }
+    }
+
+    var message: LocalizedStringResource {
+        switch kind {
+        case .rateLimited:
+            "Lobsters has temporarily paused requests. Wait until the time below, then pull to refresh."
+        case .network:
+            "Claw could not connect to Lobsters. Check your connection, then pull to refresh."
+        case .http:
+            "Lobsters returned an error for this story. Try again later. If it keeps happening, include the error details in a bug report."
+        case .storyMarkup, .commentMarkup, .invalidResponse, .decoding:
+            "Claw could not read the page returned by Lobsters. If refreshing does not help, copy the error details and include them in a bug report."
+        case .other:
+            "Claw could not finish loading this story. Try refreshing. If it keeps happening, include the error details in a bug report."
+        }
+    }
+
+    var report: String {
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        var lines = [
+            "Claw story error (report v1)",
+            "Category: \(kind.rawValue)",
+            "Stage: \(stage.rawValue)",
+            "Error type: \(errorType)",
+            "URL: \(url)",
+            "Occurred: \(occurredAt.ISO8601Format())",
+            "App: \(version) (\(build))",
+            "OS: \(ProcessInfo.processInfo.operatingSystemVersionString)"
+        ]
+        if let statusCode { lines.append("HTTP status: \(statusCode)") }
+        if kind == .rateLimited { lines.append("Rate limit: HTTP 429 or active cooldown from an earlier HTTP 429") }
+        if let retryAt { lines.append("Retry after: \(retryAt.ISO8601Format())") }
+        if let underlyingCode { lines.append("Underlying error code: \(underlyingCode)") }
+        if let parserReason { lines.append("Parser reason: \(parserReason)") }
+        return lines.joined(separator: "\n")
+    }
+}
+
 @MainActor
 class StoryFetcher: ObservableObject {
     private final class WeakReference {
@@ -133,6 +251,7 @@ class StoryFetcher: ObservableObject {
 
     @Published var story: Story? = nil
     @Published var loadFailed = false
+    @Published private(set) var loadFailure: StoryLoadFailure?
 
     public var short_id: String? = nil
     public var pageURL: URL? = nil
@@ -177,6 +296,7 @@ class StoryFetcher: ObservableObject {
         supersedePendingLoads()
         story = nil
         loadFailed = false
+        loadFailure = nil
     }
 
     private func loadSupersedingPendingLoads() async throws {
@@ -228,18 +348,18 @@ class StoryFetcher: ObservableObject {
         let isShortURL = url.pathComponents.count == 3
             && url.pathComponents[1] == "s"
             && url.pathComponents[2] == short_id
-        let hasCookies = try !webpageFetcher.cookies(for: url).isEmpty
-        if isShortURL, !hasCookies {
-            request.setValue("claw_cache_bypass=1", forHTTPHeaderField: "Cookie")
-        }
-
         let webpage: Webpage
         do {
+            let hasCookies = try !webpageFetcher.cookies(for: url).isEmpty
+            if isShortURL, !hasCookies {
+                request.setValue("claw_cache_bypass=1", forHTTPHeaderField: "Cookie")
+            }
             webpage = try await webpageFetcher.fetch(request)
         } catch {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailure = StoryLoadFailure(error: error, stage: .request, url: url)
             loadFailed = true
             throw error
         }
@@ -254,6 +374,8 @@ class StoryFetcher: ObservableObject {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailure = StoryLoadFailure(error: error, stage: .storyParsing,
+                url: webpage.url, statusCode: webpage.response.statusCode)
             loadFailed = true
             throw error
         }
@@ -261,6 +383,10 @@ class StoryFetcher: ObservableObject {
             return
         }
         self.story = parsedStory
+        loadFailure = parsedStory.comments_unavailable == true
+            ? StoryLoadFailure(error: StoryHTMLParserError.incompatibleComments,
+                stage: .commentsParsing, url: webpage.url, statusCode: webpage.response.statusCode)
+            : nil
         loadFailed = false
 
         StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})

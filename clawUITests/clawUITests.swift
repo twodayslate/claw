@@ -232,6 +232,49 @@ class clawUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["story-comments-unavailable"].exists)
     }
 
+    func testStoryRateLimitOffersCopyableReportAndRetryTime() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("err429", in: app)
+        XCTAssertTrue(app.staticTexts["Lobsters Is Limiting Requests"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["story-error-retry-time"].exists)
+        assertCopyableStoryReport(in: app, category: "rateLimited", stage: "request")
+    }
+
+    func testStoryMarkupErrorOffersCopyableReport() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("errhtm", in: app)
+        XCTAssertTrue(app.staticTexts["Story Could Not Be Read"].waitForExistence(timeout: 20))
+        assertCopyableStoryReport(in: app, category: "storyMarkup", stage: "storyParsing")
+    }
+
+    func testCommentMarkupErrorKeepsStoryAndOffersCopyableReport() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("errcmt", in: app)
+        XCTAssertTrue(app.staticTexts["Comments Could Not Be Read"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.descendants(matching: .any)["story-title-errcmt"].exists)
+        assertCopyableStoryReport(in: app, category: "commentMarkup", stage: "commentsParsing")
+    }
+
+    private func assertCopyableStoryReport(in app: XCUIApplication, category: String, stage: String) {
+        app.buttons["Error Details"].tap()
+        let details = app.staticTexts["story-error-details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        XCTAssertTrue(details.label.contains("Category: \(category)"))
+        XCTAssertTrue(details.label.contains("Stage: \(stage)"))
+        XCTAssertTrue(details.label.contains("App:"))
+        let copy = app.buttons["copy-story-error-details"]
+        let errorScroll = app.scrollViews.containing(.button, identifier: "copy-story-error-details").firstMatch
+        scroll(errorScroll, untilHittable: copy)
+        copy.tap()
+        XCTAssertTrue(app.staticTexts["story-error-copied"].waitForExistence(timeout: 5))
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
             // This measures how long it takes to launch your application.

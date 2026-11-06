@@ -85,16 +85,11 @@ struct StoryView: View {
                     else if let story = from_newest  {
                         StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
                             .environmentObject(observableSheet)
-                    } else if story.loadFailed {
-                        ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
-                    } else {
+                    } else if !story.loadFailed {
                         StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
                     }
-                    if story.loadFailed {
-                        Label("Unable to load the story. Pull to refresh to try again.", systemImage: "arrow.clockwise")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .padding()
+                    if let failure = story.loadFailure {
+                        StoryLoadErrorView(failure: failure)
                     }
                     Divider()
                     if canAddComment {
@@ -109,8 +104,9 @@ struct StoryView: View {
                     }
                     if let my_story = story.story {
                         if my_story.comments_unavailable == true {
-                            Label("Comments could not be loaded. Pull to refresh to try again.", systemImage: "exclamationmark.triangle")
-                                .font(.callout)
+                            // The detailed error above also covers a failed refresh
+                            // while retaining a previously degraded story.
+                            Text("Comments are unavailable for this story.")
                                 .foregroundStyle(.secondary)
                                 .padding()
                                 .accessibilityIdentifier("story-comments-unavailable")
@@ -437,5 +433,52 @@ struct StoryView: View {
                 voteError = error
             }
         }
+    }
+}
+
+private struct StoryLoadErrorView: View {
+    let failure: StoryLoadFailure
+    @State private var didCopy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label {
+                Text(failure.title).font(.headline)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle")
+            }
+            .accessibilityIdentifier("story-error-title")
+            Text(failure.message)
+                .fixedSize(horizontal: false, vertical: true)
+            if let retryAt = failure.retryAt {
+                Text("Try again after \(retryAt, format: .dateTime.hour().minute().second()).")
+                    .accessibilityIdentifier("story-error-retry-time")
+            }
+            DisclosureGroup("Error Details") {
+                Text(verbatim: failure.report)
+                    .font(.caption.monospaced())
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("story-error-details")
+            }
+            Button {
+                UIPasteboard.general.string = failure.report
+                didCopy = true
+            } label: {
+                Label("Copy Error Details", systemImage: "doc.on.doc")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("copy-story-error-details")
+            if didCopy {
+                Text("Error details copied. Paste them into your bug report.")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("story-error-copied")
+            }
+        }
+        .font(.callout)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
     }
 }
