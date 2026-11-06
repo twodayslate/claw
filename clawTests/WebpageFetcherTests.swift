@@ -300,3 +300,65 @@ extension WebpageFetcherTests {
         XCTAssertFalse(fetcher.loadFailed)
     }
 }
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testFailedTagRefreshPreservesContentAndWarningAcrossViews() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: session, storedCredentialPolicy: .never)
+        let first = TagStoryFetcher(tags: ["shared-cache"], pageLoader: loader)
+        let second = TagStoryFetcher(tags: ["shared-cache"], pageLoader: loader)
+        func row(_ id: String) -> String {
+            "<li class='story' data-shortid='\(id)'><h2 class='link'><a class='u-url' href='/s/\(id)'>\(id)</a></h2></li>"
+        }
+        var responseHTML = "<ol class='stories'>\(row("a"))</ol>"
+        var paths: [String] = []
+        WebpageURLProtocol.requestHandler = { request in
+            let url = try XCTUnwrap(request.url)
+            XCTAssertTrue(["localhost", "127.0.0.1"].contains(url.host ?? ""))
+            paths.append(url.path)
+            return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(responseHTML.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            TagStoryFetcher.cachedStories.removeAll()
+            session.invalidateAndCancel()
+        }
+        TagStoryFetcher.cachedStories.removeAll()
+        try await first.load()
+        responseHTML = "<ol class='stories'>\(row("b"))<li class='story' data-shortid='bad'>Missing title</li></ol>"
+        try await first.more(first.items.last)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b"])
+        XCTAssertEqual(first.skippedStoryCount, 1)
+        XCTAssertEqual(first.page, 3)
+        // A second view refreshes the same tag, replacing the shared cache
+        // with page 1 while the first view still displays two pages.
+        responseHTML = "<ol class='stories'>\(row("a"))</ol>"
+        try await second.load()
+        responseHTML = "<html>Temporary error</html>"
+        do {
+            try await first.reload()
+            XCTFail("Expected the malformed refresh response to fail")
+        } catch {}
+        XCTAssertTrue(first.loadFailed)
+        XCTAssertEqual(first.page, 3)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b"], "Failed refresh must retain this view's loaded pages")
+        XCTAssertEqual(first.skippedStoryCount, 1, "Failed refresh must retain this view's warning")
+        responseHTML = "<ol class='stories'>\(row("c"))</ol>"
+        try await first.more(first.items.last)
+        XCTAssertTrue(paths.last?.hasSuffix("/page/3") == true)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b", "c"], "Pagination must not skip the discarded page")
+        XCTAssertEqual(first.skippedStoryCount, 1)
+        XCTAssertFalse(first.loadFailed)
+
+        // Only a successful refresh should replace the loaded pages and clear
+        // the warning about the previously skipped row.
+        responseHTML = "<ol class='stories'>\(row("fresh"))</ol>"
+        try await first.reload()
+        XCTAssertEqual(first.items.map(\.short_id), ["fresh"])
+        XCTAssertEqual(first.skippedStoryCount, 0)
+        XCTAssertEqual(first.page, 2)
+    }
+}

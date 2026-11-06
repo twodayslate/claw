@@ -68,7 +68,10 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             }
         }
 
-        if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
+        // Another view may have replaced the shared cache with fewer pages.
+        // Keep this view's content and warning paired with its page cursor
+        // until the refresh succeeds.
+        if self.items.isEmpty, let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
             self.items = cachedStories.stories
             self.skippedStoryCount = cachedStories.skippedStoryCount
         }
