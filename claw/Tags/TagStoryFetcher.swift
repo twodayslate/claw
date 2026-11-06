@@ -120,10 +120,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             TagStoryFetcher.cachedStories.removeAll()
         }
         TagStoryFetcher.cachedStories[self.tags] = decodedLists
-        self.items = decodedLists.stories
-        self.skippedStoryCount = decodedLists.skippedStoryCount
-        self.loadFailed = false
-        self.page = 2
+        replaceStoryPage(decodedLists)
     }
 
     override func more(_ story: NewestStory? = nil) async throws {
@@ -156,16 +153,9 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         guard isCurrentContentGeneration(generation) else {
             return
         }
-        for story in stories.stories {
-            if !self.items.contains(story) {
-                self.items.append(story)
-            }
-        }
-        self.skippedStoryCount += stories.skippedStoryCount
-        self.loadFailed = false
+        appendStoryPage(stories)
         TagStoryFetcher.cachedStories[self.tags] = ParsedStoryList(
             stories: self.items, skippedStoryCount: self.skippedStoryCount
         )
-        self.page += 1
     }
 }

@@ -87,3 +87,23 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
         // no-op
     }
 }
+
+// Keep successful feed publication consistent across Hottest, Newest, and Tags.
+// Callers validate their request generation before applying a page.
+extension GenericArrayFetcher where T == NewestStory {
+    func replaceStoryPage(_ result: ParsedStoryList) {
+        items = result.stories
+        skippedStoryCount = result.skippedStoryCount
+        loadFailed = false
+        page = 2
+    }
+
+    func appendStoryPage(_ result: ParsedStoryList) {
+        for story in result.stories where !items.contains(story) {
+            items.append(story)
+        }
+        skippedStoryCount += result.skippedStoryCount
+        loadFailed = false
+        page += 1
+    }
+}

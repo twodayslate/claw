@@ -97,16 +97,7 @@ struct StoryHTMLParser {
     }
 
     private static func parseComments(document: Document, pageURL: URL) throws -> [Comment] {
-        guard try !document.select(".comments").isEmpty() else {
-            throw StoryHTMLParserError.incompatibleComments
-        }
-        // Strip known content from a copy. Remaining text in the comment area
-        // signals unrecognized markup, rather than a legitimately empty thread.
-        let remaining = try SwiftSoup.parse(document.outerHtml())
-        try remaining.select(".comment_form_container, .comment, .thread_summary").remove()
-        guard try remaining.select(".comments").text().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw StoryHTMLParserError.incompatibleComments
-        }
+        try validateCommentMarkup(in: document)
         var ids = Set<String>()
         let elements = try document.select(".comments .comment").array().filter { element in
             var ancestor = element.parent()
@@ -116,26 +107,27 @@ struct StoryHTMLParser {
             }
             return true
         }
-        var owners = Set<ObjectIdentifier>()
-        let comments = try elements.map { element in
+        // Index owners once. Looking for descendants of each ancestor while
+        // resolving every reply would repeatedly scan the same large thread.
+        var ownerIDs: [ObjectIdentifier: String] = [:]
+        for element in elements {
             var owner = element.parent()
             while let node = owner, !node.hasClass("comments_subtree") {
                 owner = node.parent()
             }
-            // Every comment must own a distinct subtree. If row wrappers lose
-            // their class, an outer thread container must not become a guessed
-            // parent for all of its previously independent comments.
-            guard let owner, owners.insert(ObjectIdentifier(owner)).inserted else {
+            let shortID = try element.attr("data-shortid")
+            guard let owner, !shortID.isEmpty, ids.insert(shortID).inserted,
+                  ownerIDs.updateValue(shortID, forKey: ObjectIdentifier(owner)) == nil else {
                 throw StoryHTMLParserError.incompatibleComments
             }
+        }
+        let comments = try elements.map { element in
             let shortID = try element.attr("data-shortid")
-            guard !shortID.isEmpty, ids.insert(shortID).inserted,
-                  try element.select(".comment_text").first() != nil else {
+            guard let commentText = try element.select(".comment_text").first() else {
                 throw StoryHTMLParserError.incompatibleComments
             }
             let byline = try element.select(".byline").first()
-            let commentText = try element.select(".comment_text").first()
-            let statusText = try commentText?.select(".na").text().lowercased() ?? ""
+            let statusText = try commentText.select(".na").text().lowercased()
             let timestampElement = try byline?.select("time").first()
             let date = try timestamp(from: timestampElement)
             let permalinkElement = try byline?.select("a[href^='/c/']").first()
@@ -157,8 +149,8 @@ struct StoryHTMLParser {
                 score_is_unavailable: score.isUnavailable,
                 flags: element.hasClass("flagged") ? 1 : 0,
                 url: permalink.absoluteString,
-                comment: try commentText?.html() ?? "",
-                parent_comment: try parentCommentID(for: element),
+                comment: try commentText.html(),
+                parent_comment: try parentCommentID(for: element, ownerIDs: ownerIDs),
                 commenting_user: try LobstersHTMLParser.username(in: byline) ?? "",
                 user_upvoted: element.hasClass("upvoted"),
                 can_edit: try !element.select("a.comment_editor").isEmpty(),
@@ -176,7 +168,33 @@ struct StoryHTMLParser {
         return comments
     }
 
-    private static func parentCommentID(for element: Element) throws -> String? {
+    /// Inspect the original DOM without serializing or reparsing it. Known
+    /// comment bodies and controls are opaque; unexpected text around them
+    /// means the page cannot be safely represented as a complete comment tree.
+    private static func validateCommentMarkup(in document: Document) throws {
+        var pending: [(node: Node, inComments: Bool)] = [(document, false)]
+        var foundComments = false
+        while let (node, inComments) = pending.popLast() {
+            var inside = inComments
+            if let element = node as? Element {
+                if element.hasClass("comment_form_container") || element.hasClass("thread_summary") {
+                    continue
+                }
+                inside = inside || element.hasClass("comments")
+                foundComments = foundComments || inside
+                if element.hasClass("comment") { continue }
+            } else if inside, let text = node as? TextNode,
+                      !text.getWholeText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw StoryHTMLParserError.incompatibleComments
+            }
+            for child in node.getChildNodes() {
+                pending.append((child, inside))
+            }
+        }
+        guard foundComments else { throw StoryHTMLParserError.incompatibleComments }
+    }
+
+    private static func parentCommentID(for element: Element, ownerIDs: [ObjectIdentifier: String]) throws -> String? {
         let ownID = try element.attr("data-shortid")
         var ancestor = element.parent()
         var foundSubtree = false
@@ -184,17 +202,8 @@ struct StoryHTMLParser {
         while let current = ancestor {
             if current.hasClass("comments_subtree") {
                 foundSubtree = true
-                for child in try current.select(".comment").array() {
-                    // Only the comment owned by this subtree establishes a
-                    // parent. A thread container also contains many descendants.
-                    var owner = child.parent()
-                    while let node = owner, !node.hasClass("comments_subtree") {
-                        owner = node.parent()
-                    }
-                    guard owner === current else { continue }
-                    let candidate = try child.attr("data-shortid")
-                    if !candidate.isEmpty, candidate != ownID { return candidate }
-                    break
+                if let candidate = ownerIDs[ObjectIdentifier(current)], candidate != ownID {
+                    return candidate
                 }
             }
             ancestor = current.parent()

@@ -46,10 +46,7 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
             return
         }
         
-        self.items = decodedLists.stories
-        self.skippedStoryCount = decodedLists.skippedStoryCount
-        self.loadFailed = false
-        self.page = 2
+        replaceStoryPage(decodedLists)
     }
 
     override func more(_ story: NewestStory? = nil) async throws {
@@ -83,15 +80,7 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
             return
         }
 
-        let stories = decodedLists
-        for story in stories.stories {
-            if !self.items.contains(story) {
-                self.items.append(story)
-            }
-        }
-        self.skippedStoryCount += stories.skippedStoryCount
-        self.loadFailed = false
-        self.page += 1
+        appendStoryPage(decodedLists)
 
     }
 }

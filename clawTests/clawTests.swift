@@ -2002,3 +2002,50 @@ extension clawTests {
         XCTAssertEqual(degraded.comments_unavailable, true)
     }
 }
+
+extension clawTests {
+    func testWideCommentThreadPreservesAllParents() throws {
+        let header = "<ol class='stories'><li class='story' data-shortid='wide'><h2 class='link'><a class='u-url' href='/s/wide'>Wide thread</a></h2></li></ol>"
+        func comment(_ id: String) -> String {
+            "<div class='comment' data-shortid='\(id)'><div class='comment_text'><p>Body \(id)</p></div></div>"
+        }
+        let replies = (1...1000).map {
+            "<li class='comments_subtree'><section>\(comment("reply\($0)"))</section></li>"
+        }.joined()
+        let html = header + """
+        <ol class='comments'>
+          <li class='comments_subtree'>
+            \(comment("parent"))<ol class='comments'>\(replies)</ol>
+          </li>
+          <li class='comments_subtree'>\(comment("independent"))</li>
+        </ol>
+        """
+        let story = try StoryHTMLParser.parse(html, pageURL: URL(string: "http://127.0.0.1:3005/s/wide")!)
+        XCTAssertEqual(story.comments_unavailable, false)
+        XCTAssertEqual(story.comments.count, 1002)
+        XCTAssertNil(story.comments.first?.parent_comment)
+        XCTAssertNil(story.comments.last?.parent_comment)
+        XCTAssertEqual(story.comments.dropFirst().dropLast().map(\.short_id), (1...1000).map { "reply\($0)" })
+        XCTAssertTrue(story.comments.dropFirst().dropLast().allSatisfy { $0.parent_comment == "parent" })
+        XCTAssertTrue(story.comments[500].comment.contains("Body reply500"))
+    }
+
+    func testCommentValidationIgnoresKnownControlsButRejectsUnknownText() throws {
+        let original = try historicalStoryHTML()
+        let withControls = original.replacingOccurrences(of: "<ol class=\"comments\">", with: """
+        <ol class="comments">
+          <div class="comment_form_container"><div class="comment">Unsaved preview without an ID</div></div>
+          <div class="thread_summary"><span>Known thread control</span></div>
+        """)
+        let url = URL(string: "http://127.0.0.1:3005/s/abc123")!
+        let story = try StoryHTMLParser.parse(withControls, pageURL: url)
+        XCTAssertEqual(story.comments_unavailable, false)
+        XCTAssertEqual(story.comments.map(\.short_id), ["parent1", "child1", "deleted1"])
+        let changed = withControls.replacingOccurrences(of: "<ol class=\"comments\">", with:
+            "<ol class='comments'><section><div>Unrecognized comment content</div></section>")
+        let degraded = try StoryHTMLParser.parse(changed, pageURL: url)
+        XCTAssertEqual(degraded.comments_unavailable, true)
+        XCTAssertTrue(degraded.comments.isEmpty)
+        XCTAssertEqual(degraded.title, story.title)
+    }
+}
