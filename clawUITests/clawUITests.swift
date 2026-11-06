@@ -202,6 +202,36 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["test"].waitForExistence(timeout: 5))
     }
 
+    func testLatestLobstersStoryDisplaysCommentsAndReplies() throws {
+        _ = try localBaseURL()
+        let app = configuredApplication()
+        app.launch()
+        signInToLocalLobstersIfNeeded(app)
+        selectTab("Newest", in: app)
+
+        let fixture = app.staticTexts.matching(NSPredicate(
+            format: "identifier BEGINSWITH 'story-row-' AND label == %@",
+            "Claw Parser Compatibility Fixture"
+        )).firstMatch
+        let feed = app.scrollViews.firstMatch
+        XCTAssertTrue(feed.waitForExistence(timeout: 10))
+        _ = fixture.waitForExistence(timeout: 15)
+        scroll(feed, untilHittable: fixture)
+        XCTAssertTrue(fixture.isHittable, "Seed the local server with .ci/seed-parser-fixture.rb")
+        fixture.tap()
+
+        // A successfully loaded header alone does not prove comments loaded.
+        // Exercise the actual fetcher and native comment rendering for #73.
+        for body in ["Parser parent body.", "Parser child body.", "Parser second root body."] {
+            let comment = app.staticTexts[body]
+            if !comment.waitForExistence(timeout: 15) {
+                scroll(app.scrollViews.firstMatch, untilHittable: comment)
+            }
+            XCTAssertTrue(comment.exists, "Missing rendered comment: \(body)")
+        }
+        XCTAssertFalse(app.descendants(matching: .any)["story-comments-unavailable"].exists)
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
             // This measures how long it takes to launch your application.

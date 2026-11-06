@@ -1987,6 +1987,21 @@ extension clawTests {
         XCTAssertEqual(child.parent_comment, parent.short_id)
         XCTAssertTrue(parent.comment.contains("<strong>body</strong>"))
 
+        // Cover the application's real short-link and canonical-link fetch
+        // paths as well as direct parsing (#73). Both must return the same tree.
+        for pageURL in [nil, URL(string: row.comments_url)] as [URL?] {
+            let fetcher = StoryFetcher(row.short_id,
+                webpageFetcher: WebpageFetcher(storedCredentialPolicy: .never))
+            fetcher.pageURL = pageURL
+            try await fetcher.load()
+            let fetched = try XCTUnwrap(fetcher.story)
+            XCTAssertFalse(fetcher.loadFailed)
+            XCTAssertEqual(fetched.comments_unavailable, false)
+            XCTAssertEqual(fetched.comments.map(\.short_id), story.comments.map(\.short_id))
+            XCTAssertEqual(fetched.comments.map(\.parent_comment), story.comments.map(\.parent_comment))
+            XCTAssertEqual(fetched.comments.map(\.comment), story.comments.map(\.comment))
+        }
+
         // Mutate actual upstream HTML in memory; no production traffic and no
         // fixture-specific behavior added to the shipped application.
         let document = try SwiftSoup.parse(page.html)
@@ -2047,5 +2062,36 @@ extension clawTests {
         XCTAssertEqual(degraded.comments_unavailable, true)
         XCTAssertTrue(degraded.comments.isEmpty)
         XCTAssertEqual(degraded.title, story.title)
+    }
+}
+
+extension clawTests {
+    func testCurrentLobstersCommentsWithoutLegacyAnchors() throws {
+        let fixtureURL = try XCTUnwrap(Bundle(for: clawTests.self).url(
+            forResource: "story-lobsters-2026-11-06", withExtension: "html", subdirectory: "Fixtures"
+        ))
+        let html = try String(contentsOf: fixtureURL, encoding: .utf8)
+        let document = try SwiftSoup.parse(html)
+        XCTAssertTrue(try document.select(".comment .byline a[name]").isEmpty())
+        let baseURL = URL(string: "http://127.0.0.1:3005/s/shcve8/claw_parser_compatibility_fixture")!
+        let story = try StoryHTMLParser.parse(html, pageURL: baseURL)
+        XCTAssertEqual(story.short_id, "shcve8")
+        XCTAssertEqual(story.title, "Claw Parser Compatibility Fixture")
+        XCTAssertEqual(story.comments_unavailable, false)
+        XCTAssertEqual(story.comment_count, 3)
+        XCTAssertEqual(story.comments.map(\.short_id), ["wlbqqq", "2w4r5j", "f9ljpy"])
+        XCTAssertEqual(story.comments.map(\.parent_comment), [nil, "wlbqqq", nil])
+        XCTAssertEqual(story.comments.map(\.comment), [
+            "<p>Parser parent <strong>body</strong>.</p>",
+            "<p>Parser child body.</p>",
+            "<p>Parser second root body.</p>"
+        ])
+        for comment in story.comments {
+            XCTAssertEqual(comment.commenting_user, "System")
+            XCTAssertFalse(comment.created_at.isEmpty)
+            XCTAssertEqual(URL(string: comment.url)?.path, "/c/\(comment.short_id)")
+            XCTAssertEqual(comment.can_vote, false)
+            XCTAssertEqual(comment.can_reply, false)
+        }
     }
 }

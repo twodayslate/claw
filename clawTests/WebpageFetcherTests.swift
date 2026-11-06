@@ -35,7 +35,11 @@ final class WebpageFetcherTests: XCTestCase {
             storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
         let session = LobstersSession(credentialStore: store, pageLoader: loader,
             webClient: feed, storyWebClient: LobstersWebViewClient(dataStore: dataStore),
-            avatarLoader: LobstersAvatarLoader(pageLoader: loader), coordinator: LobstersSessionCoordinator())
+            avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+            // Session expiry must not refresh global feeds or fetchers owned by
+            // the next test after this test's session has been released.
+            contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
+            coordinator: LobstersSessionCoordinator())
         session.setEntitlementAvailable(true)
         await session.start()
         XCTAssertTrue(session.isAuthenticated)
@@ -109,6 +113,7 @@ final class WebpageFetcherTests: XCTestCase {
         let session = LobstersSession(credentialStore: store, pageLoader: loader,
                                      webClient: feed, storyWebClient: story,
                                      avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+                                     contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
                                      coordinator: LobstersSessionCoordinator())
         session.setEntitlementAvailable(true)
         await session.start()

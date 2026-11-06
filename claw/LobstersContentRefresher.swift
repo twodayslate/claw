@@ -9,6 +9,16 @@ import WidgetKit
 final class LobstersContentRefresher {
     private var refreshTask: Task<Void, Never>?
     private var refreshRequested = false
+    private let refreshLiveContent: () async -> Void
+
+    init(refreshLiveContent: (() async -> Void)? = nil) {
+        self.refreshLiveContent = refreshLiveContent ?? {
+            await Self.refreshHottest()
+            await Self.refreshNewest()
+            await StoryFetcher.reloadLiveFetchers()
+            await TagStoryFetcher.reloadLiveFetchers()
+        }
+    }
 
     func invalidate(
         reloadWidgets: Bool = true,
@@ -29,11 +39,8 @@ final class LobstersContentRefresher {
             return
         }
 
-        refreshTask = Task { [weak self] in
-            await Self.refreshHottest()
-            await Self.refreshNewest()
-            await StoryFetcher.reloadLiveFetchers()
-            await TagStoryFetcher.reloadLiveFetchers()
+        refreshTask = Task { [weak self, refreshLiveContent] in
+            await refreshLiveContent()
             guard let self else {
                 return
             }
