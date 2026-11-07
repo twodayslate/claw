@@ -9,7 +9,7 @@ import SwiftUI
 
 struct URLView: View {
     var link: HTMLLink
-    @Environment(Settings.self) var settings
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject var urlToOpen: ObservableURL
     @EnvironmentObject var observableSheet: ObservableActiveSheet
     
@@ -37,11 +37,7 @@ struct URLView: View {
                 observableSheet.sheet = .error(URLError(.badURL))
                 return
             }
-            if settings.browser == .inAppSafari, (url.scheme == "http" || url.scheme == "https") {
-                urlToOpen.url = url
-            } else {
-                UIApplication.shared.open(url)
-            }
+            openURL(url)
         }
     }
 
@@ -49,7 +45,7 @@ struct URLView: View {
         guard let url = URL(string: link.url) else {
             return nil
         }
-        if url.scheme != nil {
+        if url.scheme != nil || link.url.hasPrefix("/") || link.url.hasPrefix("#") {
             return url
         }
 

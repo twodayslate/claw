@@ -58,6 +58,56 @@ class clawTests: XCTestCase {
         )
     }
 
+    func testCommentDepthUsesAvailableWidth() {
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 390), 3)
+        XCTAssertGreaterThan(CommentThreadLayout.maximumIndentLevel(width: 820), 3)
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 320), 1)
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 0), 1)
+        XCTAssertLessThan(CommentThreadLayout.maximumIndentLevel(width: 820, minimumReadingWidth: 560),
+                          CommentThreadLayout.maximumIndentLevel(width: 820))
+    }
+
+    func testNativeCommentLinksPreserveTheirTargets() throws {
+        let base = URL(string: "http://localhost:3006")!
+        let comment = base.appendingPathComponent("c/deep123")
+        XCTAssertEqual(LobstersLink(url: comment, baseURL: base), .comment(id: "deep123", url: comment))
+        XCTAssertEqual(LobstersLink.commentID(in: comment), "deep123")
+
+        let story = URL(string: "http://localhost:3006/s/story1/title?source=a&other=b#c_deep123")!
+        var wrapper = URLComponents(string: "claw://open")!
+        wrapper.queryItems = [URLQueryItem(name: "source", value: "extension"),
+                              URLQueryItem(name: "url", value: story.absoluteString)]
+        XCTAssertEqual(LobstersLink.unwrap(try XCTUnwrap(wrapper.url)), story)
+        XCTAssertEqual(LobstersLink(url: try XCTUnwrap(wrapper.url), baseURL: base),
+                       .story(id: "story1", url: story))
+        XCTAssertEqual(LobstersLink.commentID(in: story), "deep123")
+        XCTAssertEqual(LobstersLink.commentID(in: LobstersLink.unwrap(
+            URL(string: "claw://open?url=http://localhost:3006/s/story1/title#c_deep123")!)), "deep123")
+        XCTAssertNil(LobstersLink.commentID(in: URL(string: "http://localhost:3006/s/story1#comments")))
+        XCTAssertNil(LobstersLink(url: URL(string: "http://example.com/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: URL(string: "http://localhost:3007/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: URL(string: "https://localhost:3006/c/deep123")!, baseURL: base))
+        let defaultPort = URL(string: "http://localhost:80/c/deep123")!
+        XCTAssertEqual(LobstersLink(url: defaultPort, baseURL: URL(string: "http://localhost")!),
+                       .comment(id: "deep123", url: defaultPort))
+        XCTAssertNil(LobstersLink(url: URL(string: "file://localhost:3006/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: base.appendingPathComponent("c"), baseURL: base))
+    }
+
+    func testDeepCommentLookupRetainsReplies() {
+        func node(_ id: String, children: [CommentStructure] = []) -> CommentStructure {
+            var comment = Comment.placeholder
+            comment.short_id = id
+            return CommentStructure(comment: comment, children: children)
+        }
+        let leaf = node("leaf")
+        let target = node("target", children: [leaf])
+        let tree = node("root", children: [node("sibling"), node("parent", children: [target])])
+        XCTAssertEqual(tree.find("target"), target)
+        XCTAssertEqual(tree.find("target")?.children.first?.id, "leaf")
+        XCTAssertNil(tree.find("missing"))
+    }
+
     func testStoryHTMLParserParsesNestedComments() throws {
         let html = """
         <html>

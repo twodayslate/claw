@@ -67,6 +67,14 @@ struct CommentStructure: Codable, Identifiable {
     var comment: Comment
     var children: [CommentStructure] = []
 
+    func find(_ commentID: String) -> CommentStructure? {
+        if id == commentID { return self }
+        for child in children {
+            if let found = child.find(commentID) { return found }
+        }
+        return nil
+    }
+
     func addChild(_ child: Comment) -> Self {
         var newChildren = children
         newChildren.append(CommentStructure(comment: child))
@@ -340,7 +348,8 @@ class StoryFetcher: ObservableObject {
             return
         }
         let generation = contentGeneration
-        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
+        let isCommentLink = pageURL?.pathComponents.dropFirst().first == "c"
+        if !isCommentLink, let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
         let configuredURL = APIConfiguration.shared.storyURL(shortId: short_id)
@@ -391,13 +400,14 @@ class StoryFetcher: ObservableObject {
             return
         }
         self.story = parsedStory
+        self.short_id = parsedStory.short_id
         loadFailure = parsedStory.comments_unavailable == true
             ? StoryLoadFailure(error: StoryHTMLParserError.incompatibleComments,
                 stage: .commentsParsing, url: webpage.url, statusCode: webpage.response.statusCode)
             : nil
         loadFailed = false
 
-        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
+        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == parsedStory.short_id})
         StoryFetcher.cachedStories.append(parsedStory)
         if StoryFetcher.cachedStories.count > 10 {
             StoryFetcher.cachedStories.removeFirst()

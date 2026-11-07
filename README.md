@@ -72,3 +72,43 @@ legs must pass before a scheduled revision combination is cached as successful.
 Push/PR checks run development only and cannot satisfy the combined nightly cache.
 CI uses one Puma process and request thread because Lobsters development mode
 rewrites generated inline templates on disk; concurrent writers can truncate them.
+
+#### Comment depth and link regression tests
+
+Comment indentation adapts to the available pane width and Dynamic Type size.
+When further indentation would leave too little reading space, **Continue thread**
+opens the next part of the discussion. Native comment links (`/c/<id>` and story
+URLs with `#c_<id>`) open the target comment and its replies at the top, with
+**View all comments** to return to the full discussion. This also works through
+the **Open in claw** share extension.
+
+Use a disposable local Lobsters instance and set `TEST_RUNNER_CLAW_UI_TEST_BASE_URL`
+to its loopback URL when running these tests. Set the same port in
+Lobsters' `config/environments/development.rb` so generated URLs stay local to
+that instance. After running the
+Lobsters Docker setup (which creates the `test` user and tag), copy
+`scripts/seed_comment_depth.rb` into that checkout and run:
+
+```sh
+docker compose run --rm app bin/rails runner seed_comment_depth.rb
+```
+
+Use the instance's `COMPOSE_PROJECT_NAME` for this command if it is isolated.
+The fixture creates a ten-level thread, a sibling reply, an independent root,
+an internal comment link, and a four-level branch ending at the portrait phone
+depth limit. To run its UI tests on an iPhone 16e simulator:
+
+```sh
+TEST_RUNNER_CLAW_UI_TEST_BASE_URL=http://localhost:3006 \
+TEST_RUNNER_RUN_COMMENT_DEPTH_UI_TEST=1 xcodebuild test \
+  -project claw.xcodeproj -scheme claw -configuration Debug \
+  -destination 'platform=iOS Simulator,name=<your simulator>' \
+  -only-testing:clawUITests/clawUITests/testCommentDepthContinuation \
+  -only-testing:clawUITests/clawUITests/testCommentDepthAdaptsToWidth \
+  -only-testing:clawUITests/clawUITests/testCommentLinksOpenHiddenReplies
+```
+
+These tests are skipped unless explicitly enabled and must only use the local server.
+The comment tests default to port 3006; set `TEST_RUNNER_CLAW_UI_TEST_BASE_URL`
+if using another loopback port. The adaptation and
+link tests also run on iPad; the continuation test asserts the narrower phone layout.

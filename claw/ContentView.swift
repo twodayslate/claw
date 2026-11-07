@@ -214,8 +214,14 @@ struct ContentView: View {
             case .story(let id, let url):
                 withEnvironment {
                     SimplePanel{
-                        StoryView(id, commentsURL: url).id(id)
+                        StoryView(id, commentsURL: url).id(item.id)
                     }.id(id)
+                }
+            case .comment(let id, let url):
+                withEnvironment {
+                    SimplePanel {
+                        StoryView(id, commentsURL: url).id(item.id)
+                    }
                 }
             case .user(let username):
                 withEnvironment {
@@ -259,32 +265,8 @@ struct ContentView: View {
 
     private func handleIncomingURL(_ url: URL) {
         let openAction = {
-            if url.host == "open",
-               let components = URLComponents(
-                url: url,
-                resolvingAgainstBaseURL: false
-               ),
-               let item = components.queryItems?.first(where: { $0.name == "url" }),
-               let value = item.value,
-               let lobstersURL = URL(string: value),
-               APIConfiguration.shared.isLobstersURL(lobstersURL) {
-                if lobstersURL.pathComponents.count > 2,
-                   lobstersURL.pathComponents[1] == "s" {
-                    observableSheet.sheet = .story(
-                        id: lobstersURL.pathComponents[2],
-                        url: lobstersURL
-                    )
-                } else if lobstersURL.pathComponents.count > 2,
-                          lobstersURL.pathComponents[1] == "u" {
-                    observableSheet.sheet = .user(
-                        username: lobstersURL.pathComponents[2]
-                    )
-                } else {
-                    observableSheet.sheet = .url(lobstersURL)
-                }
-            } else {
-                observableSheet.sheet = .url(url)
-            }
+            observableSheet.sheet = ActiveSheet.destination(for: url)
+                ?? .url(LobstersLink.unwrap(url))
         }
 
         // If the share sheet is currently present, dismiss it. See #22.
@@ -315,6 +297,10 @@ struct ContentView: View {
     }
 
     func handleUrl(_ url: URL) -> OpenURLAction.Result {
+        if let destination = ActiveSheet.destination(for: url) {
+            observableSheet.sheet = destination
+            return .handled
+        }
         if settings.browser == .inAppSafari, (url.scheme == "https" || url.scheme == nil || url.scheme == "http") {
             if url.scheme == nil {
                 var comps = URLComponents(url: url, resolvingAgainstBaseURL: true)

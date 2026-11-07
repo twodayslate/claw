@@ -13,6 +13,17 @@ struct StoryView: View {
     @Environment(\.didReselect) var didReselect
     @Environment(\.dismiss) private var dismiss
     @StateObject var story = StoryFetcher()
+    @Environment(\.openURL) private var openURL
+    @State private var showsAllComments = false
+
+    private var focusedCommentID: String? {
+        showsAllComments ? nil : LobstersLink.commentID(in: commentsURL)
+    }
+
+    private var resolvedStoryID: String { story.story?.short_id ?? short_id }
+    private var resolvedStoryURL: URL? {
+        story.story.flatMap { URL(string: $0.comments_url) } ?? commentsURL
+    }
     
     init(_ short_id: String, commentsURL: URL? = nil) {
         self.short_id = short_id
@@ -67,30 +78,39 @@ struct StoryView: View {
     var body: some View {
         ScrollViewReader { scrollReader in
             
-            SimpleScrollView(contentOffset: $scrollViewContentOffset) {
+            ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if let story = story.story {
-                        StoryHeaderView<Story>(
-                            story: story,
-                            isUpvoted: canVote ? story.user_upvoted : nil,
-                            isVoting: isVoting,
-                            voteAction: {
-                                toggleStoryVote(currentState: story.user_upvoted)
-                            }
-                        )
+                    if focusedCommentID != nil {
+                        Button("View all comments") {
+                            showsAllComments = true
+                            scrollReader.scrollTo(0, anchor: .top)
+                        }
+                        .padding()
                         .id(0)
-                        .environmentObject(urlToOpen)
-                        .environmentObject(observableSheet)
-                    }
-                    else if let story = from_newest  {
-                        StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
-                            .environmentObject(observableSheet)
-                    } else if story.loadFailed {
-                        ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
                     } else {
-                        StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
+                        if let story = story.story {
+                            StoryHeaderView<Story>(
+                                story: story,
+                                isUpvoted: canVote ? story.user_upvoted : nil,
+                                isVoting: isVoting,
+                                voteAction: {
+                                    toggleStoryVote(currentState: story.user_upvoted)
+                                }
+                            )
+                            .id(0)
+                            .environmentObject(urlToOpen)
+                            .environmentObject(observableSheet)
+                        }
+                        else if let story = from_newest  {
+                            StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
+                                .environmentObject(observableSheet)
+                        } else if story.loadFailed {
+                            ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
+                        } else {
+                            StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
+                        }
+                        Divider()
                     }
-                    Divider()
                     if canAddComment {
                         Button {
                             commentComposer = .new
@@ -107,33 +127,8 @@ struct StoryView: View {
                                 .foregroundStyle(.secondary)
                                 .padding()
                                 .accessibilityIdentifier("story-comments-unavailable")
-                        } else if my_story.comments.count > 0 {
-                            HierarchyList(data: my_story.sorted_comments, header: { comment in
-                                HStack(alignment: .center) {
-                                    if !comment.comment.commenting_user.isEmpty {
-                                        SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
-                                            Text(comment.comment.commenting_user)
-                                                .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
-                                        }
-                                    }
-                                    Spacer()
-                                    commentVoteButton(comment.comment)
-                                }
-                            }, rowContent: { comment in
-                                VStack(alignment: .leading, spacing: 8.0) {
-                                    let html = HTMLView(html: comment.comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
-                                    HStack {
-                                        html
-                                        Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
-                                    }
-                                    ForEach(html.links, id: \.self) { link in
-                                        URLView(link: link).environmentObject(urlToOpen)
-                                    }
-                                    if canInteract {
-                                        commentActions(comment.comment)
-                                    }
-                                }
-                            }).padding([.bottom])
+                        } else if !my_story.comments.isEmpty || focusedCommentID != nil {
+                            commentsView(my_story)
                         } else {
                             HStack {
                                 Spacer()
@@ -142,7 +137,12 @@ struct StoryView: View {
                             }.padding()
                         }
                     } else if story.loadFailed {
-                        EmptyView()
+                        if focusedCommentID != nil {
+                            ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
+                        }
+                        Button("Retry") { Task { await loadStory() } }
+                            .frame(maxWidth: .infinity)
+                            .padding()
                     } else if let story = self.from_newest {
                         if story.comment_count_is_unavailable == true {
                             ProgressView().frame(maxWidth: .infinity).padding()
@@ -152,12 +152,12 @@ struct StoryView: View {
                                     VStack(alignment: .leading) {
                                         HStack(alignment: .center) {
                                             SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
-                                                Text(String(repeating: " ", count: Int.random(in: 3..<8))).foregroundColor(.gray)
+                                                Text(String(repeating: " ", count: 8)).foregroundColor(.gray)
                                             }
                                             Spacer()
                                             Text("\(Image(systemName: "arrow.up")) \(count)").foregroundColor(.gray)
                                         }
-                                        Text(String(repeating: " ", count: Int.random(in: 24..<164)))
+                                        Text(String(repeating: " ", count: 96))
                                         if count < story.comment_count {
                                             Divider()
                                         }
@@ -180,6 +180,11 @@ struct StoryView: View {
                     }
                 }
             }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, offset in
+                scrollViewContentOffset = offset
+            }
             .navigationBarTitle(self.title, displayMode: .inline)
             .onReceive(didReselect) { _ in
                 DispatchQueue.main.async {
@@ -193,20 +198,21 @@ struct StoryView: View {
                 }
             }
             .task {
-                if storeModel.owned {
-                    lobstersSession.prepareStory(
-                        shortID: short_id,
-                        commentsURL: commentsURL
-                    )
-                }
                 self.story.short_id = self.short_id
                 self.story.pageURL = self.commentsURL
                 await loadStory()
+                guard let loadedStory = self.story.story else { return }
+                if storeModel.owned {
+                    lobstersSession.prepareStory(
+                        shortID: resolvedStoryID,
+                        commentsURL: resolvedStoryURL
+                    )
+                }
                 let contains = viewedItems.contains { element in
-                    element.short_id == story.short_id && element.isStory
+                    element.short_id == loadedStory.short_id && element.isStory
                 }
                 if !contains {
-                    let newViewedItem = ViewedItem(short_id: story.short_id!, isStory: true, isComment: false)
+                    let newViewedItem = ViewedItem(short_id: loadedStory.short_id, isStory: true, isComment: false)
                     modelContext.insert(newViewedItem)
                 }
             }
@@ -216,6 +222,12 @@ struct StoryView: View {
                 await Task { await loadStory() }.value
             }
         } // scrollviewreader
+        .environment(\.openURL, OpenURLAction { url in
+            let base = resolvedStoryURL ?? APIConfiguration.shared.storyURL(shortId: resolvedStoryID)
+            let resolved = URL(string: url.relativeString, relativeTo: base)?.absoluteURL ?? url
+            openURL(resolved)
+            return .handled
+        })
         .safariView(item: $urlToOpen.url,
         content:
         { url in
@@ -237,8 +249,8 @@ struct StoryView: View {
         .sheet(item: $commentComposer) { mode in
             CommentComposerView(
                 mode: mode,
-                storyID: short_id,
-                commentsURL: commentsURL,
+                storyID: resolvedStoryID,
+                commentsURL: resolvedStoryURL,
                 didSubmit: {
                     try? await story.load()
                 }
@@ -263,6 +275,45 @@ struct StoryView: View {
             }
         } message: {
             Text("This uses the delete control on the Lobsters webpage.")
+        }
+    }
+
+    @ViewBuilder
+    private func commentsView(_ my_story: Story) -> some View {
+        let roots = my_story.sorted_comments
+        let focused = focusedCommentID.flatMap { id in
+            roots.lazy.compactMap { $0.find(id) }.first
+        }
+        if focusedCommentID != nil && focused == nil {
+            ContentUnavailableView("Comment unavailable", systemImage: "bubble.left",
+                                   description: Text("This comment could not be found in the discussion."))
+        } else {
+            HierarchyList(data: focused.map { [$0] } ?? roots, header: { comment in
+                HStack(alignment: .center) {
+                    if !comment.comment.commenting_user.isEmpty {
+                        SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
+                            Text(comment.comment.commenting_user)
+                                .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
+                        }
+                    }
+                    Spacer()
+                    commentVoteButton(comment.comment)
+                }
+            }, rowContent: { comment in
+                VStack(alignment: .leading, spacing: 8.0) {
+                    let html = HTMLView(html: comment.comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
+                    HStack {
+                        html
+                        Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
+                    }
+                    ForEach(html.links, id: \.self) { link in
+                        URLView(link: link).environmentObject(urlToOpen)
+                    }
+                    if canInteract {
+                        commentActions(comment.comment)
+                    }
+                }
+            }, highlightedCommentID: focusedCommentID).padding(.bottom)
         }
     }
 
@@ -341,8 +392,8 @@ struct StoryView: View {
             do {
                 try await lobstersSession.setStoryUpvoted(
                     desiredState,
-                    shortID: short_id,
-                    commentsURL: commentsURL
+                    shortID: resolvedStoryID,
+                    commentsURL: resolvedStoryURL
                 )
             } catch is CancellationError {
                 setOptimisticStoryVote(currentState)
@@ -368,8 +419,8 @@ struct StoryView: View {
                 try await lobstersSession.setCommentUpvoted(
                     desiredState,
                     commentID: comment.short_id,
-                    storyID: short_id,
-                    commentsURL: commentsURL
+                    storyID: resolvedStoryID,
+                    commentsURL: resolvedStoryURL
                 )
             } catch is CancellationError {
                 setOptimisticCommentVote(comment.short_id, upvoted: currentState)
@@ -433,8 +484,8 @@ struct StoryView: View {
             do {
                 try await lobstersSession.deleteComment(
                     commentID: comment.short_id,
-                    storyID: short_id,
-                    commentsURL: commentsURL
+                    storyID: resolvedStoryID,
+                    commentsURL: resolvedStoryURL
                 )
                 try await story.load()
             } catch is CancellationError {

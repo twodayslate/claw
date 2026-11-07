@@ -18,11 +18,13 @@ class clawUITests: XCTestCase {
 
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
     override func tearDownWithError() throws {
+        XCUIDevice.shared.orientation = .portrait
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
@@ -320,6 +322,163 @@ class clawUITests: XCTestCase {
         let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
         XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
         XCTAssertFalse(app.buttons["copy-story-error-details"].exists)
+    }
+
+    private func commentFixtureApplication() -> XCUIApplication {
+        let app = configuredApplication()
+        app.launchEnvironment["CLAW_UI_TEST_BASE_URL"] =
+            ProcessInfo.processInfo.environment["CLAW_UI_TEST_BASE_URL"] ?? "http://localhost:3006"
+        return app
+    }
+
+    func testCommentDepthContinuation() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["RUN_COMMENT_DEPTH_UI_TEST"] == "1",
+                          "Seed the local Lobsters instance with scripts/seed_comment_depth.rb first.")
+        let app = commentFixtureApplication()
+        app.launch()
+        app.buttons["Newest"].firstMatch.tap()
+        let story = app.staticTexts["Claw comment depth regression fixture"]
+        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        story.tap()
+        XCTAssertTrue(app.staticTexts["Depth 0 comment"].waitForExistence(timeout: 15))
+
+        func reveal(_ element: XCUIElement) {
+            for _ in 0..<12 {
+                if element.exists && element.isHittable { return }
+                app.scrollViews.firstMatch.swipeUp()
+            }
+            XCTFail("Could not reveal \(element)")
+        }
+
+        let firstContinuation = app.buttons["continue-thread-depth3"]
+        reveal(firstContinuation)
+        XCTAssertFalse(app.staticTexts["Depth 4 comment"].exists)
+        XCTAssertFalse(app.buttons["continue-thread-leaf3"].exists)
+        let originalIndent = app.staticTexts["Depth 3 comment"].frame.minX
+        firstContinuation.tap()
+
+        XCTAssertTrue(app.navigationBars["Thread"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Depth 3 comment"].exists)
+        XCTAssertLessThan(app.staticTexts["Depth 3 comment"].frame.minX, originalIndent)
+        XCTAssertTrue(app.staticTexts["Depth 4 comment"].exists)
+        XCTAssertFalse(app.staticTexts["Depth 7 comment"].exists)
+
+        let secondContinuation = app.buttons["continue-thread-depth6"]
+        reveal(secondContinuation)
+        secondContinuation.tap()
+        XCTAssertTrue(app.staticTexts["Depth 6 comment"].waitForExistence(timeout: 5))
+        app.staticTexts["Depth 6 comment"].tap()
+        XCTAssertFalse(app.staticTexts["Depth 7 comment"].exists)
+        // The context comment remains available through its header when collapsed.
+        app.buttons["toggle-comment-depth6"].tap()
+        XCTAssertTrue(app.staticTexts["Depth 7 comment"].waitForExistence(timeout: 5))
+        reveal(app.staticTexts["Depth 9 comment"])
+        XCTAssertFalse(app.buttons["continue-thread-depth9"].exists)
+
+        app.navigationBars.buttons.firstMatch.tap()
+        reveal(app.staticTexts["Sibling reply at depth 4"])
+        app.navigationBars.buttons.firstMatch.tap()
+        reveal(app.staticTexts["Independent root comment"])
+        reveal(app.staticTexts["Short branch depth 3"])
+        XCTAssertFalse(app.buttons["continue-thread-leaf3"].exists)
+    }
+
+    private func requireCommentFixture() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["RUN_COMMENT_DEPTH_UI_TEST"] == "1",
+                          "Seed the disposable local Lobsters instance first.")
+    }
+
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        for _ in 0..<16 {
+            if element.exists && element.isHittable { return }
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTFail("Could not reveal \(element)")
+    }
+
+    func testCommentDepthAdaptsToWidth() throws {
+        try requireCommentFixture()
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = commentFixtureApplication()
+        app.launch()
+        app.buttons["Newest"].firstMatch.tap()
+        let story = app.staticTexts["Claw comment depth regression fixture"]
+        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        story.tap()
+        XCTAssertTrue(app.staticTexts["Depth 0 comment"].waitForExistence(timeout: 15))
+        if app.frame.width < 700 {
+            reveal(app.buttons["continue-thread-depth3"], in: app)
+            XCTAssertFalse(app.staticTexts["Depth 4 comment"].exists)
+            XCUIDevice.shared.orientation = .landscapeLeft
+            reveal(app.staticTexts["Depth 4 comment"], in: app)
+            XCTAssertFalse(app.buttons["continue-thread-depth3"].exists)
+            XCUIDevice.shared.orientation = .portrait
+            reveal(app.buttons["continue-thread-depth3"], in: app)
+            XCTAssertFalse(app.staticTexts["Depth 4 comment"].exists)
+        } else {
+            reveal(app.staticTexts["Depth 9 comment"], in: app)
+            XCTAssertFalse(app.buttons["continue-thread-depth3"].exists)
+        }
+    }
+
+    @MainActor
+    func testCommentLinksOpenHiddenReplies() async throws {
+        try requireCommentFixture()
+        let base = try XCTUnwrap(URL(string: ProcessInfo.processInfo.environment["CLAW_UI_TEST_BASE_URL"]
+                                     ?? "http://localhost:3006"))
+        XCTAssertTrue(["localhost", "127.0.0.1", "::1"].contains(base.host ?? ""))
+        guard ["localhost", "127.0.0.1", "::1"].contains(base.host ?? "") else { return }
+        let (data, _) = try await URLSession.shared.data(from: base.appendingPathComponent("newest.json"))
+        let feed = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+        let fixture = try XCTUnwrap(feed.first { ($0["title"] as? String) == "Claw comment depth regression fixture" })
+        let storyURL = try XCTUnwrap(fixture["comments_url"] as? String)
+
+        func wrapped(_ url: URL) -> URL {
+            var components = URLComponents(string: "claw://open")!
+            components.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+            return components.url!
+        }
+
+        let app = commentFixtureApplication()
+        app.launch()
+        app.buttons["Newest"].firstMatch.tap()
+        let story = app.staticTexts["Claw comment depth regression fixture"]
+        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        story.tap()
+        XCTAssertTrue(app.staticTexts["Depth 0 comment"].waitForExistence(timeout: 15))
+        let internalLink = app.staticTexts["/c/depth4"]
+        reveal(internalLink, in: app)
+        internalLink.tap()
+        XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Depth 4 comment"].isHittable)
+        XCTAssertFalse(app.staticTexts["Depth 0 comment"].exists)
+        if app.frame.width < 700 {
+            reveal(app.buttons["continue-thread-depth7"], in: app)
+            app.buttons["continue-thread-depth7"].tap()
+            reveal(app.staticTexts["Depth 9 comment"], in: app)
+        }
+
+        // Replace an already-open thread with another comment in the same story.
+        app.open(wrapped(try XCTUnwrap(URL(string: storyURL + "#c_depth9"))))
+        XCTAssertTrue(app.staticTexts["Depth 9 comment"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Linked comment"].exists)
+        XCTAssertFalse(app.staticTexts["Depth 4 comment"].exists)
+        app.buttons["View all comments"].tap()
+        XCTAssertTrue(app.staticTexts["Claw comment depth regression fixture"].waitForExistence(timeout: 5))
+
+        app.open(wrapped(base.appendingPathComponent("c/depth7")))
+        XCTAssertTrue(app.staticTexts["Depth 7 comment"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Linked comment"].exists)
+        XCTAssertFalse(app.staticTexts["Depth 0 comment"].exists)
+
+        app.open(wrapped(try XCTUnwrap(URL(string: storyURL + "#c_missing"))))
+        XCTAssertTrue(app.staticTexts["Comment unavailable"].waitForExistence(timeout: 10))
+        app.open(wrapped(base.appendingPathComponent("c/missing")))
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 10))
+        app.alerts.buttons["Okay"].tap()
+        XCTAssertTrue(app.staticTexts["Story Unavailable"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Retry"].exists)
     }
 
     func testLaunchPerformance() throws {
