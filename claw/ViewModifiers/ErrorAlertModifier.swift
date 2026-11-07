@@ -14,19 +14,28 @@ struct ErrorAlertModifier: ViewModifier {
     var titleKey: LocalizedStringKey
 
     var message: String?
+    var diagnosticDetails: String?
 
-    init(_ titleKey: LocalizedStringKey, error: Binding<Error?>, message: String? = nil) {
+    init(_ titleKey: LocalizedStringKey, error: Binding<Error?>, message: String? = nil, diagnosticDetails: String? = nil) {
         self.titleKey = titleKey
         self._error = error
         self.message = message
+        self.diagnosticDetails = diagnosticDetails
     }
 
     func body(content: Content) -> some View {
         content
             .alert(titleKey, isPresented: .constant(error != nil)) {
+                if let diagnosticDetails {
+                    Button("Copy Error Details") {
+                        UIPasteboard.general.string = diagnosticDetails
+                        error = nil
+                    }
+                }
                 Button("Okay") {
                     error = nil
                 }
+                .keyboardShortcut(.defaultAction)
             } message: {
                 if let error = error {
                     let text = Text(error.localizedDescription).fontDesign(.monospaced)
@@ -44,8 +53,8 @@ struct ErrorAlertModifier: ViewModifier {
 }
 
 extension View {
-    func errorAlert(_ titleKey: LocalizedStringKey = "Error!", error: Binding<Error?>, message: String? = "Please try again. If this issue persists please contact support.") -> some View {
-        self.modifier(ErrorAlertModifier(titleKey, error: error, message: message))
+    func errorAlert(_ titleKey: LocalizedStringKey = "Error!", error: Binding<Error?>, message: String? = "Please try again. If this issue persists please contact support.", diagnosticDetails: String? = nil) -> some View {
+        self.modifier(ErrorAlertModifier(titleKey, error: error, message: message, diagnosticDetails: diagnosticDetails))
     }
 }
 

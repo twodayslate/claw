@@ -15,13 +15,17 @@ struct HottestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
+                    StoryFeedStatusView(
+                        skippedStoryCount: hottest.skippedStoryCount,
+                        loadFailed: hottest.loadFailed && !hottest.items.isEmpty
+                    )
                     if hottest.items.isEmpty && (!hottest.hasAttemptedLoad || hottest.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                         }
                         Divider().padding(0).padding([.leading])
                     } else if hottest.items.isEmpty {
-                        StoryFeedEmptyView()
+                        StoryFeedEmptyView(loadFailed: hottest.loadFailed)
                     } else {
                         ForEach(hottest.items) { story in
                             StoryListCellView(story: story).id(story).task {

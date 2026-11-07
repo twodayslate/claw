@@ -35,7 +35,11 @@ final class WebpageFetcherTests: XCTestCase {
             storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
         let session = LobstersSession(credentialStore: store, pageLoader: loader,
             webClient: feed, storyWebClient: LobstersWebViewClient(dataStore: dataStore),
-            avatarLoader: LobstersAvatarLoader(pageLoader: loader), coordinator: LobstersSessionCoordinator())
+            avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+            // Session expiry must not refresh global feeds or fetchers owned by
+            // the next test after this test's session has been released.
+            contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
+            coordinator: LobstersSessionCoordinator())
         session.setEntitlementAvailable(true)
         await session.start()
         XCTAssertTrue(session.isAuthenticated)
@@ -109,6 +113,7 @@ final class WebpageFetcherTests: XCTestCase {
         let session = LobstersSession(credentialStore: store, pageLoader: loader,
                                      webClient: feed, storyWebClient: story,
                                      avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+                                     contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
                                      coordinator: LobstersSessionCoordinator())
         session.setEntitlementAvailable(true)
         await session.start()
@@ -449,4 +454,248 @@ private final class WebpageURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testFeedPartialResultsPaginationAndRecovery() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: session, storedCredentialPolicy: .never)
+        let fetchers: [GenericArrayFetcher<NewestStory>] = [
+            HottestFetcher(pageLoader: loader), NewestFetcher(pageLoader: loader),
+            TagStoryFetcher(tags: ["resilience"], pageLoader: loader)
+        ]
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            session.invalidateAndCancel()
+            TagStoryFetcher.cachedStories.removeAll()
+        }
+        for fetcher in fetchers {
+            var responseHTML = """
+            <ol class='stories'>
+              <li class='story' data-shortid='good'><h2 class='link'><a class='u-url' href='/s/good'>Good</a></h2></li>
+              <li class='story' data-shortid='broken'>Changed title markup</li>
+            </ol>
+            """
+            var requestedPaths: [String] = []
+            WebpageURLProtocol.requestHandler = { request in
+                let url = try XCTUnwrap(request.url)
+                XCTAssertTrue(["localhost", "127.0.0.1"].contains(url.host ?? ""))
+                requestedPaths.append(url.path)
+                return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/html"])!, Data(responseHTML.utf8))
+            }
+            try await fetcher.load()
+            XCTAssertEqual(fetcher.items.map(\.short_id), ["good"])
+            XCTAssertEqual(fetcher.skippedStoryCount, 1)
+            XCTAssertEqual(fetcher.page, 2)
+            responseHTML = "<html><h1>Temporary server error</h1></html>"
+            do {
+                try await fetcher.load()
+                XCTFail("An unexpected page must fail, even with HTTP 200")
+            } catch {}
+            XCTAssertTrue(fetcher.loadFailed)
+            XCTAssertEqual(fetcher.items.map(\.short_id), ["good"])
+            XCTAssertEqual(fetcher.skippedStoryCount, 1)
+            XCTAssertEqual(fetcher.page, 2, "A failed refresh must preserve the pagination cursor")
+            responseHTML = "<ol class='stories'><li class='story' data-shortid='next'><h2 class='link'><a class='u-url' href='/s/next'>Next</a></h2></li></ol>"
+            try await fetcher.more(fetcher.items.last)
+            XCTAssertTrue(requestedPaths.last?.hasSuffix("/page/2") == true)
+            XCTAssertEqual(fetcher.items.map(\.short_id), ["good", "next"])
+            XCTAssertEqual(fetcher.skippedStoryCount, 1, "A successful next page must retain the earlier warning")
+            XCTAssertFalse(fetcher.loadFailed)
+            try await fetcher.load()
+            XCTAssertEqual(fetcher.items.map(\.short_id), ["next"])
+            XCTAssertEqual(fetcher.skippedStoryCount, 0)
+            fetcher.invalidateContent()
+            XCTAssertTrue(fetcher.items.isEmpty)
+            XCTAssertFalse(fetcher.loadFailed)
+            XCTAssertEqual(fetcher.skippedStoryCount, 0)
+        }
+    }
+
+    @MainActor
+    func testStoryFetcherPublishesReadableStoryWhenCommentsBreakAndRecovers() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let fetcher = StoryFetcher("test01", webpageFetcher: WebpageFetcher(session: session, storedCredentialPolicy: .never))
+        var comments = "<ol class='comments'><li>Unrecognized comments</li></ol>"
+        var responseOverride: String?
+        WebpageURLProtocol.requestHandler = { request in
+            let url = try XCTUnwrap(request.url)
+            let html = responseOverride ?? ("<ol class='stories'><li class='story' data-shortid='test01'><h2 class='link'><a class='u-url' href='/s/test01'>Readable story</a></h2></li></ol>" + comments)
+            return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            session.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        try await fetcher.load()
+        XCTAssertEqual(fetcher.story?.title, "Readable story")
+        XCTAssertEqual(fetcher.story?.comments_unavailable, true)
+        XCTAssertEqual(StoryFetcher.cachedStories.first?.comments_unavailable, true)
+        comments = "<ol class='comments'></ol>"
+        try await fetcher.reload()
+        XCTAssertEqual(fetcher.story?.comments_unavailable, false)
+        XCTAssertEqual(fetcher.story?.comment_count, 0)
+        responseOverride = "<html><form action='/login'>Sign in</form></html>"
+        do {
+            try await fetcher.reload()
+            XCTFail("An HTTP 200 login page is not a story")
+        } catch {}
+        XCTAssertTrue(fetcher.loadFailed)
+        XCTAssertEqual(fetcher.story?.title, "Readable story")
+        responseOverride = nil
+        try await fetcher.reload()
+        XCTAssertFalse(fetcher.loadFailed)
+    }
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testFailedTagRefreshPreservesContentAndWarningAcrossViews() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: session, storedCredentialPolicy: .never)
+        let first = TagStoryFetcher(tags: ["shared-cache"], pageLoader: loader)
+        let second = TagStoryFetcher(tags: ["shared-cache"], pageLoader: loader)
+        func row(_ id: String) -> String {
+            "<li class='story' data-shortid='\(id)'><h2 class='link'><a class='u-url' href='/s/\(id)'>\(id)</a></h2></li>"
+        }
+        var responseHTML = "<ol class='stories'>\(row("a"))</ol>"
+        var paths: [String] = []
+        WebpageURLProtocol.requestHandler = { request in
+            let url = try XCTUnwrap(request.url)
+            XCTAssertTrue(["localhost", "127.0.0.1"].contains(url.host ?? ""))
+            paths.append(url.path)
+            return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(responseHTML.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            TagStoryFetcher.cachedStories.removeAll()
+            session.invalidateAndCancel()
+        }
+        TagStoryFetcher.cachedStories.removeAll()
+        try await first.load()
+        responseHTML = "<ol class='stories'>\(row("b"))<li class='story' data-shortid='bad'>Missing title</li></ol>"
+        try await first.more(first.items.last)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b"])
+        XCTAssertEqual(first.skippedStoryCount, 1)
+        XCTAssertEqual(first.page, 3)
+        // A second view refreshes the same tag, replacing the shared cache
+        // with page 1 while the first view still displays two pages.
+        responseHTML = "<ol class='stories'>\(row("a"))</ol>"
+        try await second.load()
+        responseHTML = "<html>Temporary error</html>"
+        do {
+            try await first.reload()
+            XCTFail("Expected the malformed refresh response to fail")
+        } catch {}
+        XCTAssertTrue(first.loadFailed)
+        XCTAssertEqual(first.page, 3)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b"], "Failed refresh must retain this view's loaded pages")
+        XCTAssertEqual(first.skippedStoryCount, 1, "Failed refresh must retain this view's warning")
+        responseHTML = "<ol class='stories'>\(row("c"))</ol>"
+        try await first.more(first.items.last)
+        XCTAssertTrue(paths.last?.hasSuffix("/page/3") == true)
+        XCTAssertEqual(first.items.map(\.short_id), ["a", "b", "c"], "Pagination must not skip the discarded page")
+        XCTAssertEqual(first.skippedStoryCount, 1)
+        XCTAssertFalse(first.loadFailed)
+
+        // Only a successful refresh should replace the loaded pages and clear
+        // the warning about the previously skipped row.
+        responseHTML = "<ol class='stories'>\(row("fresh"))</ol>"
+        try await first.reload()
+        XCTAssertEqual(first.items.map(\.short_id), ["fresh"])
+        XCTAssertEqual(first.skippedStoryCount, 0)
+        XCTAssertEqual(first.page, 2)
+    }
+}
+
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testStoryErrorReportsDistinguishFailuresAndClearOnRecovery() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let fetcher = StoryFetcher("errors", webpageFetcher: WebpageFetcher(
+            session: session, storedCredentialPolicy: .never,
+            throttle: LobstersRequestThrottle(minimumInterval: 0)))
+        var status = 503
+        var html = "<html>Temporary server error</html>"
+        var networkError: Error?
+        WebpageURLProtocol.requestHandler = { request in
+            if let networkError { throw networkError }
+            return (HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil,
+                headerFields: ["Retry-After": "60"])!, Data(html.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            session.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        do { try await fetcher.load(); XCTFail("Expected HTTP failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .http)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 503)
+        XCTAssertEqual(fetcher.loadFailure?.stage, .request)
+
+        status = 200
+        do { try await fetcher.load(); XCTFail("Expected story parsing failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .storyMarkup)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 200)
+        XCTAssertEqual(fetcher.loadFailure?.parserReason, "missingStory")
+
+        let header = "<ol class='stories'><li class='story' data-shortid='errors'><h2 class='link'><a class='u-url' href='/s/errors'>Readable</a></h2></li></ol>"
+        html = header + "<ol class='comments'><li>Changed comment markup</li></ol>"
+        try await fetcher.load()
+        XCTAssertFalse(fetcher.loadFailed)
+        XCTAssertEqual(fetcher.story?.title, "Readable")
+        XCTAssertEqual(fetcher.loadFailure?.kind, .commentMarkup)
+        XCTAssertEqual(fetcher.loadFailure?.stage, .commentsParsing)
+        XCTAssertEqual(fetcher.loadFailure?.statusCode, 200)
+
+        html = header + "<ol class='comments'></ol>"
+        try await fetcher.load()
+        XCTAssertNil(fetcher.loadFailure)
+        XCTAssertFalse(fetcher.loadFailed)
+
+        networkError = URLError(.notConnectedToInternet)
+        do { try await fetcher.load(); XCTFail("Expected connection failure") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .network)
+        XCTAssertEqual(fetcher.loadFailure?.underlyingCode, URLError.notConnectedToInternet.rawValue)
+        XCTAssertEqual(fetcher.story?.title, "Readable", "Keep cached content on failure")
+        networkError = nil
+        status = 429
+        do { try await fetcher.load(); XCTFail("Expected rate limit") } catch {}
+        XCTAssertEqual(fetcher.loadFailure?.kind, .rateLimited)
+        XCTAssertNotNil(fetcher.loadFailure?.retryAt)
+        XCTAssertTrue(fetcher.loadFailure?.report.contains("HTTP 429") == true)
+        XCTAssertNotEqual(fetcher.loadFailure?.title, StoryLoadFailure(
+            error: StoryHTMLParserError.incompatibleComments, stage: .commentsParsing,
+            url: APIConfiguration.shared.baseURL).title)
+        StoryFetcher.invalidateLiveContent()
+        XCTAssertNil(fetcher.loadFailure)
+        XCTAssertFalse(fetcher.loadFailed)
+    }
+
+    func testStoryErrorReportExcludesSensitiveErrorAndURLData() throws {
+        let error = NSError(domain: NSURLErrorDomain, code: -1009, userInfo: [
+            NSLocalizedDescriptionKey: "secret-cookie secret-html",
+            NSURLErrorFailingURLErrorKey: URL(string: "http://localhost/s/errors?token=secret-token")!
+        ])
+        let failure = StoryLoadFailure(error: error, stage: .request,
+            url: URL(string: "http://secret-user:secret-password@localhost:3000/s/errors?token=secret-token#secret-fragment")!,
+            now: Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(failure.url, "http://localhost:3000/s/errors")
+        XCTAssertFalse(failure.report.contains("secret"))
+        XCTAssertTrue(failure.report.contains("Underlying error code: -1009"))
+        XCTAssertTrue(failure.report.contains("1970-01-01T00:00:00Z"))
+        XCTAssertTrue(failure.report.contains("App:"))
+        XCTAssertTrue(failure.report.contains("OS:"))
+    }
 }

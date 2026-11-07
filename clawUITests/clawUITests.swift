@@ -37,6 +37,46 @@ class clawUITests: XCTestCase {
         return app
     }
 
+    func testStoryPullToRefreshDisplaysUpdatedContent() throws {
+        try setRefreshFixture(updated: false)
+        let app = configuredApplication()
+        try openLocalStory("rfrsh1", in: app)
+        let title = app.descendants(matching: .any)["story-title-rfrsh1"]
+        XCTAssertTrue(title.waitForExistence(timeout: 20))
+        waitForLabel("Initial refresh fixture", on: title)
+        // Exercise refreshing an already-open story after navigation settles;
+        // pulling immediately can miss SwiftUI's refresh-cancellation behavior.
+        sleep(3)
+
+        try setRefreshFixture(updated: true)
+        let scroll = app.scrollViews.containing(.any, identifier: "story-title-rfrsh1").firstMatch
+        XCTAssertTrue(scroll.exists)
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).press(
+            forDuration: 0.1,
+            thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9))
+        )
+
+        // A disappearing spinner does not prove the request completed: a
+        // cancelled refresh can leave the cached story visible without an alert.
+        waitForLabel("Updated refresh fixture", on: title)
+        XCTAssertFalse(app.alerts["Error!"].exists)
+    }
+
+    private func setRefreshFixture(updated: Bool) throws {
+        let url = try XCTUnwrap(URL(string: "/_claw_test/story_refresh", relativeTo: localBaseURL()))
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("updated=\(updated)".utf8)
+        let completed = expectation(description: "Update the local refresh fixture")
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            XCTAssertNil(error)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
+            completed.fulfill()
+        }.resume()
+        wait(for: [completed], timeout: 10)
+    }
+
     func testStoryCanBeUpvotedThenUnvoted() throws {
         let app = configuredApplication()
         app.launch()
@@ -202,6 +242,86 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["test"].waitForExistence(timeout: 5))
     }
 
+    func testLatestLobstersStoryDisplaysCommentsAndReplies() throws {
+        _ = try localBaseURL()
+        let app = configuredApplication()
+        app.launch()
+        signInToLocalLobstersIfNeeded(app)
+        selectTab("Newest", in: app)
+
+        let fixture = app.staticTexts.matching(NSPredicate(
+            format: "identifier BEGINSWITH 'story-row-' AND label == %@",
+            "Claw Parser Compatibility Fixture"
+        )).firstMatch
+        let feed = app.scrollViews.firstMatch
+        XCTAssertTrue(feed.waitForExistence(timeout: 10))
+        _ = fixture.waitForExistence(timeout: 15)
+        scroll(feed, untilHittable: fixture)
+        XCTAssertTrue(fixture.isHittable, "Seed the local server with .ci/seed-parser-fixture.rb")
+        fixture.tap()
+
+        // A successfully loaded header alone does not prove comments loaded.
+        // Exercise the actual fetcher and native comment rendering for #73.
+        for body in ["Parser parent body.", "Parser child body.", "Parser second root body."] {
+            let comment = app.staticTexts[body]
+            if !comment.waitForExistence(timeout: 15) {
+                scroll(app.scrollViews.firstMatch, untilHittable: comment)
+            }
+            XCTAssertTrue(comment.exists, "Missing rendered comment: \(body)")
+        }
+        XCTAssertFalse(app.descendants(matching: .any)["story-comments-unavailable"].exists)
+    }
+
+    func testStoryRateLimitOffersCopyableReportAndRetryTime() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("err429", in: app)
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        let message = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: "\n")
+        XCTAssertTrue(message.contains("Lobsters Is Limiting Requests"))
+        XCTAssertTrue(message.contains("Try again after"))
+        assertCopyableStoryAlert(in: app)
+    }
+
+    func testStoryMarkupErrorOffersCopyableReport() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("errhtm", in: app)
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        XCTAssertTrue(alert.staticTexts.containing(NSPredicate(
+            format: "label CONTAINS %@", "Story Could Not Be Read")).firstMatch.exists)
+        assertCopyableStoryAlert(in: app)
+        XCTAssertTrue(app.staticTexts["Story Unavailable"].exists)
+    }
+
+    func testCommentMarkupErrorKeepsStoryAndOffersCopyableReport() throws {
+        let app = configuredApplication()
+        app.launch()
+        selectTab("Hottest", in: app)
+        try openLocalStory("errcmt", in: app)
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        XCTAssertTrue(alert.staticTexts.containing(NSPredicate(
+            format: "label CONTAINS %@", "Comments Could Not Be Read")).firstMatch.exists)
+        alert.buttons["Okay"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["story-title-errcmt"].exists)
+        XCTAssertTrue(app.staticTexts["story-comments-unavailable"].exists)
+        XCTAssertFalse(app.buttons["copy-story-error-details"].exists)
+    }
+
+    private func assertCopyableStoryAlert(in app: XCUIApplication) {
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.buttons["Okay"].exists)
+        alert.buttons["Copy Error Details"].tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+        XCTAssertFalse(app.buttons["copy-story-error-details"].exists)
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
             // This measures how long it takes to launch your application.
@@ -343,8 +463,8 @@ class clawUITests: XCTestCase {
         on element: XCUIElement,
         timeout: TimeInterval = 20
     ) {
-        // The label changes optimistically. Wait for the server confirmation
-        // and the control to re-enable before attempting the opposite vote.
+        // For vote controls, also wait for server confirmation to re-enable
+        // the control before attempting the opposite vote.
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@ AND enabled == true", label),
             object: element
@@ -352,7 +472,7 @@ class clawUITests: XCTestCase {
         XCTAssertEqual(
             XCTWaiter.wait(for: [expectation], timeout: timeout),
             .completed,
-            "Expected \(element.identifier) to finish voting and become “\(label)”."
+            "Expected \(element.identifier) to become “\(label)” and be enabled."
         )
     }
 

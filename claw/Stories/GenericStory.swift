@@ -23,8 +23,10 @@ protocol GenericStory: Codable, Hashable, Identifiable {
     var url: String { get }
     var score: Int { get }
     var score_is_hidden: Bool? { get }
+    var score_is_unavailable: Bool? { get }
     var flags: Int { get }
     var comment_count: Int { get }
+    var comment_count_is_unavailable: Bool? { get }
     var description: String { get }
     var comments_url: String { get }
     var submitter_user: String { get }
@@ -38,7 +40,7 @@ extension GenericStory {
     }
 
     var displayedScore: String {
-        score_is_hidden == true ? "~" : String(score)
+        score_is_unavailable == true ? "—" : (score_is_hidden == true ? "~" : String(score))
     }
     
     var time_ago: String {
@@ -66,6 +68,6 @@ extension GenericStory {
             return "\(days) days ago"
         }
         
-        return "unknown time ago"
+        return ""
     }
 }

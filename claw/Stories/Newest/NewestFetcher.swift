@@ -12,23 +12,29 @@ import SwiftUI
 class NewestFetcher: GenericArrayFetcher<NewestStory> {
     static var shared = NewestFetcher()
     
+    private let pageLoader: LobstersPageLoader
+
+    init(pageLoader: LobstersPageLoader = .shared) {
+        self.pageLoader = pageLoader
+        super.init()
+    }
+
     override func load() async throws {
         if isLoading {
             return
         }
         let generation = captureContentGeneration()
         hasAttemptedLoad = true
-        page = 1
         isLoading = true
         defer {
             if isCurrentContentGeneration(generation) {
                 isLoading = false
             }
         }
-        let decodedLists: [NewestStory]
+        let decodedLists: ParsedStoryList
         do {
-            let url = APIConfiguration.shared.newestWebpageURL(page: self.page)
-            let loadedPage = try await LobstersPageLoader.shared.load(url)
+            let url = APIConfiguration.shared.newestWebpageURL(page: 1)
+            let loadedPage = try await pageLoader.load(url)
             decodedLists = try await StoryListHTMLParser.parseOffMain(
                 loadedPage.html,
                 pageURL: loadedPage.response.url ?? url
@@ -37,14 +43,14 @@ class NewestFetcher: GenericArrayFetcher<NewestStory> {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
         guard isCurrentContentGeneration(generation) else {
             return
         }
         
-        self.items = decodedLists
-        self.page += 1
+        replaceStoryPage(decodedLists)
     }
     
     override func more(_ story: NewestStory? = nil) async throws {
@@ -59,9 +65,9 @@ class NewestFetcher: GenericArrayFetcher<NewestStory> {
             }
         }
         let url = APIConfiguration.shared.newestWebpageURL(page: self.page)
-        let stories: [NewestStory]
+        let stories: ParsedStoryList
         do {
-            let loadedPage = try await LobstersPageLoader.shared.load(url)
+            let loadedPage = try await pageLoader.load(url)
             stories = try await StoryListHTMLParser.parseOffMain(
                 loadedPage.html,
                 pageURL: loadedPage.response.url ?? url
@@ -70,18 +76,14 @@ class NewestFetcher: GenericArrayFetcher<NewestStory> {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            loadFailed = true
             throw error
         }
         guard isCurrentContentGeneration(generation) else {
             return
         }
 
-        for story in stories {
-            if !self.items.contains(story) {
-                self.items.append(story)
-            }
-        }
-        self.page += 1
+        appendStoryPage(stories)
 
     }
 }

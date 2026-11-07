@@ -10,6 +10,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var isReloading = false
     @Published var isLoading = false
     @Published var hasAttemptedLoad = false
+    @Published var skippedStoryCount = 0
+    @Published var loadFailed = false
 
     public internal(set) var page: Int = 1
     private var contentGeneration: UInt = 0
@@ -37,6 +39,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     func invalidateContent() {
         supersedePendingLoads()
         items.removeAll()
+        skippedStoryCount = 0
+        loadFailed = false
         page = 1
         hasAttemptedLoad = false
     }
@@ -81,5 +85,25 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
             isLoadingMore = false
         }
         // no-op
+    }
+}
+
+// Keep successful feed publication consistent across Hottest, Newest, and Tags.
+// Callers validate their request generation before applying a page.
+extension GenericArrayFetcher where T == NewestStory {
+    func replaceStoryPage(_ result: ParsedStoryList) {
+        items = result.stories
+        skippedStoryCount = result.skippedStoryCount
+        loadFailed = false
+        page = 2
+    }
+
+    func appendStoryPage(_ result: ParsedStoryList) {
+        for story in result.stories where !items.contains(story) {
+            items.append(story)
+        }
+        skippedStoryCount += result.skippedStoryCount
+        loadFailed = false
+        page += 1
     }
 }

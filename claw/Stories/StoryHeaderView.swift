@@ -68,13 +68,17 @@ struct StoryHeaderView<T: GenericStory>: View {
                         
                         VStack(alignment: .leading) {
                             TagList(tags: story.tags)
-                            SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
-                                Text("via ").foregroundColor(Color.secondary) +
-                                Text(story.submitter_user)
-                                    .foregroundColor(story.user_is_author ? .blue : .gray) +
-                                    Text(" " + story.time_ago).foregroundColor(Color.secondary)
+                            if !story.submitter_user.isEmpty {
+                                SGNavigationLink(destination: UserView(story.submitter_user), withChevron: false) {
+                                    Text("via ").foregroundColor(Color.secondary) +
+                                    Text(story.submitter_user)
+                                        .foregroundColor(story.user_is_author ? .blue : .gray) +
+                                        Text(" " + story.time_ago).foregroundColor(Color.secondary)
+                                }
+                                .font(style: .callout)
+                            } else if !story.time_ago.isEmpty {
+                                Text(story.time_ago).foregroundStyle(.secondary)
                             }
-                            .font(style: .callout)
                         }
                     }
                 }

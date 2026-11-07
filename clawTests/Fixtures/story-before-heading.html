@@ -1,0 +1,64 @@
+<html>
+  <body>
+    <ol class="stories">
+      <li id="story_abc123" data-shortid="abc123" class="story upvoted">
+        <div class="story_liner h-entry">
+          <div class="voters"><a class="upvoter" title="42">42</a></div>
+          <div class="details">
+            <span class="link"><a class="u-url" href="https://example.com/article">An article</a></span>
+            <ul class="tags"><li><a>swift</a></li><li><a>ios</a></li></ul>
+            <div class="byline">
+              <span>authored by</span>
+              <a href="/~alice">alice</a>
+              <time datetime="2026-07-29T12:00:00Z" data-at-unix="1785326400"></time>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ol>
+    <div class="story_content"><div class="story_text"><p>Story body</p></div></div>
+    <div class="comment_form_container">
+      <form><input name="story_id" value="abc123"></form>
+    </div>
+    <ol class="comments">
+      <li class="comments_subtree">
+        <div id="c_parent1" data-shortid="parent1" class="comment upvoted">
+          <div class="voters"><button class="upvoter" title="8">8</button></div>
+          <div class="details">
+            <div class="byline">
+              <a aria-hidden="true" href="/~bob"></a><a href="/~bob">bob</a>
+              <a href="/c/parent1"><time data-at-unix="1785326460"></time></a>
+              <a class="comment_editor">edit</a>
+              <a class="comment_deletor">delete</a>
+              <a class="comment_replier">reply</a>
+            </div>
+            <div class="comment_text"><p>Parent <strong>comment</strong></p></div>
+          </div>
+        </div>
+        <ol class="comments">
+          <li class="comments_subtree">
+            <div id="c_child1" data-shortid="child1" class="comment flagged">
+              <div class="voters"><button class="upvoter" title="3">3</button></div>
+              <div class="details">
+                <div class="byline">
+                  <a href="/~carol">carol</a>
+                  <a href="/c/child1"><time data-at-unix="1785326520"></time></a>
+                  <a class="comment_replier">reply</a>
+                </div>
+                <div class="comment_text"><p>Child comment</p></div>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </li>
+      <li class="comments_subtree">
+        <div id="c_deleted1" data-shortid="deleted1" class="comment">
+          <div class="details">
+            <div class="byline"><a href="/~dave">dave</a><a href="/c/deleted1"><time data-at-unix="1785326580"></time></a></div>
+            <div class="comment_text"><span class="na">[deleted by moderator]</span></div>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </body>
+</html>

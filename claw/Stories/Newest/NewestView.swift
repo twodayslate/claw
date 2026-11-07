@@ -14,13 +14,17 @@ struct NewestView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Divider().padding(0).padding([.leading])
+                    StoryFeedStatusView(
+                        skippedStoryCount: newest.skippedStoryCount,
+                        loadFailed: newest.loadFailed && !newest.items.isEmpty
+                    )
                     if newest.items.isEmpty && (!newest.hasAttemptedLoad || newest.isLoading) {
                         ForEach(1..<10) { _ in
                             StoryListCellView(story: NewestStory.placeholder).redacted(reason: .placeholder).allowsTightening(false).disabled(true)
                             Divider().padding(0).padding([.leading])
                         }
                     } else if newest.items.isEmpty {
-                        StoryFeedEmptyView()
+                        StoryFeedEmptyView(loadFailed: newest.loadFailed)
                     } else {
                         ForEach(newest.items) { story in
                             StoryListCellView(story: story).id(story).task {
