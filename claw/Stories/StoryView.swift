@@ -288,7 +288,7 @@ struct StoryView: View {
             ContentUnavailableView("Comment unavailable", systemImage: "bubble.left",
                                    description: Text("This comment could not be found in the discussion."))
         } else {
-            HierarchyList(data: focused.map { [$0] } ?? roots, header: { comment in
+            HierarchyList(data: focused.map { [$0.thread] } ?? roots, header: { comment in
                 HStack(alignment: .center) {
                     if !comment.comment.commenting_user.isEmpty {
                         SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
@@ -313,7 +313,7 @@ struct StoryView: View {
                         commentActions(comment.comment)
                     }
                 }
-            }, highlightedCommentID: focusedCommentID).padding(.bottom)
+            }, highlightedCommentID: focusedCommentID, rootDepth: focused?.depth ?? 0).padding(.bottom)
         }
     }
 

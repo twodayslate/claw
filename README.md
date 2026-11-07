@@ -77,7 +77,8 @@ rewrites generated inline templates on disk; concurrent writers can truncate the
 
 Comment indentation adapts to the available pane width and Dynamic Type size.
 When further indentation would leave too little reading space, **Continue thread**
-opens the next part of the discussion. Native comment links (`/c/<id>` and story
+opens the next part of the discussion. Thread colors retain the original discussion
+depth when opening a continuation or a linked comment. Native comment links (`/c/<id>` and story
 URLs with `#c_<id>`) open the target comment and its replies at the top, with
 **View all comments** to return to the full discussion. This also works through
 the **Open in claw** share extension.

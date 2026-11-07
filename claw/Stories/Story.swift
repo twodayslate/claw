@@ -67,10 +67,11 @@ struct CommentStructure: Codable, Identifiable {
     var comment: Comment
     var children: [CommentStructure] = []
 
-    func find(_ commentID: String) -> CommentStructure? {
-        if id == commentID { return self }
+    /// Retain the discussion depth when opening a subtree directly.
+    func find(_ commentID: String, atDepth depth: Int = 0) -> (thread: CommentStructure, depth: Int)? {
+        if id == commentID { return (self, depth) }
         for child in children {
-            if let found = child.find(commentID) { return found }
+            if let found = child.find(commentID, atDepth: depth + 1) { return found }
         }
         return nil
     }

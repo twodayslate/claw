@@ -94,7 +94,7 @@ class clawTests: XCTestCase {
         XCTAssertNil(LobstersLink(url: base.appendingPathComponent("c"), baseURL: base))
     }
 
-    func testDeepCommentLookupRetainsReplies() {
+    func testDeepCommentLookupRetainsReplies() throws {
         func node(_ id: String, children: [CommentStructure] = []) -> CommentStructure {
             var comment = Comment.placeholder
             comment.short_id = id
@@ -103,8 +103,16 @@ class clawTests: XCTestCase {
         let leaf = node("leaf")
         let target = node("target", children: [leaf])
         let tree = node("root", children: [node("sibling"), node("parent", children: [target])])
-        XCTAssertEqual(tree.find("target"), target)
-        XCTAssertEqual(tree.find("target")?.children.first?.id, "leaf")
+        let focused = try XCTUnwrap(tree.find("target"))
+        XCTAssertEqual(focused.thread, target)
+        XCTAssertEqual(focused.thread.children.first?.id, "leaf")
+        XCTAssertEqual(focused.depth, 2)
+        XCTAssertEqual(tree.find("root")?.depth, 0)
+        XCTAssertEqual(tree.find("sibling")?.depth, 1)
+        // Searching again after re-rooting must retain the full discussion depth.
+        let nested = focused.thread.find("leaf", atDepth: focused.depth)
+        XCTAssertEqual(nested?.depth, 3)
+        XCTAssertEqual(nested?.depth, tree.find("leaf")?.depth)
         XCTAssertNil(tree.find("missing"))
     }
 

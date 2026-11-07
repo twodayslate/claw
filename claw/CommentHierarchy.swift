@@ -16,6 +16,7 @@ public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: V
     let header: (CommentStructure) -> HeaderContent
     let rowContent: (CommentStructure) -> RowContent
     var highlightedCommentID: String? = nil
+    var rootDepth: Int = 0
     @State var sharedComment: Comment?
     @State private var availableWidth: CGFloat = 390
     @ScaledMetric(relativeTo: .body) private var minimumReadingWidth: CGFloat = 280
@@ -24,7 +25,7 @@ public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: V
         // this should be a LazyVStack but there is a bug
         // https://developer.apple.com/forums/thread/658199
         LazyVStack(alignment: .leading, spacing: 0) {
-            RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0, maximumIndentLevel: CommentThreadLayout.maximumIndentLevel(width: availableWidth, minimumReadingWidth: minimumReadingWidth), highlightedCommentID: highlightedCommentID, sharedComment: $sharedComment)
+            RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0, commentDepth: rootDepth, maximumIndentLevel: CommentThreadLayout.maximumIndentLevel(width: availableWidth, minimumReadingWidth: minimumReadingWidth), highlightedCommentID: highlightedCommentID, sharedComment: $sharedComment)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onGeometryChange(for: CGFloat.self) { geometry in
@@ -40,13 +41,14 @@ public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: V
 
 private struct CommentThreadView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
     let parent: CommentStructure
+    let parentDepth: Int
     let header: (CommentStructure) -> HeaderContent
     let rowContent: (CommentStructure) -> RowContent
 
     var body: some View {
         ScrollView {
             // Keep the parent for context and restart indentation for its replies.
-            HierarchyList(data: [parent], header: header, rowContent: rowContent)
+            HierarchyList(data: [parent], header: header, rowContent: rowContent, rootDepth: parentDepth)
                 .padding(.bottom)
         }
         .navigationTitle("Thread")
@@ -59,6 +61,7 @@ private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: 
     let header: (CommentStructure) -> HeaderContent
     let rowContent: (CommentStructure) -> RowContent
     let indentLevel: Int
+    let commentDepth: Int
     let maximumIndentLevel: Int
     let highlightedCommentID: String?
     
@@ -66,7 +69,7 @@ private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: 
     
     var body: some View {
         ForEach(data) { child in
-            HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, maximumIndentLevel: maximumIndentLevel, highlightedCommentID: highlightedCommentID, child: child, sharedComment: $sharedComment, last: child == data.last!)
+            HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, commentDepth: commentDepth, maximumIndentLevel: maximumIndentLevel, highlightedCommentID: highlightedCommentID, child: child, sharedComment: $sharedComment, last: child == data.last!)
         }
     }
 }
@@ -76,6 +79,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     let header: (CommentStructure) -> HeaderContent
     let rowContent: (CommentStructure) -> RowContent
     let indentLevel: Int
+    let commentDepth: Int
     let maximumIndentLevel: Int
     let highlightedCommentID: String?
     
@@ -90,11 +94,10 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
     var last = false
     
     var commentColor: Color {
-        let index = indentLevel % 7
-        if settings.commentColorScheme.colors.count < index {
-            return .accentColor
-        }
-        return settings.commentColorScheme.colors[index]
+        let colors = settings.commentColorScheme.colors
+        guard !colors.isEmpty else { return .accentColor }
+        // Re-rooting changes indentation, but retains the original discussion depth.
+        return colors[commentDepth % colors.count]
     }
     
     @State var isExpanded: Bool = true
@@ -132,7 +135,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                         Divider().padding([.top, .leading])
                         if indentLevel >= maximumIndentLevel {
                             NavigationLink {
-                                CommentThreadView(parent: child, header: header, rowContent: rowContent)
+                                CommentThreadView(parent: child, parentDepth: commentDepth, header: header, rowContent: rowContent)
                             } label: {
                                 Label("Continue thread", systemImage: "arrow.turn.down.right")
                                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -144,7 +147,7 @@ struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: V
                             .accessibilityHint("Opens the replies with less indentation")
                             .accessibilityIdentifier("continue-thread-\(child.id)")
                         } else {
-                            RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, maximumIndentLevel: maximumIndentLevel, highlightedCommentID: highlightedCommentID, sharedComment: $sharedComment)
+                            RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, commentDepth: commentDepth+1, maximumIndentLevel: maximumIndentLevel, highlightedCommentID: highlightedCommentID, sharedComment: $sharedComment)
                                 .padding([.leading], 4)
                                 .overlay(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 8.0)
