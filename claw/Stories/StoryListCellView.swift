@@ -3,7 +3,16 @@ import SwiftUI
 
 @MainActor
 public class ObservableActiveSheet: ObservableObject {
-    @Published var sheet: ActiveSheet? = nil
+    @Published var sheet: ActiveSheet? = nil {
+        didSet {
+            if sheet != nil {
+                presentationID = UUID()
+            }
+        }
+    }
+
+    // A repeated route is a new navigation request, even when its URL is unchanged.
+    @Published private(set) var presentationID = UUID()
 }
 
 struct StoryListCellView: View {

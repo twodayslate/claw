@@ -214,14 +214,14 @@ struct ContentView: View {
             case .story(let id, let url):
                 withEnvironment {
                     SimplePanel{
-                        StoryView(id, commentsURL: url).id(item.id)
-                    }.id(id)
+                        StoryView(id, commentsURL: url)
+                    }.id(observableSheet.presentationID)
                 }
             case .comment(let id, let url):
                 withEnvironment {
                     SimplePanel {
-                        StoryView(id, commentsURL: url).id(item.id)
-                    }
+                        StoryView(id, commentsURL: url)
+                    }.id(observableSheet.presentationID)
                 }
             case .user(let username):
                 withEnvironment {

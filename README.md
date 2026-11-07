@@ -106,7 +106,8 @@ TEST_RUNNER_RUN_COMMENT_DEPTH_UI_TEST=1 xcodebuild test \
   -destination 'platform=iOS Simulator,name=<your simulator>' \
   -only-testing:clawUITests/clawUITests/testCommentDepthContinuation \
   -only-testing:clawUITests/clawUITests/testCommentDepthAdaptsToWidth \
-  -only-testing:clawUITests/clawUITests/testCommentLinksOpenHiddenReplies
+  -only-testing:clawUITests/clawUITests/testCommentLinksOpenHiddenReplies \
+  -only-testing:clawUITests/clawUITests/testCommentLinkRefocusesAfterViewAll
 ```
 
 These tests are skipped unless explicitly enabled and must only use the local server.

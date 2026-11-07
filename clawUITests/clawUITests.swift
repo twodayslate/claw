@@ -481,6 +481,23 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Retry"].exists)
     }
 
+    func testCommentLinkRefocusesAfterViewAll() throws {
+        try requireCommentFixture()
+        let app = commentFixtureApplication()
+        let base = ProcessInfo.processInfo.environment["CLAW_UI_TEST_BASE_URL"] ?? "http://localhost:3006"
+        var wrapper = URLComponents(string: "claw://open")!
+        wrapper.queryItems = [URLQueryItem(name: "url", value: base + "/c/depth4")]
+        app.open(try XCTUnwrap(wrapper.url))
+        XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 15))
+        app.buttons["View all comments"].tap()
+        let link = app.staticTexts["/c/depth4"]
+        reveal(link, in: app)
+        link.tap()
+        XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 5),
+                      "The same comment link no longer focuses its target after View all comments")
+        XCTAssertTrue(app.staticTexts["Depth 4 comment"].isHittable)
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
             // This measures how long it takes to launch your application.
