@@ -211,7 +211,9 @@ struct StoryView: View {
                 }
             }
             .refreshable {
-                await loadStory()
+                // SwiftUI can cancel the refresh action as cached content is
+                // republished. Let the load finish so refreshes and errors arrive.
+                await Task { await loadStory() }.value
             }
         } // scrollviewreader
         .safariView(item: $urlToOpen.url,

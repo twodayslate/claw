@@ -37,6 +37,46 @@ class clawUITests: XCTestCase {
         return app
     }
 
+    func testStoryPullToRefreshDisplaysUpdatedContent() throws {
+        try setRefreshFixture(updated: false)
+        let app = configuredApplication()
+        try openLocalStory("rfrsh1", in: app)
+        let title = app.descendants(matching: .any)["story-title-rfrsh1"]
+        XCTAssertTrue(title.waitForExistence(timeout: 20))
+        waitForLabel("Initial refresh fixture", on: title)
+        // Exercise refreshing an already-open story after navigation settles;
+        // pulling immediately can miss SwiftUI's refresh-cancellation behavior.
+        sleep(3)
+
+        try setRefreshFixture(updated: true)
+        let scroll = app.scrollViews.containing(.any, identifier: "story-title-rfrsh1").firstMatch
+        XCTAssertTrue(scroll.exists)
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).press(
+            forDuration: 0.1,
+            thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9))
+        )
+
+        // A disappearing spinner does not prove the request completed: a
+        // cancelled refresh can leave the cached story visible without an alert.
+        waitForLabel("Updated refresh fixture", on: title)
+        XCTAssertFalse(app.alerts["Error!"].exists)
+    }
+
+    private func setRefreshFixture(updated: Bool) throws {
+        let url = try XCTUnwrap(URL(string: "/_claw_test/story_refresh", relativeTo: localBaseURL()))
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("updated=\(updated)".utf8)
+        let completed = expectation(description: "Update the local refresh fixture")
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            XCTAssertNil(error)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
+            completed.fulfill()
+        }.resume()
+        wait(for: [completed], timeout: 10)
+    }
+
     func testStoryCanBeUpvotedThenUnvoted() throws {
         let app = configuredApplication()
         app.launch()
@@ -423,8 +463,8 @@ class clawUITests: XCTestCase {
         on element: XCUIElement,
         timeout: TimeInterval = 20
     ) {
-        // The label changes optimistically. Wait for the server confirmation
-        // and the control to re-enable before attempting the opposite vote.
+        // For vote controls, also wait for server confirmation to re-enable
+        // the control before attempting the opposite vote.
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@ AND enabled == true", label),
             object: element
@@ -432,7 +472,7 @@ class clawUITests: XCTestCase {
         XCTAssertEqual(
             XCTWaiter.wait(for: [expectation], timeout: timeout),
             .completed,
-            "Expected \(element.identifier) to finish voting and become “\(label)”."
+            "Expected \(element.identifier) to become “\(label)” and be enabled."
         )
     }
 

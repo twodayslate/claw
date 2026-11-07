@@ -6,8 +6,23 @@ class ClawRateLimitFixture
   end
 
   def call(env)
-    # Local-only story routes exercise the actual app's error and report UI.
+    # Local-only story routes exercise the actual app's error, report, and refresh UI.
     case env["PATH_INFO"]
+    when "/_claw_test/story_refresh"
+      return [405, {}, []] unless env["REQUEST_METHOD"] == "POST"
+      updated = Rack::Request.new(env).params["updated"] == "true"
+      Rails.application.executor.wrap do
+        story = Story.find_by(short_id: "rfrsh1")
+        unless story
+          story = Story.create!(
+            title: "Initial refresh fixture", description: "A story for testing pull to refresh.",
+            user: User.find_by!(username: "System"), tags: [Tag.find_by!(tag: "test")]
+          )
+          story.update!(short_id: "rfrsh1")
+        end
+        story.update!(title: updated ? "Updated refresh fixture" : "Initial refresh fixture")
+      end
+      return [204, {"cache-control" => "no-store"}, []]
     when "/s/errhtm"
       return [200, {"content-type" => "text/html"}, ["<html><body>Unexpected story markup</body></html>"]]
     when "/s/errcmt"
