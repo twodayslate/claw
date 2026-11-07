@@ -116,6 +116,64 @@ class clawTests: XCTestCase {
         XCTAssertNil(tree.find("missing"))
     }
 
+    func testVisibleCommentRowsRespectCollapseAndContinuation() {
+        func node(_ id: String, _ children: [CommentStructure] = []) -> CommentStructure {
+            var comment = Comment.placeholder
+            comment.short_id = id
+            return CommentStructure(comment: comment, children: children)
+        }
+        let roots = [node("root", [node("child", [node("grandchild", [node("leaf")])]),
+                                    node("sibling")]), node("other")]
+        let limited = CommentThreadLayout.rows(for: roots, maximumIndentLevel: 1)
+        XCTAssertEqual(limited.map(\.id), ["root", "child", "sibling", "other"])
+        XCTAssertEqual(limited.map(\.indentLevel), [0, 1, 1, 0])
+        XCTAssertEqual(limited.filter(\.continuesThread).map(\.id), ["child"])
+
+        var expansion = CommentExpansionState()
+        expansion[expanded: "child"] = false
+        expansion[expanded: "root"] = false
+        XCTAssertEqual(CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs).map(\.id), ["root", "other"])
+        expansion[expanded: "root"] = true
+        let reopened = CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs)
+        XCTAssertEqual(reopened.map(\.id), ["root", "child", "sibling", "other"])
+        XCTAssertFalse(reopened.contains(where: \.continuesThread))
+        expansion[expanded: "child"] = true
+        XCTAssertEqual(CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs).map(\.id),
+            ["root", "child", "grandchild", "leaf", "sibling", "other"])
+    }
+
+    func testVisibleCommentRowsKeepIdentityAndDepthWhenRerooted() throws {
+        var parent = Comment.placeholder
+        parent.short_id = "parent"
+        var reply = Comment.placeholder
+        reply.short_id = "reply"
+        let subtree = CommentStructure(comment: parent, children: [CommentStructure(comment: reply)])
+        var root = Comment.placeholder
+        root.short_id = "root"
+        let full = CommentThreadLayout.rows(for: [CommentStructure(comment: root, children: [subtree])],
+            maximumIndentLevel: 3)
+        let focused = CommentThreadLayout.rows(for: [subtree], rootDepth: 1, maximumIndentLevel: 3)
+        let originalReply = try XCTUnwrap(full.first { $0.id == "reply" })
+        let focusedReply = try XCTUnwrap(focused.first { $0.id == "reply" })
+        XCTAssertEqual(originalReply.id, focusedReply.id)
+        XCTAssertEqual(originalReply.commentDepth, focusedReply.commentDepth)
+        XCTAssertEqual(originalReply.indentLevel, 2)
+        XCTAssertEqual(focusedReply.indentLevel, 1)
+
+        // Identity stays stable on refresh, but edited/voted content must still
+        // invalidate the row instead of comparing equal by IDs alone.
+        var updated = subtree
+        updated.children[0].comment.comment = "Edited reply"
+        updated.children[0].comment.score += 1
+        XCTAssertNotEqual(subtree, updated)
+        let refreshed = CommentThreadLayout.rows(for: [updated], rootDepth: 1, maximumIndentLevel: 3)
+        XCTAssertEqual(refreshed.map(\.id), focused.map(\.id))
+        XCTAssertEqual(refreshed.last?.comment.comment, "Edited reply")
+    }
+
     func testStoryHTMLParserParsesNestedComments() throws {
         let html = """
         <html>

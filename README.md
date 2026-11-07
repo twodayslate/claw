@@ -106,6 +106,7 @@ TEST_RUNNER_RUN_COMMENT_DEPTH_UI_TEST=1 xcodebuild test \
   -destination 'platform=iOS Simulator,name=<your simulator>' \
   -only-testing:clawUITests/clawUITests/testCommentDepthContinuation \
   -only-testing:clawUITests/clawUITests/testCommentDepthAdaptsToWidth \
+  -only-testing:clawUITests/clawUITests/testCommentContinuationSurvivesWidthChange \
   -only-testing:clawUITests/clawUITests/testCommentLinksOpenHiddenReplies \
   -only-testing:clawUITests/clawUITests/testCommentLinkRefocusesAfterViewAll
 ```
@@ -113,4 +114,11 @@ TEST_RUNNER_RUN_COMMENT_DEPTH_UI_TEST=1 xcodebuild test \
 These tests are skipped unless explicitly enabled and must only use the local server.
 The comment tests default to port 3006; set `TEST_RUNNER_CLAW_UI_TEST_BASE_URL`
 if using another loopback port. The adaptation and
-link tests also run on iPad; the continuation test asserts the narrower phone layout.
+link tests also run on iPad; the continuation tests assert the narrower phone layout.
+The refocus test repeats the linked-comment → full-discussion transition three times
+and scrolls the result to catch layout hangs on iPad.
+
+Comments are projected into one lazy list of visible rows. Collapse state is keyed
+by comment ID, while local indentation and original discussion depth are separate.
+Each row draws its own ancestor guides; it does not contain or measure descendant
+views. This keeps subtree changes and width changes out of nested lazy layout.

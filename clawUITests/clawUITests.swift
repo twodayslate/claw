@@ -368,7 +368,9 @@ class clawUITests: XCTestCase {
         secondContinuation.tap()
         XCTAssertTrue(app.staticTexts["Depth 6 comment"].waitForExistence(timeout: 5))
         app.staticTexts["Depth 6 comment"].tap()
-        XCTAssertFalse(app.staticTexts["Depth 7 comment"].exists)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.staticTexts["Depth 7 comment"])], timeout: 5), .completed)
         // The context comment remains available through its header when collapsed.
         app.buttons["toggle-comment-depth6"].tap()
         XCTAssertTrue(app.staticTexts["Depth 7 comment"].waitForExistence(timeout: 5))
@@ -394,6 +396,16 @@ class clawUITests: XCTestCase {
             app.scrollViews.firstMatch.swipeUp()
         }
         XCTFail("Could not reveal \(element)")
+    }
+
+    private func assertVisibleComment(_ text: String, in app: XCUIApplication) {
+        // The full discussion behind an iPad sheet can retain a second copy of
+        // the same lazy row. Check the visible copy, not the first AX match.
+        let matches = app.staticTexts.matching(NSPredicate(format: "label == %@", text))
+        let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            matches.allElementsBoundByIndex.contains { $0.isHittable }
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed)
     }
 
     func testCommentDepthAdaptsToWidth() throws {
@@ -451,8 +463,8 @@ class clawUITests: XCTestCase {
         reveal(internalLink, in: app)
         internalLink.tap()
         XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Depth 4 comment"].isHittable)
-        XCTAssertFalse(app.staticTexts["Depth 0 comment"].exists)
+        assertVisibleComment("Depth 4 comment", in: app)
+        XCTAssertFalse(app.staticTexts["Depth 0 comment"].isHittable)
         if app.frame.width < 700 {
             reveal(app.buttons["continue-thread-depth7"], in: app)
             app.buttons["continue-thread-depth7"].tap()
@@ -461,16 +473,16 @@ class clawUITests: XCTestCase {
 
         // Replace an already-open thread with another comment in the same story.
         app.open(wrapped(try XCTUnwrap(URL(string: storyURL + "#c_depth9"))))
-        XCTAssertTrue(app.staticTexts["Depth 9 comment"].waitForExistence(timeout: 10))
+        assertVisibleComment("Depth 9 comment", in: app)
         XCTAssertTrue(app.staticTexts["Linked comment"].exists)
-        XCTAssertFalse(app.staticTexts["Depth 4 comment"].exists)
+        XCTAssertFalse(app.staticTexts["Depth 4 comment"].isHittable)
         app.buttons["View all comments"].tap()
         XCTAssertTrue(app.staticTexts["Claw comment depth regression fixture"].waitForExistence(timeout: 5))
 
         app.open(wrapped(base.appendingPathComponent("c/depth7")))
-        XCTAssertTrue(app.staticTexts["Depth 7 comment"].waitForExistence(timeout: 10))
+        assertVisibleComment("Depth 7 comment", in: app)
         XCTAssertTrue(app.staticTexts["Linked comment"].exists)
-        XCTAssertFalse(app.staticTexts["Depth 0 comment"].exists)
+        XCTAssertFalse(app.staticTexts["Depth 0 comment"].isHittable)
 
         app.open(wrapped(try XCTUnwrap(URL(string: storyURL + "#c_missing"))))
         XCTAssertTrue(app.staticTexts["Comment unavailable"].waitForExistence(timeout: 10))
@@ -489,13 +501,35 @@ class clawUITests: XCTestCase {
         wrapper.queryItems = [URLQueryItem(name: "url", value: base + "/c/depth4")]
         app.open(try XCTUnwrap(wrapper.url))
         XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 15))
-        app.buttons["View all comments"].tap()
-        let link = app.staticTexts["/c/depth4"]
-        reveal(link, in: app)
-        link.tap()
-        XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 5),
-                      "The same comment link no longer focuses its target after View all comments")
-        XCTAssertTrue(app.staticTexts["Depth 4 comment"].isHittable)
+        // Repeatedly replace the focused subtree with the full tree in the same
+        // sheet. On iPad this used to hang in nested lazy-stack layout on scroll.
+        for _ in 0..<3 {
+            app.buttons["View all comments"].tap()
+            let link = app.staticTexts["/c/depth4"]
+            reveal(link, in: app)
+            link.tap()
+            XCTAssertTrue(app.staticTexts["Linked comment"].waitForExistence(timeout: 5),
+                          "The same comment link no longer focuses its target after View all comments")
+            assertVisibleComment("Depth 4 comment", in: app)
+        }
+    }
+
+    func testCommentContinuationSurvivesWidthChange() throws {
+        try requireCommentFixture()
+        let app = commentFixtureApplication()
+        app.launch()
+        app.buttons["Newest"].firstMatch.tap()
+        let story = app.staticTexts["Claw comment depth regression fixture"]
+        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        story.tap()
+        XCTAssertTrue(app.staticTexts["Depth 0 comment"].waitForExistence(timeout: 15))
+        let continuation = app.buttons["continue-thread-depth3"]
+        reveal(continuation, in: app)
+        continuation.tap()
+        XCTAssertTrue(app.navigationBars["Thread"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.navigationBars["Thread"].waitForExistence(timeout: 5),
+                      "Widening the window unexpectedly popped the active thread")
     }
 
     func testLaunchPerformance() throws {

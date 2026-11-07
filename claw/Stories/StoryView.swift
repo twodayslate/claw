@@ -65,7 +65,7 @@ struct StoryView: View {
     
     @Environment(\.modelContext) private var modelContext
     
-    @State private var scrollViewContentOffset = CGFloat(0)
+    @State private var isScrolledFromTop = false
     @State private var isVoting = false
     @State private var presentedError: Error?
     @State private var activeCommentActionID: String?
@@ -180,15 +180,15 @@ struct StoryView: View {
                     }
                 }
             }
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top
-            } action: { _, offset in
-                scrollViewContentOffset = offset
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > 0
+            } action: { _, isScrolled in
+                isScrolledFromTop = isScrolled
             }
             .navigationBarTitle(self.title, displayMode: .inline)
             .onReceive(didReselect) { _ in
                 DispatchQueue.main.async {
-                    if scrollViewContentOffset > 0 {
+                    if isScrolledFromTop {
                         withAnimation {
                             scrollReader.scrollTo(0)
                         }
@@ -290,18 +290,18 @@ struct StoryView: View {
         } else {
             HierarchyList(data: focused.map { [$0.thread] } ?? roots, header: { comment in
                 HStack(alignment: .center) {
-                    if !comment.comment.commenting_user.isEmpty {
-                        SGNavigationLink(destination: UserView(comment.comment.commenting_user), withChevron: false) {
-                            Text(comment.comment.commenting_user)
-                                .foregroundColor(story.story?.submitter_user == comment.comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
+                    if !comment.commenting_user.isEmpty {
+                        SGNavigationLink(destination: UserView(comment.commenting_user), withChevron: false) {
+                            Text(comment.commenting_user)
+                                .foregroundColor(story.story?.submitter_user == comment.commenting_user && story.story?.user_is_author == true ? .blue : .gray)
                         }
                     }
                     Spacer()
-                    commentVoteButton(comment.comment)
+                    commentVoteButton(comment)
                 }
             }, rowContent: { comment in
                 VStack(alignment: .leading, spacing: 8.0) {
-                    let html = HTMLView(html: comment.comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
+                    let html = HTMLView(html: comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
                     HStack {
                         html
                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
@@ -310,7 +310,7 @@ struct StoryView: View {
                         URLView(link: link).environmentObject(urlToOpen)
                     }
                     if canInteract {
-                        commentActions(comment.comment)
+                        commentActions(comment)
                     }
                 }
             }, highlightedCommentID: focusedCommentID, rootDepth: focused?.depth ?? 0).padding(.bottom)

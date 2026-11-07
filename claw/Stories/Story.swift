@@ -91,11 +91,7 @@ struct CommentStructure: Codable, Identifiable {
     }
 }
 
-extension CommentStructure: Equatable {
-    static func == (lhs: CommentStructure, rhs: CommentStructure) -> Bool {
-        return lhs.id == rhs.id && rhs.children == lhs.children
-    }
-}
+extension CommentStructure: Equatable {}
 
 struct Comment: Codable, Hashable, Identifiable {
     var id: String {
