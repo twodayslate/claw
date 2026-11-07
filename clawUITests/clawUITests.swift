@@ -237,9 +237,12 @@ class clawUITests: XCTestCase {
         app.launch()
         selectTab("Hottest", in: app)
         try openLocalStory("err429", in: app)
-        XCTAssertTrue(app.staticTexts["Lobsters Is Limiting Requests"].waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["story-error-retry-time"].exists)
-        assertCopyableStoryReport(in: app, category: "rateLimited", stage: "request")
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        let message = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: "\n")
+        XCTAssertTrue(message.contains("Lobsters Is Limiting Requests"))
+        XCTAssertTrue(message.contains("Try again after"))
+        assertCopyableStoryAlert(in: app)
     }
 
     func testStoryMarkupErrorOffersCopyableReport() throws {
@@ -247,8 +250,12 @@ class clawUITests: XCTestCase {
         app.launch()
         selectTab("Hottest", in: app)
         try openLocalStory("errhtm", in: app)
-        XCTAssertTrue(app.staticTexts["Story Could Not Be Read"].waitForExistence(timeout: 20))
-        assertCopyableStoryReport(in: app, category: "storyMarkup", stage: "storyParsing")
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        XCTAssertTrue(alert.staticTexts.containing(NSPredicate(
+            format: "label CONTAINS %@", "Story Could Not Be Read")).firstMatch.exists)
+        assertCopyableStoryAlert(in: app)
+        XCTAssertTrue(app.staticTexts["Story Unavailable"].exists)
     }
 
     func testCommentMarkupErrorKeepsStoryAndOffersCopyableReport() throws {
@@ -256,23 +263,23 @@ class clawUITests: XCTestCase {
         app.launch()
         selectTab("Hottest", in: app)
         try openLocalStory("errcmt", in: app)
-        XCTAssertTrue(app.staticTexts["Comments Could Not Be Read"].waitForExistence(timeout: 20))
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 20))
+        XCTAssertTrue(alert.staticTexts.containing(NSPredicate(
+            format: "label CONTAINS %@", "Comments Could Not Be Read")).firstMatch.exists)
+        alert.buttons["Okay"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["story-title-errcmt"].exists)
-        assertCopyableStoryReport(in: app, category: "commentMarkup", stage: "commentsParsing")
+        XCTAssertTrue(app.staticTexts["story-comments-unavailable"].exists)
+        XCTAssertFalse(app.buttons["copy-story-error-details"].exists)
     }
 
-    private func assertCopyableStoryReport(in app: XCUIApplication, category: String, stage: String) {
-        app.buttons["Error Details"].tap()
-        let details = app.staticTexts["story-error-details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5))
-        XCTAssertTrue(details.label.contains("Category: \(category)"))
-        XCTAssertTrue(details.label.contains("Stage: \(stage)"))
-        XCTAssertTrue(details.label.contains("App:"))
-        let copy = app.buttons["copy-story-error-details"]
-        let errorScroll = app.scrollViews.containing(.button, identifier: "copy-story-error-details").firstMatch
-        scroll(errorScroll, untilHittable: copy)
-        copy.tap()
-        XCTAssertTrue(app.staticTexts["story-error-copied"].waitForExistence(timeout: 5))
+    private func assertCopyableStoryAlert(in app: XCUIApplication) {
+        let alert = app.alerts["Error!"]
+        XCTAssertTrue(alert.buttons["Okay"].exists)
+        alert.buttons["Copy Error Details"].tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+        XCTAssertFalse(app.buttons["copy-story-error-details"].exists)
     }
 
     func testLaunchPerformance() throws {

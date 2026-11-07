@@ -123,7 +123,7 @@ struct Comment: Codable, Hashable, Identifiable {
 
 /// A small, allowlisted report: never include response HTML, cookies, headers,
 /// URL credentials/query/fragment, or an arbitrary error's description/userInfo.
-struct StoryLoadFailure: Equatable {
+struct StoryLoadFailure: Equatable, LocalizedError {
     enum Stage: String {
         case request, storyParsing, commentsParsing
     }
@@ -214,6 +214,14 @@ struct StoryLoadFailure: Equatable {
         case .other:
             "Claw could not finish loading this story. Try refreshing. If it keeps happening, include the error details in a bug report."
         }
+    }
+
+    var errorDescription: String? {
+        var paragraphs = [String(localized: title), String(localized: message)]
+        if let retryAt {
+            paragraphs.append(String(localized: "Try again after \(retryAt.formatted(date: .omitted, time: .standard))."))
+        }
+        return paragraphs.joined(separator: "\n\n")
     }
 
     var report: String {

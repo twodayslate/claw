@@ -56,7 +56,7 @@ struct StoryView: View {
     
     @State private var scrollViewContentOffset = CGFloat(0)
     @State private var isVoting = false
-    @State private var voteError: Error?
+    @State private var presentedError: Error?
     @State private var activeCommentActionID: String?
     @State private var commentComposer: CommentComposerMode?
     @State private var commentPendingDeletion: Comment?
@@ -85,11 +85,10 @@ struct StoryView: View {
                     else if let story = from_newest  {
                         StoryHeaderView<NewestStory>(story: story).id(0).environmentObject(urlToOpen)
                             .environmentObject(observableSheet)
-                    } else if !story.loadFailed {
+                    } else if story.loadFailed {
+                        ContentUnavailableView("Story Unavailable", systemImage: "exclamationmark.triangle")
+                    } else {
                         StoryHeaderView<NewestStory>(story: NewestStory.placeholder).id(0).redacted(reason: .placeholder).allowsHitTesting(false)
-                    }
-                    if let failure = story.loadFailure {
-                        StoryLoadErrorView(failure: failure)
                     }
                     Divider()
                     if canAddComment {
@@ -104,8 +103,6 @@ struct StoryView: View {
                     }
                     if let my_story = story.story {
                         if my_story.comments_unavailable == true {
-                            // The detailed error above also covers a failed refresh
-                            // while retaining a previously degraded story.
                             Text("Comments are unavailable for this story.")
                                 .foregroundStyle(.secondary)
                                 .padding()
@@ -204,11 +201,7 @@ struct StoryView: View {
                 }
                 self.story.short_id = self.short_id
                 self.story.pageURL = self.commentsURL
-                do {
-                    try await self.story.load()
-                } catch {
-                    print("error", error)
-                }
+                await loadStory()
                 let contains = viewedItems.contains { element in
                     element.short_id == story.short_id && element.isStory
                 }
@@ -218,13 +211,7 @@ struct StoryView: View {
                 }
             }
             .refreshable {
-                await Task {
-                    do {
-                        try await self.story.load()
-                    } catch {
-                        // no-op
-                    }
-                }.value
+                await loadStory()
             }
         } // scrollviewreader
         .safariView(item: $urlToOpen.url,
@@ -240,7 +227,11 @@ struct StoryView: View {
             .preferredControlAccentColor(settings.accentColor)
             .dismissButtonStyle(.close)
         })
-        .errorAlert(error: $voteError)
+        .errorAlert(
+            error: $presentedError,
+            message: presentedError is StoryLoadFailure ? nil : "Please try again. If this issue persists please contact support.",
+            diagnosticDetails: (presentedError as? StoryLoadFailure)?.report
+        )
         .sheet(item: $commentComposer) { mode in
             CommentComposerView(
                 mode: mode,
@@ -356,7 +347,7 @@ struct StoryView: View {
                 return
             } catch {
                 setOptimisticStoryVote(currentState)
-                voteError = error
+                presentedError = error
             }
         }
     }
@@ -383,7 +374,7 @@ struct StoryView: View {
                 return
             } catch {
                 setOptimisticCommentVote(comment.short_id, upvoted: currentState)
-                voteError = error
+                presentedError = error
             }
         }
     }
@@ -415,6 +406,23 @@ struct StoryView: View {
         story.story = updatedStory
     }
 
+    private func loadStory() async {
+        do {
+            try await story.load()
+        } catch is CancellationError {
+            return
+        } catch let error as URLError where error.code == .cancelled {
+            return
+        } catch {
+            presentedError = story.loadFailure ?? error
+            return
+        }
+        // Parsing can retain a readable story while marking its comments unavailable.
+        if let failure = story.loadFailure {
+            presentedError = failure
+        }
+    }
+
     private func deleteComment(_ comment: Comment) {
         activeCommentActionID = comment.short_id
         commentPendingDeletion = nil
@@ -430,55 +438,8 @@ struct StoryView: View {
             } catch is CancellationError {
                 return
             } catch {
-                voteError = error
+                presentedError = error
             }
         }
-    }
-}
-
-private struct StoryLoadErrorView: View {
-    let failure: StoryLoadFailure
-    @State private var didCopy = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label {
-                Text(failure.title).font(.headline)
-            } icon: {
-                Image(systemName: "exclamationmark.triangle")
-            }
-            .accessibilityIdentifier("story-error-title")
-            Text(failure.message)
-                .fixedSize(horizontal: false, vertical: true)
-            if let retryAt = failure.retryAt {
-                Text("Try again after \(retryAt, format: .dateTime.hour().minute().second()).")
-                    .accessibilityIdentifier("story-error-retry-time")
-            }
-            DisclosureGroup("Error Details") {
-                Text(verbatim: failure.report)
-                    .font(.caption.monospaced())
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("story-error-details")
-            }
-            Button {
-                UIPasteboard.general.string = failure.report
-                didCopy = true
-            } label: {
-                Label("Copy Error Details", systemImage: "doc.on.doc")
-            }
-            .buttonStyle(.bordered)
-            .accessibilityIdentifier("copy-story-error-details")
-            if didCopy {
-                Text("Error details copied. Paste them into your bug report.")
-                    .font(.caption)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("story-error-copied")
-            }
-        }
-        .font(.callout)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
     }
 }
