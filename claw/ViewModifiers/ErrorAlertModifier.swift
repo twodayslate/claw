@@ -35,6 +35,7 @@ struct ErrorAlertModifier: ViewModifier {
                 Button("Okay") {
                     error = nil
                 }
+                .keyboardShortcut(.defaultAction)
             } message: {
                 if let error = error {
                     let text = Text(error.localizedDescription).fontDesign(.monospaced)
