@@ -493,6 +493,98 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Retry"].exists)
     }
 
+    func testStoryAndUserLinksOpenNatively() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnksrc", in: app)
+        let storyLink = app.staticTexts["/s/lnktgt"]
+        XCTAssertTrue(storyLink.waitForExistence(timeout: 30))
+        storyLink.tap()
+        XCTAssertTrue(app.staticTexts["story-title-lnktgt"].waitForExistence(timeout: 30))
+
+        // Follow another native destination while a story sheet is already open.
+        let profileLink = app.staticTexts["/~test"]
+        XCTAssertTrue(profileLink.waitForExistence(timeout: 5))
+        profileLink.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["Stories"].exists)
+
+        try openLocalStory("lnksrc", in: app)
+        let legacyProfile = app.staticTexts["/u/test"]
+        XCTAssertTrue(legacyProfile.waitForExistence(timeout: 30))
+        reveal(legacyProfile, in: app)
+        legacyProfile.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+
+        // The title/domain/chevron action must use the same native URL routing.
+        try openLocalStory("lnksrc", in: app)
+        let title = app.buttons["story-title-lnksrc"]
+        XCTAssertTrue(title.waitForExistence(timeout: 30))
+        title.tap()
+        XCTAssertTrue(app.staticTexts["story-title-lnktgt"].waitForExistence(timeout: 30))
+        try openLocalStory("lnkusr", in: app)
+        let openStory = app.buttons["Open story"]
+        XCTAssertTrue(openStory.waitForExistence(timeout: 30))
+        openStory.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+
+        var wrapper = URLComponents(string: "claw://open")!
+        wrapper.queryItems = [URLQueryItem(name: "url", value: try localBaseURL().absoluteString + "/u/test")]
+        app.open(try XCTUnwrap(wrapper.url))
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.webViews.firstMatch.exists)
+    }
+
+    func testNativeLinkCanOpenInBrowser() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnksrc", in: app)
+        let profileLink = app.staticTexts["/~test"]
+        XCTAssertTrue(profileLink.waitForExistence(timeout: 30))
+        profileLink.press(forDuration: 1)
+        let browserAction = app.buttons["Open in Browser"]
+        XCTAssertTrue(browserAction.waitForExistence(timeout: 5))
+        browserAction.tap()
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
+    }
+
+    func testCommentAndLinkContextMenusStaySeparate() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnkctx", in: app)
+        let body = app.staticTexts["Claw link menu comment."]
+        let reply = app.staticTexts["Claw link menu reply."]
+        let toggle = app.buttons["toggle-comment-lnkcom"]
+        XCTAssertTrue(body.waitForExistence(timeout: 30))
+        XCTAssertTrue(reply.exists)
+
+        // The comment body's existing menu still shares and collapses the comment.
+        body.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Collapse"].exists)
+        XCTAssertFalse(app.buttons["Open in Browser"].exists)
+        XCTAssertFalse(app.buttons["Share Link"].exists)
+        app.buttons["Collapse"].tap()
+        XCTAssertFalse(body.exists)
+        XCTAssertFalse(reply.exists)
+        toggle.tap()
+        XCTAssertTrue(body.waitForExistence(timeout: 5))
+
+        // The child link menu has only link actions, not the parent comment's actions.
+        let link = app.staticTexts["/~test"]
+        link.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Open in Browser"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Share"].exists)
+        XCTAssertFalse(app.buttons["Collapse"].exists)
+        app.buttons["Share Link"].tap()
+        let copy = app.cells["Copy"]
+        XCTAssertTrue(copy.waitForExistence(timeout: 10))
+        copy.tap()
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        XCTAssertTrue(body.exists)
+        XCTAssertTrue(reply.exists)
+        body.press(forDuration: 1)
+        app.buttons["Share"].tap()
+        XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 10))
+    }
+
     func testCommentLinkRefocusesAfterViewAll() throws {
         try requireCommentFixture()
         let app = commentFixtureApplication()

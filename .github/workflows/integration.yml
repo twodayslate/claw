@@ -307,6 +307,10 @@ jobs:
             exit 1
           fi
 
+      - name: Seed native link fixtures
+        working-directory: ${{ env.LOBSTERS_DIRECTORY }}
+        run: docker compose run --rm -T -e LOBSTERS_BASE_URL app bin/rails runner - < ../harness/.ci/seed-native-link-fixture.rb
+
       - name: Use configured Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:

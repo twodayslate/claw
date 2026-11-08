@@ -94,6 +94,31 @@ class clawTests: XCTestCase {
         XCTAssertNil(LobstersLink(url: base.appendingPathComponent("c"), baseURL: base))
     }
 
+    func testNativeStoryAndUserLinks() throws {
+        let base = URL(string: "http://localhost:3007")!
+        for path in ["/s/story1", "/s/story1/title?source=link#comments"] {
+            let url = try XCTUnwrap(URL(string: path, relativeTo: base)?.absoluteURL)
+            XCTAssertEqual(LobstersLink(url: url, baseURL: base), .story(id: "story1", url: url))
+            XCTAssertEqual(LobstersLink(url: try XCTUnwrap(URL(string: path)), baseURL: base),
+                           .story(id: "story1", url: url))
+        }
+        for path in ["/~test", "/u/test", "/~test?source=link", "/%7Etest"] {
+            let url = try XCTUnwrap(URL(string: path, relativeTo: base)?.absoluteURL)
+            XCTAssertEqual(LobstersLink(url: url, baseURL: base), .user(username: "test"))
+            var wrapper = URLComponents(string: "claw://open")!
+            wrapper.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+            XCTAssertEqual(LobstersLink(url: try XCTUnwrap(wrapper.url), baseURL: base),
+                           .user(username: "test"))
+        }
+        for path in ["/s", "/u", "/~", "/~test/stories", "/settings"] {
+            XCTAssertNil(LobstersLink(url: try XCTUnwrap(URL(string: path)), baseURL: base))
+        }
+        for address in ["http://example.com/s/story1", "http://example.com/~test",
+                        "http://localhost:3008/s/story1", "http://localhost:3008/~test"] {
+            XCTAssertNil(LobstersLink(url: try XCTUnwrap(URL(string: address)), baseURL: base))
+        }
+    }
+
     func testDeepCommentLookupRetainsReplies() throws {
         func node(_ id: String, children: [CommentStructure] = []) -> CommentStructure {
             var comment = Comment.placeholder
