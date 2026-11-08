@@ -129,7 +129,8 @@ Links to stories (`/s/<id>` with or without a title), profiles (`/~<username>`
 or `/u/<username>`), and comments open inside Claw. This includes story title,
 domain, and chevron taps when the submitted URL points to a supported Lobsters
 page. Long-press a link block and choose **Open in Browser** to use the selected
-browser for that link instead.
+browser for that link instead. **Share Link** shares the link's full URL, including
+resolving relative links against the current page.
 Inside comments, that menu also includes the comment's **Share** and **Collapse**
 actions. Long-pressing the comment body retains its existing menu.
 

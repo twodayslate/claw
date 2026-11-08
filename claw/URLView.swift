@@ -43,13 +43,16 @@ struct URLView: View {
             openURL(url)
         }
         .contextMenu {
-            if let url = browserURL, LobstersLink(url: url) != nil {
-                Button("Open in Browser", systemImage: "safari") {
-                    // Bypass native routing only for this explicit action.
-                    if settings.browser == .inAppSafari {
-                        urlToOpen.url = url
-                    } else {
-                        UIApplication.shared.open(url)
+            if let url = resolvedURL {
+                ShareLink("Share Link", item: url)
+                if LobstersLink(url: url) != nil {
+                    Button("Open in Browser", systemImage: "safari") {
+                        // Bypass native routing only for this explicit action.
+                        if settings.browser == .inAppSafari {
+                            urlToOpen.url = url
+                        } else {
+                            UIApplication.shared.open(url)
+                        }
                     }
                 }
             }
@@ -59,7 +62,7 @@ struct URLView: View {
         }
     }
 
-    private var browserURL: URL? {
+    private var resolvedURL: URL? {
         guard let url = fixedUpUrl else { return nil }
         return URL(string: url.relativeString,
                    relativeTo: pageURL ?? APIConfiguration.shared.baseURL)?.absoluteURL
