@@ -9,6 +9,8 @@ import SwiftUI
 
 struct URLView: View {
     var link: HTMLLink
+    var pageURL: URL? = nil
+    @Environment(Settings.self) private var settings
     @Environment(\.openURL) private var openURL
     @EnvironmentObject var urlToOpen: ObservableURL
     @EnvironmentObject var observableSheet: ObservableActiveSheet
@@ -39,6 +41,24 @@ struct URLView: View {
             }
             openURL(url)
         }
+        .contextMenu {
+            if let url = browserURL, LobstersLink(url: url) != nil {
+                Button("Open in Browser", systemImage: "safari") {
+                    // Bypass native routing only for this explicit action.
+                    if settings.browser == .inAppSafari {
+                        urlToOpen.url = url
+                    } else {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+        }
+    }
+
+    private var browserURL: URL? {
+        guard let url = fixedUpUrl else { return nil }
+        return URL(string: url.relativeString,
+                   relativeTo: pageURL ?? APIConfiguration.shared.baseURL)?.absoluteURL
     }
 
     var fixedUpUrl: URL? {

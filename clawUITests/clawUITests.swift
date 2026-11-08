@@ -493,6 +493,59 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Retry"].exists)
     }
 
+    func testStoryAndUserLinksOpenNatively() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnksrc", in: app)
+        let storyLink = app.staticTexts["/s/lnktgt"]
+        XCTAssertTrue(storyLink.waitForExistence(timeout: 30))
+        storyLink.tap()
+        XCTAssertTrue(app.staticTexts["story-title-lnktgt"].waitForExistence(timeout: 30))
+
+        // Follow another native destination while a story sheet is already open.
+        let profileLink = app.staticTexts["/~test"]
+        XCTAssertTrue(profileLink.waitForExistence(timeout: 5))
+        profileLink.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["Stories"].exists)
+
+        try openLocalStory("lnksrc", in: app)
+        let legacyProfile = app.staticTexts["/u/test"]
+        XCTAssertTrue(legacyProfile.waitForExistence(timeout: 30))
+        reveal(legacyProfile, in: app)
+        legacyProfile.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+
+        // The title/domain/chevron action must use the same native URL routing.
+        try openLocalStory("lnksrc", in: app)
+        let title = app.buttons["story-title-lnksrc"]
+        XCTAssertTrue(title.waitForExistence(timeout: 30))
+        title.tap()
+        XCTAssertTrue(app.staticTexts["story-title-lnktgt"].waitForExistence(timeout: 30))
+        try openLocalStory("lnkusr", in: app)
+        let openStory = app.buttons["Open story"]
+        XCTAssertTrue(openStory.waitForExistence(timeout: 30))
+        openStory.tap()
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+
+        var wrapper = URLComponents(string: "claw://open")!
+        wrapper.queryItems = [URLQueryItem(name: "url", value: try localBaseURL().absoluteString + "/u/test")]
+        app.open(try XCTUnwrap(wrapper.url))
+        XCTAssertTrue(app.staticTexts["Claw native profile destination."].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.webViews.firstMatch.exists)
+    }
+
+    func testNativeLinkCanOpenInBrowser() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnksrc", in: app)
+        let profileLink = app.staticTexts["/~test"]
+        XCTAssertTrue(profileLink.waitForExistence(timeout: 30))
+        profileLink.press(forDuration: 1)
+        let browserAction = app.buttons["Open in Browser"]
+        XCTAssertTrue(browserAction.waitForExistence(timeout: 5))
+        browserAction.tap()
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
+    }
+
     func testCommentLinkRefocusesAfterViewAll() throws {
         try requireCommentFixture()
         let app = commentFixtureApplication()

@@ -7,7 +7,7 @@ struct StoryHeaderView<T: GenericStory>: View {
     var isVoting = false
     var voteAction: (() -> Void)?
         
-    @Environment(Settings.self) var settings
+    @Environment(\.openURL) private var openURL
     
     @State var backgroundColorState = Color(UIColor.systemBackground)
     
@@ -131,7 +131,8 @@ struct StoryHeaderView<T: GenericStory>: View {
                     let html = HTMLView(html: story.description.trimmingCharacters(in: .whitespacesAndNewlines))
                     html.fixedSize(horizontal: false, vertical: true)
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link).environmentObject(urlToOpen)
+                        URLView(link: link, pageURL: URL(string: story.comments_url))
+                            .environmentObject(urlToOpen)
                     }
                 }.padding()
             }
@@ -158,11 +159,7 @@ struct StoryHeaderView<T: GenericStory>: View {
                 backgroundColorState = Color(UIColor.systemBackground)
             }
         }
-        if settings.browser == .inAppSafari {
-            urlToOpen.url = url
-        } else {
-            UIApplication.shared.open(url)
-        }
+        openURL(url)
     }
 }
 

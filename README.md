@@ -122,3 +122,24 @@ Comments are projected into one lazy list of visible rows. Collapse state is key
 by comment ID, while local indentation and original discussion depth are separate.
 Each row draws its own ancestor guides; it does not contain or measure descendant
 views. This keeps subtree changes and width changes out of nested lazy layout.
+
+#### Native story and profile links
+
+Links to stories (`/s/<id>` with or without a title), profiles (`/~<username>`
+or `/u/<username>`), and comments open inside Claw. This includes story title,
+domain, and chevron taps when the submitted URL points to a supported Lobsters
+page. Long-press a link block and choose **Open in Browser** to use the selected
+browser for that link instead.
+
+The integration workflow seeds and tests native story/profile navigation and
+the browser override. To run these checks locally, seed a disposable server
+with its actual loopback URL and Compose project name:
+
+```sh
+LOBSTERS_BASE_URL=http://localhost:3007 COMPOSE_PROJECT_NAME=claw-lobsters-<unique-id> \
+  docker compose run --rm -T -e LOBSTERS_BASE_URL app bin/rails runner - \
+  < /path/to/claw/.ci/seed-native-link-fixture.rb
+```
+
+Run `testStoryAndUserLinksOpenNatively` and `testNativeLinkCanOpenInBrowser` in
+`clawUITests` with `CLAW_UI_TEST_BASE_URL` set to the same URL in `xcodebuild`.
