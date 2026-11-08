@@ -67,6 +67,15 @@ struct CommentStructure: Codable, Identifiable {
     var comment: Comment
     var children: [CommentStructure] = []
 
+    /// Retain the discussion depth when opening a subtree directly.
+    func find(_ commentID: String, atDepth depth: Int = 0) -> (thread: CommentStructure, depth: Int)? {
+        if id == commentID { return (self, depth) }
+        for child in children {
+            if let found = child.find(commentID, atDepth: depth + 1) { return found }
+        }
+        return nil
+    }
+
     func addChild(_ child: Comment) -> Self {
         var newChildren = children
         newChildren.append(CommentStructure(comment: child))
@@ -82,11 +91,7 @@ struct CommentStructure: Codable, Identifiable {
     }
 }
 
-extension CommentStructure: Equatable {
-    static func == (lhs: CommentStructure, rhs: CommentStructure) -> Bool {
-        return lhs.id == rhs.id && rhs.children == lhs.children
-    }
-}
+extension CommentStructure: Equatable {}
 
 struct Comment: Codable, Hashable, Identifiable {
     var id: String {
@@ -340,7 +345,8 @@ class StoryFetcher: ObservableObject {
             return
         }
         let generation = contentGeneration
-        if let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
+        let isCommentLink = pageURL?.pathComponents.dropFirst().first == "c"
+        if !isCommentLink, let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
         }
         let configuredURL = APIConfiguration.shared.storyURL(shortId: short_id)
@@ -391,13 +397,14 @@ class StoryFetcher: ObservableObject {
             return
         }
         self.story = parsedStory
+        self.short_id = parsedStory.short_id
         loadFailure = parsedStory.comments_unavailable == true
             ? StoryLoadFailure(error: StoryHTMLParserError.incompatibleComments,
                 stage: .commentsParsing, url: webpage.url, statusCode: webpage.response.statusCode)
             : nil
         loadFailed = false
 
-        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == short_id})
+        StoryFetcher.cachedStories.removeAll(where: {$0.short_id == parsedStory.short_id})
         StoryFetcher.cachedStories.append(parsedStory)
         if StoryFetcher.cachedStories.count > 10 {
             StoryFetcher.cachedStories.removeFirst()

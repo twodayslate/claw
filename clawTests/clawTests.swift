@@ -58,6 +58,122 @@ class clawTests: XCTestCase {
         )
     }
 
+    func testCommentDepthUsesAvailableWidth() {
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 390), 3)
+        XCTAssertGreaterThan(CommentThreadLayout.maximumIndentLevel(width: 820), 3)
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 320), 1)
+        XCTAssertEqual(CommentThreadLayout.maximumIndentLevel(width: 0), 1)
+        XCTAssertLessThan(CommentThreadLayout.maximumIndentLevel(width: 820, minimumReadingWidth: 560),
+                          CommentThreadLayout.maximumIndentLevel(width: 820))
+    }
+
+    func testNativeCommentLinksPreserveTheirTargets() throws {
+        let base = URL(string: "http://localhost:3006")!
+        let comment = base.appendingPathComponent("c/deep123")
+        XCTAssertEqual(LobstersLink(url: comment, baseURL: base), .comment(id: "deep123", url: comment))
+        XCTAssertEqual(LobstersLink.commentID(in: comment), "deep123")
+
+        let story = URL(string: "http://localhost:3006/s/story1/title?source=a&other=b#c_deep123")!
+        var wrapper = URLComponents(string: "claw://open")!
+        wrapper.queryItems = [URLQueryItem(name: "source", value: "extension"),
+                              URLQueryItem(name: "url", value: story.absoluteString)]
+        XCTAssertEqual(LobstersLink.unwrap(try XCTUnwrap(wrapper.url)), story)
+        XCTAssertEqual(LobstersLink(url: try XCTUnwrap(wrapper.url), baseURL: base),
+                       .story(id: "story1", url: story))
+        XCTAssertEqual(LobstersLink.commentID(in: story), "deep123")
+        XCTAssertEqual(LobstersLink.commentID(in: LobstersLink.unwrap(
+            URL(string: "claw://open?url=http://localhost:3006/s/story1/title#c_deep123")!)), "deep123")
+        XCTAssertNil(LobstersLink.commentID(in: URL(string: "http://localhost:3006/s/story1#comments")))
+        XCTAssertNil(LobstersLink(url: URL(string: "http://example.com/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: URL(string: "http://localhost:3007/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: URL(string: "https://localhost:3006/c/deep123")!, baseURL: base))
+        let defaultPort = URL(string: "http://localhost:80/c/deep123")!
+        XCTAssertEqual(LobstersLink(url: defaultPort, baseURL: URL(string: "http://localhost")!),
+                       .comment(id: "deep123", url: defaultPort))
+        XCTAssertNil(LobstersLink(url: URL(string: "file://localhost:3006/c/deep123")!, baseURL: base))
+        XCTAssertNil(LobstersLink(url: base.appendingPathComponent("c"), baseURL: base))
+    }
+
+    func testDeepCommentLookupRetainsReplies() throws {
+        func node(_ id: String, children: [CommentStructure] = []) -> CommentStructure {
+            var comment = Comment.placeholder
+            comment.short_id = id
+            return CommentStructure(comment: comment, children: children)
+        }
+        let leaf = node("leaf")
+        let target = node("target", children: [leaf])
+        let tree = node("root", children: [node("sibling"), node("parent", children: [target])])
+        let focused = try XCTUnwrap(tree.find("target"))
+        XCTAssertEqual(focused.thread, target)
+        XCTAssertEqual(focused.thread.children.first?.id, "leaf")
+        XCTAssertEqual(focused.depth, 2)
+        XCTAssertEqual(tree.find("root")?.depth, 0)
+        XCTAssertEqual(tree.find("sibling")?.depth, 1)
+        // Searching again after re-rooting must retain the full discussion depth.
+        let nested = focused.thread.find("leaf", atDepth: focused.depth)
+        XCTAssertEqual(nested?.depth, 3)
+        XCTAssertEqual(nested?.depth, tree.find("leaf")?.depth)
+        XCTAssertNil(tree.find("missing"))
+    }
+
+    func testVisibleCommentRowsRespectCollapseAndContinuation() {
+        func node(_ id: String, _ children: [CommentStructure] = []) -> CommentStructure {
+            var comment = Comment.placeholder
+            comment.short_id = id
+            return CommentStructure(comment: comment, children: children)
+        }
+        let roots = [node("root", [node("child", [node("grandchild", [node("leaf")])]),
+                                    node("sibling")]), node("other")]
+        let limited = CommentThreadLayout.rows(for: roots, maximumIndentLevel: 1)
+        XCTAssertEqual(limited.map(\.id), ["root", "child", "sibling", "other"])
+        XCTAssertEqual(limited.map(\.indentLevel), [0, 1, 1, 0])
+        XCTAssertEqual(limited.filter(\.continuesThread).map(\.id), ["child"])
+
+        var expansion = CommentExpansionState()
+        expansion[expanded: "child"] = false
+        expansion[expanded: "root"] = false
+        XCTAssertEqual(CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs).map(\.id), ["root", "other"])
+        expansion[expanded: "root"] = true
+        let reopened = CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs)
+        XCTAssertEqual(reopened.map(\.id), ["root", "child", "sibling", "other"])
+        XCTAssertFalse(reopened.contains(where: \.continuesThread))
+        expansion[expanded: "child"] = true
+        XCTAssertEqual(CommentThreadLayout.rows(for: roots, maximumIndentLevel: 10,
+            collapsedIDs: expansion.collapsedIDs).map(\.id),
+            ["root", "child", "grandchild", "leaf", "sibling", "other"])
+    }
+
+    func testVisibleCommentRowsKeepIdentityAndDepthWhenRerooted() throws {
+        var parent = Comment.placeholder
+        parent.short_id = "parent"
+        var reply = Comment.placeholder
+        reply.short_id = "reply"
+        let subtree = CommentStructure(comment: parent, children: [CommentStructure(comment: reply)])
+        var root = Comment.placeholder
+        root.short_id = "root"
+        let full = CommentThreadLayout.rows(for: [CommentStructure(comment: root, children: [subtree])],
+            maximumIndentLevel: 3)
+        let focused = CommentThreadLayout.rows(for: [subtree], rootDepth: 1, maximumIndentLevel: 3)
+        let originalReply = try XCTUnwrap(full.first { $0.id == "reply" })
+        let focusedReply = try XCTUnwrap(focused.first { $0.id == "reply" })
+        XCTAssertEqual(originalReply.id, focusedReply.id)
+        XCTAssertEqual(originalReply.commentDepth, focusedReply.commentDepth)
+        XCTAssertEqual(originalReply.indentLevel, 2)
+        XCTAssertEqual(focusedReply.indentLevel, 1)
+
+        // Identity stays stable on refresh, but edited/voted content must still
+        // invalidate the row instead of comparing equal by IDs alone.
+        var updated = subtree
+        updated.children[0].comment.comment = "Edited reply"
+        updated.children[0].comment.score += 1
+        XCTAssertNotEqual(subtree, updated)
+        let refreshed = CommentThreadLayout.rows(for: [updated], rootDepth: 1, maximumIndentLevel: 3)
+        XCTAssertEqual(refreshed.map(\.id), focused.map(\.id))
+        XCTAssertEqual(refreshed.last?.comment.comment, "Edited reply")
+    }
+
     func testStoryHTMLParserParsesNestedComments() throws {
         let html = """
         <html>

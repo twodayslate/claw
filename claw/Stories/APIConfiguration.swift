@@ -193,3 +193,55 @@ final class APIConfiguration: Sendable {
         }
     }
 }
+
+/// Native destinations accepted from links and the Open in claw extension.
+enum LobstersLink: Equatable {
+    case story(id: String, url: URL)
+    case comment(id: String, url: URL)
+    case user(username: String)
+
+    static func unwrap(_ url: URL) -> URL {
+        guard url.scheme == "claw", url.host == "open",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let value = components.queryItems?.first(where: { $0.name == "url" })?.value,
+              var destination = URLComponents(string: value) else { return url }
+        // Older extension versions left the nested URL's fragment unescaped.
+        if destination.fragment == nil { destination.fragment = components.fragment }
+        return destination.url ?? url
+    }
+
+    init?(url: URL, baseURL: URL = APIConfiguration.shared.baseURL) {
+        let url = Self.unwrap(url)
+        guard let resolved = URL(string: url.relativeString, relativeTo: baseURL)?.absoluteURL,
+              ["http", "https"].contains(resolved.scheme?.lowercased() ?? ""),
+              resolved.scheme?.lowercased() == baseURL.scheme?.lowercased(),
+              resolved.host?.lowercased() == baseURL.host?.lowercased(),
+              Self.effectivePort(resolved) == Self.effectivePort(baseURL) else { return nil }
+        let parts = resolved.pathComponents
+        if parts.count >= 3, parts[1] == "s", !parts[2].isEmpty {
+            self = .story(id: parts[2], url: resolved)
+        } else if parts.count == 3, parts[1] == "c", !parts[2].isEmpty {
+            self = .comment(id: parts[2], url: resolved)
+        } else if parts.count == 3, parts[1] == "u" {
+            self = .user(username: parts[2])
+        } else if parts.count == 2, parts[1].hasPrefix("~"), parts[1].count > 1 {
+            self = .user(username: String(parts[1].dropFirst()))
+        } else {
+            return nil
+        }
+    }
+
+    private static func effectivePort(_ url: URL) -> Int? {
+        url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80)
+    }
+
+    static func commentID(in url: URL?) -> String? {
+        guard let url else { return nil }
+        let parts = url.pathComponents
+        if parts.count == 3, parts[1] == "c" { return parts[2] }
+        guard let fragment = url.fragment, fragment.hasPrefix("c_"), fragment.count > 2 else {
+            return nil
+        }
+        return String(fragment.dropFirst(2))
+    }
+}

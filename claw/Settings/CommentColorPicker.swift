@@ -10,19 +10,29 @@ import SwiftData
 import SimpleCommon
 
 struct RedactedCommentColorPickerPreview: View {
+    private static let previewComments: [CommentStructure] = {
+        var children: [CommentStructure] = []
+        for depth in (0..<8).reversed() {
+            var comment = Comment.placeholder
+            comment.short_id = "color-preview-\(depth)"
+            children = [CommentStructure(comment: comment, children: children)]
+        }
+        return children
+    }()
+
     var body: some View {
         ScrollViewReader { reader in
             ScrollView {
-                HierarchyList(data: [CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder).addChild(CommentStructure(comment: Comment.placeholder))))))))], header: { comment in
+                HierarchyList(data: Self.previewComments, header: { comment in
                     HStack {
-                        Text(comment.comment.commenting_user)
+                        Text(comment.commenting_user)
                         Spacer()
-                        Text("\(Image(systemName: "arrow.up")) \(comment.comment.displayedScore)").foregroundColor(.gray)
+                        Text("\(Image(systemName: "arrow.up")) \(comment.displayedScore)").foregroundColor(.gray)
                     }
                     .foregroundColor(.gray)
                     .redacted(reason: .placeholder)
                 }, rowContent: { comment in
-                    Text(comment.comment.comment)
+                    Text(comment.comment)
                         .redacted(reason: .placeholder)
                 })
                 .disabled(true)

@@ -1,129 +1,200 @@
 import SwiftUI
 
-// From https://fivestars.blog/code/swiftui-hierarchy-list.html
+/// The visible discussion is a sequence of rows, not a tree of lazy containers.
+/// Indentation is local to the page; discussion depth is retained for colors.
+struct CommentThreadRow: Identifiable {
+    let comment: Comment
+    let continuation: CommentStructure?
+    let indentLevel: Int
+    let commentDepth: Int
+    var continuesThread: Bool { continuation != nil }
+    var id: String { comment.id }
+}
+
+struct CommentExpansionState {
+    private(set) var collapsedIDs: Set<String> = []
+
+    subscript(expanded id: String) -> Bool {
+        get { !collapsedIDs.contains(id) }
+        set {
+            if newValue { collapsedIDs.remove(id) }
+            else { collapsedIDs.insert(id) }
+        }
+    }
+}
+
+enum CommentThreadLayout {
+    static func maximumIndentLevel(width: CGFloat, minimumReadingWidth: CGFloat = 280) -> Int {
+        // Each reply adds 20 points leading and 4 trailing, plus 32 at the root.
+        // Always expose at least one reply so continuation pages make progress.
+        max(1, Int((width - 32 - minimumReadingWidth) / 24))
+    }
+
+    static func rows(
+        for roots: [CommentStructure],
+        rootDepth: Int = 0,
+        maximumIndentLevel: Int,
+        collapsedIDs: Set<String> = []
+    ) -> [CommentThreadRow] {
+        var result: [CommentThreadRow] = []
+        func append(_ nodes: [CommentStructure], indentLevel: Int) {
+            for node in nodes {
+                let expanded = !collapsedIDs.contains(node.id)
+                let continues = expanded && !node.children.isEmpty && indentLevel >= maximumIndentLevel
+                result.append(CommentThreadRow(comment: node.comment, continuation: continues ? node : nil,
+                    indentLevel: indentLevel, commentDepth: rootDepth + indentLevel))
+                if expanded && !continues {
+                    append(node.children, indentLevel: indentLevel + 1)
+                }
+            }
+        }
+        append(roots, indentLevel: 0)
+        return result
+    }
+}
 
 public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
-    
     let data: [CommentStructure]
-    let header: (CommentStructure) -> HeaderContent
-    let rowContent: (CommentStructure) -> RowContent
-    @State var sharedComment: Comment?
-    
+    let header: (Comment) -> HeaderContent
+    let rowContent: (Comment) -> RowContent
+    var highlightedCommentID: String? = nil
+    var rootDepth: Int = 0
+    @State private var sharedComment: Comment?
+    @State private var expansion = CommentExpansionState()
+    @State private var maximumIndentLevel = 3
+    @ScaledMetric(relativeTo: .body) private var minimumReadingWidth: CGFloat = 280
+
     public var body: some View {
-        // this should be a LazyVStack but there is a bug
-        // https://developer.apple.com/forums/thread/658199
+        let rows = CommentThreadLayout.rows(for: data, rootDepth: rootDepth,
+            maximumIndentLevel: maximumIndentLevel, collapsedIDs: expansion.collapsedIDs)
         LazyVStack(alignment: .leading, spacing: 0) {
-            RecursiveView(data: data, header: header, rowContent: rowContent, indentLevel: 0, sharedComment: $sharedComment)
+            ForEach(rows) { row in
+                CommentThreadRowView(row: row, header: header, rowContent: rowContent,
+                    highlighted: row.id == highlightedCommentID,
+                    isExpanded: $expansion[expanded: row.id], sharedComment: $sharedComment)
+            }
         }
-        .sheet(item: $sharedComment, content: { item in
-            ShareSheet(activityItems: [URL(string: item.short_id_url)!])
-        })
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: Int.self) { geometry in
+            CommentThreadLayout.maximumIndentLevel(width: geometry.size.width,
+                minimumReadingWidth: minimumReadingWidth)
+        } action: { limit in
+            maximumIndentLevel = limit
+        }
+        .sheet(item: $sharedComment) { comment in
+            ShareSheet(activityItems: [URL(string: comment.short_id_url)!])
+        }
     }
 }
 
-private struct RecursiveView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
-    let data: [CommentStructure]
-    let header: (CommentStructure) -> HeaderContent
-    let rowContent: (CommentStructure) -> RowContent
-    let indentLevel: Int
-    
-    @Binding var sharedComment: Comment?
-    
+private struct CommentThreadView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
+    let parent: CommentStructure
+    let parentDepth: Int
+    let header: (Comment) -> HeaderContent
+    let rowContent: (Comment) -> RowContent
+
     var body: some View {
-        ForEach(data) { child in
-            HierarchyCommentView(header: header, rowContent: rowContent, indentLevel: indentLevel, child: child, sharedComment: $sharedComment, last: child == data.last!)
+        ScrollView {
+            HierarchyList(data: [parent], header: header, rowContent: rowContent, rootDepth: parentDepth)
+                .padding(.bottom)
         }
+        .navigationTitle("Thread")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-struct HierarchyCommentView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
-    
-    let header: (CommentStructure) -> HeaderContent
-    let rowContent: (CommentStructure) -> RowContent
-    let indentLevel: Int
-    
-    var child: CommentStructure
-
-    @Environment(Settings.self) var settings
-    
+private struct CommentThreadRowView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
+    let row: CommentThreadRow
+    let header: (Comment) -> HeaderContent
+    let rowContent: (Comment) -> RowContent
+    let highlighted: Bool
+    @Binding var isExpanded: Bool
     @Binding var sharedComment: Comment?
-    
-    @State var showShareSheet = false
-    
-    var last = false
-    
-    var commentColor: Color {
-        let index = indentLevel % 7
-        if settings.commentColorScheme.colors.count < index {
-            return .accentColor
-        }
-        return settings.commentColorScheme.colors[index]
-    }
-    
-    @State var isExpanded: Bool = true
-    
-    @State var backgroundColorState = Color(UIColor.systemBackground)
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if highlighted {
+                Text("Linked comment")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding([.top, .leading])
+            }
             HStack {
-                header(child).padding([.leading])
-                Button {
-                    withAnimation {
-                        isExpanded.toggle()
-                    }
-                } label: {
+                header(row.comment).padding(.leading)
+                Button(action: toggleExpanded) {
                     Image(systemName: "chevron.down")
                         .rotationEffect(isExpanded ? .zero : .degrees(-90))
                 }
+                .accessibilityLabel(isExpanded ? Text("Collapse comment") : Text("Expand comment"))
+                .accessibilityIdentifier("toggle-comment-\(row.id)")
             }
-            .padding([.top, .bottom])
+            .padding(.vertical)
             if isExpanded {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    rowContent(child)
-                        .padding([.leading])
-                        .padding(.bottom, child.children.isEmpty ? nil : 0.0)
-                    if !child.children.isEmpty {
-                        Divider().padding([.top, .leading])
-                        RecursiveView(data: child.children, header: header, rowContent: rowContent, indentLevel: indentLevel+1, sharedComment: $sharedComment)
-                            .padding([.leading], 4)
-                            .overlay(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 8.0)
-                                    .foregroundColor(self.commentColor)
-                                    .frame(width: 3, alignment: .leading)
-                                    .padding([.top, .bottom], 8.0)
-                            }
-                            .padding([.leading], 16)
+                rowContent(row.comment)
+                    .padding([.leading, .bottom])
+                if let parent = row.continuation {
+                    NavigationLink {
+                        CommentThreadView(parent: parent, parentDepth: row.commentDepth,
+                            header: header, rowContent: rowContent)
+                    } label: {
+                        Label("Continue thread", systemImage: "arrow.turn.down.right")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .padding([.leading, .bottom])
+                    .accessibilityHint("Opens the replies with less indentation")
+                    .accessibilityIdentifier("continue-thread-\(row.id)")
                 }
-                .padding(indentLevel > 0 ? [.trailing] : [], 4.0)
             }
-            if !last {
-                Divider().padding([.horizontal])
+            Divider().padding(.leading)
+        }
+        .padding(.leading, CGFloat(row.indentLevel) * 20)
+        .padding(.trailing, 16 + CGFloat(row.indentLevel) * 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(uiColor: .systemBackground))
+        .overlay(alignment: .leading) {
+            CommentIndentGuides(indentLevel: row.indentLevel,
+                rootDepth: row.commentDepth - row.indentLevel)
+        }
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                sharedComment = row.comment
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            Button(action: toggleExpanded) {
+                Label(isExpanded ? "Collapse" : "Expand",
+                    systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")
             }
         }
-        .padding(indentLevel == 0 ? [.trailing] : [])
-        .background(backgroundColorState.edgesIgnoringSafeArea(.all))
-        .contextMenu(menuItems: {
-            Button(action: {
-                sharedComment = child.comment
-            }, label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-            })
-            Button(action: {
-                withAnimation(.easeIn) {
-                    isExpanded.toggle()
-                }
-            }, label: {Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")})
-        })
-        .onTapGesture(count: 1, perform: {
-            withAnimation(.easeIn) {
-                backgroundColorState = Color(UIColor.systemGray4)
-                withAnimation(.easeOut) {
-                    backgroundColorState = Color(UIColor.systemBackground)
-                    isExpanded.toggle()
-                }
+        .onTapGesture(perform: toggleExpanded)
+    }
+
+    private func toggleExpanded() {
+        withAnimation { isExpanded.toggle() }
+    }
+}
+
+/// Each row draws its ancestors' guides without measuring or wrapping descendants.
+private struct CommentIndentGuides: View {
+    let indentLevel: Int
+    let rootDepth: Int
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        let colors = settings.commentColorScheme.colors
+        ZStack(alignment: .leading) {
+            ForEach(0..<indentLevel, id: \.self) { level in
+                Rectangle()
+                    .fill(colors.isEmpty ? Color.accentColor : colors[(rootDepth + level) % colors.count])
+                    .frame(width: 3)
+                    .padding(.leading, 16 + CGFloat(level) * 20)
             }
-        })
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
