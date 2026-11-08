@@ -130,6 +130,8 @@ or `/u/<username>`), and comments open inside Claw. This includes story title,
 domain, and chevron taps when the submitted URL points to a supported Lobsters
 page. Long-press a link block and choose **Open in Browser** to use the selected
 browser for that link instead.
+Inside comments, that menu also includes the comment's **Share** and **Collapse**
+actions. Long-pressing the comment body retains its existing menu.
 
 The integration workflow seeds and tests native story/profile navigation and
 the browser override. To run these checks locally, seed a disposable server
@@ -141,5 +143,6 @@ LOBSTERS_BASE_URL=http://localhost:3007 COMPOSE_PROJECT_NAME=claw-lobsters-<uniq
   < /path/to/claw/.ci/seed-native-link-fixture.rb
 ```
 
-Run `testStoryAndUserLinksOpenNatively` and `testNativeLinkCanOpenInBrowser` in
+Run `testStoryAndUserLinksOpenNatively`, `testNativeLinkCanOpenInBrowser`, and
+`testCommentAndLinkContextMenusShareActions` in
 `clawUITests` with `CLAW_UI_TEST_BASE_URL` set to the same URL in `xcodebuild`.

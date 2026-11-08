@@ -31,7 +31,7 @@ struct RedactedCommentColorPickerPreview: View {
                     }
                     .foregroundColor(.gray)
                     .redacted(reason: .placeholder)
-                }, rowContent: { comment in
+                }, rowContent: { comment, _ in
                     Text(comment.comment)
                         .redacted(reason: .placeholder)
                 })

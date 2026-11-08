@@ -546,6 +546,42 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
     }
 
+    func testCommentAndLinkContextMenusShareActions() throws {
+        let app = configuredApplication()
+        try openLocalStory("lnkctx", in: app)
+        let body = app.staticTexts["Claw link menu comment."]
+        let reply = app.staticTexts["Claw link menu reply."]
+        let toggle = app.buttons["toggle-comment-lnkcom"]
+        XCTAssertTrue(body.waitForExistence(timeout: 30))
+        XCTAssertTrue(reply.exists)
+
+        // The comment body's existing menu still shares and collapses the comment.
+        body.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Collapse"].exists)
+        XCTAssertFalse(app.buttons["Open in Browser"].exists)
+        app.buttons["Collapse"].tap()
+        XCTAssertFalse(body.exists)
+        XCTAssertFalse(reply.exists)
+        toggle.tap()
+        XCTAssertTrue(body.waitForExistence(timeout: 5))
+
+        // A link menu includes both the link action and its parent comment actions.
+        let link = app.staticTexts["/~test"]
+        link.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Open in Browser"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Share"].exists)
+        XCTAssertTrue(app.buttons["Collapse"].exists)
+        app.buttons["Collapse"].tap()
+        XCTAssertFalse(body.exists)
+        XCTAssertFalse(reply.exists)
+        toggle.tap()
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.press(forDuration: 1)
+        app.buttons["Share"].tap()
+        XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 10))
+    }
+
     func testCommentLinkRefocusesAfterViewAll() throws {
         try requireCommentFixture()
         let app = commentFixtureApplication()
