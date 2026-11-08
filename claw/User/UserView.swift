@@ -182,7 +182,7 @@ struct UserView: View {
                 } else {
                     ForEach(stories.items) { story in
                         StoryListCellView(story: story)
-                            .id(story)
+                            .id(story.id)
                             .task {
                                 do {
                                     try await stories.more(story)

@@ -270,6 +270,8 @@ class StoryFetcher: ObservableObject {
     public var pageURL: URL? = nil
     private let webpageFetcher: WebpageFetcher
     private var contentGeneration: UInt = 0
+    private var pendingLoad: (generation: UInt, task: Task<Void, Error>)?
+    private var hasRequestedContent = false
 
     init(
         _ short_id: String? = nil,
@@ -287,7 +289,7 @@ class StoryFetcher: ObservableObject {
     static func reloadLiveFetchers() async {
         liveFetchers.removeAll { $0.value == nil }
         let fetchers = liveFetchers.compactMap(\.value)
-        for fetcher in fetchers {
+        for fetcher in fetchers where fetcher.hasRequestedContent {
             try? await fetcher.loadSupersedingPendingLoads()
         }
     }
@@ -302,6 +304,8 @@ class StoryFetcher: ObservableObject {
 
     private func supersedePendingLoads() {
         contentGeneration &+= 1
+        pendingLoad?.task.cancel()
+        pendingLoad = nil
         isReloading = false
     }
 
@@ -341,10 +345,27 @@ class StoryFetcher: ObservableObject {
     }
 
     func load() async throws {
-        guard let short_id = self.short_id else {
+        try Task.checkCancellation()
+        if let pendingLoad {
+            try await pendingLoad.task.value
             return
         }
+        guard short_id != nil else { return }
         let generation = contentGeneration
+        hasRequestedContent = true
+        // Share the result as well as the request. A brief disappearance should
+        // not cancel a read that another appearance is already waiting for.
+        let task = Task { try await performLoad(generation: generation) }
+        pendingLoad = (generation, task)
+        defer {
+            if pendingLoad?.generation == generation { pendingLoad = nil }
+        }
+        try await task.value
+    }
+
+    private func performLoad(generation: UInt) async throws {
+        try Task.checkCancellation()
+        guard isCurrentContentGeneration(generation), let short_id else { return }
         let isCommentLink = pageURL?.pathComponents.dropFirst().first == "c"
         if !isCommentLink, let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory

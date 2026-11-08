@@ -200,14 +200,8 @@ struct StoryView: View {
             .task {
                 self.story.short_id = self.short_id
                 self.story.pageURL = self.commentsURL
-                await loadStory()
-                guard let loadedStory = self.story.story else { return }
-                if storeModel.owned {
-                    lobstersSession.prepareStory(
-                        shortID: resolvedStoryID,
-                        commentsURL: resolvedStoryURL
-                    )
-                }
+                await loadStory(onlyIfEmpty: true)
+                guard !Task.isCancelled, let loadedStory = self.story.story else { return }
                 let contains = viewedItems.contains { element in
                     element.short_id == loadedStory.short_id && element.isStory
                 }
@@ -460,19 +454,24 @@ struct StoryView: View {
         story.story = updatedStory
     }
 
-    private func loadStory() async {
+    private func loadStory(onlyIfEmpty: Bool = false) async {
         do {
-            try await story.load()
+            if onlyIfEmpty {
+                try await story.loadIfEmpty()
+            } else {
+                try await story.load()
+            }
         } catch is CancellationError {
             return
         } catch let error as URLError where error.code == .cancelled {
             return
         } catch {
+            guard !Task.isCancelled else { return }
             presentedError = story.loadFailure ?? error
             return
         }
         // Parsing can retain a readable story while marking its comments unavailable.
-        if let failure = story.loadFailure {
+        if !Task.isCancelled, let failure = story.loadFailure {
             presentedError = failure
         }
     }

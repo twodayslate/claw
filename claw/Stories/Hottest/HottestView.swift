@@ -28,7 +28,7 @@ struct HottestView: View {
                         StoryFeedEmptyView(loadFailed: hottest.loadFailed)
                     } else {
                         ForEach(hottest.items) { story in
-                            StoryListCellView(story: story).id(story).task {
+                            StoryListCellView(story: story).id(story.id).task {
                                 do {
                                     try await self.hottest.more(story)
                                 } catch {
@@ -58,7 +58,7 @@ struct HottestView: View {
                     DispatchQueue.main.async {
                         if self.isVisible {
                             withAnimation {
-                                scrollProxy.scrollTo(hottest.items.first)
+                                scrollProxy.scrollTo(hottest.items.first?.id)
                             }
                         }
                     }

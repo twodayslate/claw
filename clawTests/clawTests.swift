@@ -1505,8 +1505,10 @@ class clawTests: XCTestCase {
             let loadedFeedURL = try XCTUnwrap(feedClient.currentURL)
 
             let storyURL = configuration.storyURL(shortId: fixtureID)
-            session.prepareStory(shortID: fixtureID, commentsURL: storyURL)
-            _ = try await storyClient.load(storyURL)
+            // Opening the native story no longer primes WebKit. The first
+            // action must load its own page; later votes reuse that document.
+            XCTAssertNil(storyClient.currentURL)
+            try await session.setStoryUpvoted(false, shortID: fixtureID, commentsURL: storyURL)
             let loadedStoryURL = try XCTUnwrap(storyClient.currentURL)
             let initialState = try await voteState(
                 in: storyClient,

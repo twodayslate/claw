@@ -74,9 +74,9 @@ final class LobstersSession: ObservableObject {
 
     private let credentialStore: LobstersCredentialStore
     private let pageLoader: LobstersPageLoader
-    // The primary client retains the selected feed and hosts the visible login/
-    // submission pages. Story actions use a second retained client so opening a
-    // story never evicts the feed page.
+    // The primary client hosts visible login/submission pages. Story actions
+    // load a second retained client on demand and reuse its document. Native
+    // navigation does not preload either WebView.
     private let webClient: LobstersWebViewClient
     private let storyWebClient: LobstersWebViewClient
     private let avatarLoader: LobstersAvatarLoader
@@ -290,56 +290,8 @@ final class LobstersSession: ObservableObject {
 
     func preparePage(for tab: TabSelection) {
         if tab != .Settings { selectedTab = tab }
-        // Restoration must finish before a hidden page can send an anonymous
-        // request that replaces the persisted authenticated cookie.
-        guard isEntitled, hasStarted, !isStarting else { return }
-        if tab == .Settings {
-            // Keep the most recent feed warm while Settings is visible. On a
-            // fresh launch there is no previous page, so prime Hottest.
-            if webClient.currentURL == nil {
-                do {
-                    try webClient.navigateIfNeeded(
-                        to: APIConfiguration.shared.hottestWebpageURL()
-                    )
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
-            }
-            return
-        }
-
-        selectedTab = tab
-        let url: URL?
-        switch tab {
-        case .Hottest:
-            url = APIConfiguration.shared.hottestWebpageURL()
-        case .Newest:
-            url = APIConfiguration.shared.newestWebpageURL()
-        case .Tags:
-            let tags = UserDefaults.standard.stringArray(forKey: "selectedTags") ?? ["programming"]
-            url = APIConfiguration.shared.tagStoryWebpageURL(tags: tags)
-        case .Settings:
-            url = nil
-        }
-
-        if let url {
-            do {
-                try webClient.navigateIfNeeded(to: url)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    func prepareStory(shortID: String, commentsURL: URL?) {
-        guard isEntitled, hasStarted, !isStarting else { return }
-        do {
-            try storyWebClient.navigateIfNeeded(
-                to: storyURL(shortID: shortID, commentsURL: commentsURL)
-            )
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        // Native feeds load their own HTML. Keep the selected tab for login
+        // cleanup, but do not preload a hidden WebKit page and its subresources.
     }
 
     #if DEBUG

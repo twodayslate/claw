@@ -20,6 +20,23 @@ Before running Claw's integration tests, copy
 test endpoint using Lobsters' own throttle responder; the suite verifies that
 HTTP 429 preserves login and pauses subsequent requests. CI installs it automatically.
 
+### Network request behavior
+
+Native feeds and story details load HTML from view tasks; pagination runs when
+its last row appears. Successfully loaded content (including empty feeds) is
+reused for that view's lifetime. Pull to refresh remains explicit. Pagination
+stops after an empty page and cannot start during a first-page refresh.
+
+Tag metadata uses its persisted cache until manually refreshed.
+Native navigation does not preload hidden WebKit feeds or story pages; voting
+and commenting load their action document on demand. Authentication and action
+changes refresh previously requested content, without loading unvisited feeds.
+The widget independently requests a timeline approximately hourly.
+
+The native loader and WebKit document navigations share process-local pacing
+and HTTP 429 cooldown handling. Profile images, WebKit subresources, and the widget's separate
+process are not covered by a single global request budget.
+
 ### Nightly compatibility tests
 
 The Build and Integration Test workflow checks `lobsters/lobsters` nightly at

@@ -18,16 +18,15 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     
     var tags: [String] {
         didSet {
+            guard tags != oldValue else { return }
             supersedePendingLoads()
+            hasLoadedContent = false
+            hasMorePages = true
+            hasAttemptedLoad = false
             loadFailed = false
             self.page = 1
-            if let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
-                self.items = cachedStories.stories
-                self.skippedStoryCount = cachedStories.skippedStoryCount
-            } else {
-                self.items = []
-                self.skippedStoryCount = 0
-            }
+            self.items = []
+            self.skippedStoryCount = 0
         }
     }
 
@@ -42,7 +41,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
 
     static func reloadLiveFetchers() async {
         liveFetchers.removeAll { $0.value == nil }
-        for fetcher in liveFetchers.compactMap(\.value) {
+        for fetcher in liveFetchers.compactMap(\.value) where fetcher.hasRequestedContent {
             try? await fetcher.loadSupersedingPendingLoads()
         }
     }
@@ -59,6 +58,8 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         if isLoading {
             return
         }
+        // A refresh replaces the pagination cursor and supersedes its result.
+        if isLoadingMore { supersedePendingLoads() }
         let generation = captureContentGeneration()
         hasAttemptedLoad = true
         isLoading = true
@@ -74,6 +75,9 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
         if self.items.isEmpty, let cachedStories = TagStoryFetcher.cachedStories[self.tags] {
             self.items = cachedStories.stories
             self.skippedStoryCount = cachedStories.skippedStoryCount
+            // This cache can contain several pages but has no cursor. Do not
+            // paginate it unless a successful first-page refresh resets us.
+            self.hasMorePages = false
         }
 
         let url = APIConfiguration.shared.tagStoryWebpageURL(tags: self.tags, page: 1)
@@ -84,6 +88,8 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
             guard isCurrentContentGeneration(generation) else {
                 return
             }
+            hasLoadedContent = true
+            hasMorePages = false
             // A saved tag can be absent when a Debug build switches to the local
             // test server. Treat that valid local state as an empty feed.
             TagStoryFetcher.cachedStories[self.tags] = ParsedStoryList(stories: [], skippedStoryCount: 0)
@@ -124,7 +130,7 @@ class TagStoryFetcher: GenericArrayFetcher<NewestStory> {
     }
 
     override func more(_ story: NewestStory? = nil) async throws {
-        guard self.items.last == story, !isLoadingMore else {
+        guard let story, self.items.last?.id == story.id, hasMorePages, !isLoading, !isLoadingMore else {
             return
         }
         let generation = captureContentGeneration()
