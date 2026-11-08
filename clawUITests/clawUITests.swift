@@ -546,7 +546,7 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
     }
 
-    func testCommentAndLinkContextMenusShareActions() throws {
+    func testCommentAndLinkContextMenusStaySeparate() throws {
         let app = configuredApplication()
         try openLocalStory("lnkctx", in: app)
         let body = app.staticTexts["Claw link menu comment."]
@@ -560,30 +560,27 @@ class clawUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Collapse"].exists)
         XCTAssertFalse(app.buttons["Open in Browser"].exists)
+        XCTAssertFalse(app.buttons["Share Link"].exists)
         app.buttons["Collapse"].tap()
         XCTAssertFalse(body.exists)
         XCTAssertFalse(reply.exists)
         toggle.tap()
         XCTAssertTrue(body.waitForExistence(timeout: 5))
 
-        // A link menu includes both the link action and its parent comment actions.
+        // The child link menu has only link actions, not the parent comment's actions.
         let link = app.staticTexts["/~test"]
         link.press(forDuration: 1)
         XCTAssertTrue(app.buttons["Open in Browser"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Share"].exists)
-        XCTAssertTrue(app.buttons["Collapse"].exists)
-        app.buttons["Collapse"].tap()
-        XCTAssertFalse(body.exists)
-        XCTAssertFalse(reply.exists)
-        toggle.tap()
-        XCTAssertTrue(link.waitForExistence(timeout: 5))
-        link.press(forDuration: 1)
+        XCTAssertFalse(app.buttons["Share"].exists)
+        XCTAssertFalse(app.buttons["Collapse"].exists)
         app.buttons["Share Link"].tap()
         let copy = app.cells["Copy"]
         XCTAssertTrue(copy.waitForExistence(timeout: 10))
         copy.tap()
         XCTAssertTrue(link.waitForExistence(timeout: 5))
-        link.press(forDuration: 1)
+        XCTAssertTrue(body.exists)
+        XCTAssertTrue(reply.exists)
+        body.press(forDuration: 1)
         app.buttons["Share"].tap()
         XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 10))
     }

@@ -131,8 +131,8 @@ domain, and chevron taps when the submitted URL points to a supported Lobsters
 page. Long-press a link block and choose **Open in Browser** to use the selected
 browser for that link instead. **Share Link** shares the link's full URL, including
 resolving relative links against the current page.
-Inside comments, that menu also includes the comment's **Share** and **Collapse**
-actions. Long-pressing the comment body retains its existing menu.
+Inside comments, link blocks keep their own menu. Long-pressing the comment body
+opens the separate comment menu with **Share** and **Collapse** actions.
 
 The integration workflow seeds and tests native story/profile navigation and
 the browser override. To run these checks locally, seed a disposable server
@@ -145,5 +145,5 @@ LOBSTERS_BASE_URL=http://localhost:3007 COMPOSE_PROJECT_NAME=claw-lobsters-<uniq
 ```
 
 Run `testStoryAndUserLinksOpenNatively`, `testNativeLinkCanOpenInBrowser`, and
-`testCommentAndLinkContextMenusShareActions` in
+`testCommentAndLinkContextMenusStaySeparate` in
 `clawUITests` with `CLAW_UI_TEST_BASE_URL` set to the same URL in `xcodebuild`.

@@ -10,7 +10,6 @@ import SwiftUI
 struct URLView: View {
     var link: HTMLLink
     var pageURL: URL? = nil
-    var commentMenu: CommentContextMenu? = nil
     @Environment(Settings.self) private var settings
     @Environment(\.openURL) private var openURL
     @EnvironmentObject var urlToOpen: ObservableURL
@@ -55,9 +54,6 @@ struct URLView: View {
                         }
                     }
                 }
-            }
-            if let commentMenu {
-                Section("Comment") { commentMenu }
             }
         }
     }

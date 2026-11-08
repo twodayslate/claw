@@ -56,7 +56,7 @@ enum CommentThreadLayout {
 public struct HierarchyList<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
     let data: [CommentStructure]
     let header: (Comment) -> HeaderContent
-    let rowContent: (Comment, CommentContextMenu) -> RowContent
+    let rowContent: (Comment) -> RowContent
     var highlightedCommentID: String? = nil
     var rootDepth: Int = 0
     @State private var sharedComment: Comment?
@@ -91,7 +91,7 @@ private struct CommentThreadView<RowContent, HeaderContent>: View where RowConte
     let parent: CommentStructure
     let parentDepth: Int
     let header: (Comment) -> HeaderContent
-    let rowContent: (Comment, CommentContextMenu) -> RowContent
+    let rowContent: (Comment) -> RowContent
 
     var body: some View {
         ScrollView {
@@ -106,7 +106,7 @@ private struct CommentThreadView<RowContent, HeaderContent>: View where RowConte
 private struct CommentThreadRowView<RowContent, HeaderContent>: View where RowContent: View, HeaderContent: View {
     let row: CommentThreadRow
     let header: (Comment) -> HeaderContent
-    let rowContent: (Comment, CommentContextMenu) -> RowContent
+    let rowContent: (Comment) -> RowContent
     let highlighted: Bool
     @Binding var isExpanded: Bool
     @Binding var sharedComment: Comment?
@@ -130,7 +130,7 @@ private struct CommentThreadRowView<RowContent, HeaderContent>: View where RowCo
             }
             .padding(.vertical)
             if isExpanded {
-                rowContent(row.comment, commentMenu)
+                rowContent(row.comment)
                     .padding([.leading, .bottom])
                 if let parent = row.continuation {
                     NavigationLink {
@@ -159,37 +159,22 @@ private struct CommentThreadRowView<RowContent, HeaderContent>: View where RowCo
                 rootDepth: row.commentDepth - row.indentLevel)
         }
         .contentShape(Rectangle())
-        .contextMenu { commentMenu }
+        .contextMenu {
+            Button {
+                sharedComment = row.comment
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            Button(action: toggleExpanded) {
+                Label(isExpanded ? "Collapse" : "Expand",
+                    systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")
+            }
+        }
         .onTapGesture(perform: toggleExpanded)
-    }
-
-    private var commentMenu: CommentContextMenu {
-        CommentContextMenu(comment: row.comment, isExpanded: $isExpanded, sharedComment: $sharedComment)
     }
 
     private func toggleExpanded() {
         withAnimation { isExpanded.toggle() }
-    }
-}
-
-/// The same actions are available from the comment body and its link blocks.
-struct CommentContextMenu: View {
-    let comment: Comment
-    @Binding var isExpanded: Bool
-    @Binding var sharedComment: Comment?
-
-    var body: some View {
-        Button {
-            sharedComment = comment
-        } label: {
-            Label("Share", systemImage: "square.and.arrow.up")
-        }
-        Button {
-            withAnimation { isExpanded.toggle() }
-        } label: {
-            Label(isExpanded ? "Collapse" : "Expand",
-                  systemImage: isExpanded ? "rectangle.compress.vertical" : "rectangle.expand.vertical")
-        }
     }
 }
 

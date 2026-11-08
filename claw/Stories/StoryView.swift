@@ -299,7 +299,7 @@ struct StoryView: View {
                     Spacer()
                     commentVoteButton(comment)
                 }
-            }, rowContent: { comment, commentMenu in
+            }, rowContent: { comment in
                 VStack(alignment: .leading, spacing: 8.0) {
                     let html = HTMLView(html: comment.comment.trimmingCharacters(in: .whitespacesAndNewlines))
                     HStack {
@@ -307,7 +307,7 @@ struct StoryView: View {
                         Spacer(minLength: 0) // need this cause there is a Vstack with center alignment somewhere
                     }
                     ForEach(html.links, id: \.self) { link in
-                        URLView(link: link, pageURL: resolvedStoryURL, commentMenu: commentMenu)
+                        URLView(link: link, pageURL: resolvedStoryURL)
                             .environmentObject(urlToOpen)
                     }
                     if canInteract {
