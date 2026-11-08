@@ -38,6 +38,7 @@ struct SettingsView: View {
         "Akhmad437LobsterDarkIcon": "Dark Lobster"
     ]
     
+    @Environment(\.self) private var environment
     @Environment(Settings.self) var settings
     @Environment(\.modelContext) var modelContext
 
@@ -61,7 +62,7 @@ struct SettingsView: View {
                         }
                         NavigationLink(destination: AccentColorChooserView(), label: {
                             HStack {
-                                SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "paintbrush.fill", text: "Accent Color")
+                                SettingsIconLabel(background: settings.accentColor, systemImage: "paintbrush.fill", text: "Accent Color")
                                 Spacer()
                                 Text("\(settings.accentUIColor.name ?? "Custom")").foregroundColor(.gray)
                             }
@@ -69,7 +70,7 @@ struct SettingsView: View {
 
                         NavigationLink(destination: CommentColorPicker(), label: {
                             HStack {
-                                SimpleIconLabel(iconBackgroundColor: (settings.commentColorScheme.colors.first ?? Color.accentColor), iconColor: (settings.commentColorScheme.colors.first ?? Color.accentColor) == .white ? .black : .white, systemImage: "list.bullet.indent", text: "Comment Colors")
+                                SettingsIconLabel(background: settings.commentColorScheme.colors.first ?? settings.accentColor, systemImage: "list.bullet.indent", text: "Comment Colors")
                                 Spacer()
                                 Text(settings.commentColorScheme.name).foregroundColor(.gray)
                             }
@@ -89,7 +90,7 @@ struct SettingsView: View {
             Section {
                 
                 Picker(selection: $bindableSettings.browser, label:
-                        SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "safari.fill", text: "Browser")
+                        SettingsIconLabel(background: settings.accentColor, systemImage: "safari.fill", text: "Browser")
                        , content: {
                     Text("In-App Safari").tag(BrowserSetting.inAppSafari)
                     Text("Default Browser").tag(BrowserSetting.defaultBrowser)
@@ -97,17 +98,17 @@ struct SettingsView: View {
                 
                 if settings.browser == BrowserSetting.inAppSafari {
                     Toggle(isOn: $bindableSettings.readerModeEnabled, label: {
-                        SimpleIconLabel(iconBackgroundColor: .accentColor, iconColor: settings.accentUIColor == .white ? .black : .white, systemImage: "textformat.size", text: "Reader Mode")
+                        SettingsIconLabel(background: settings.accentColor, systemImage: "textformat.size", text: "Reader Mode")
                     })
+                    .tint(SettingsColorContrast(background: settings.accentColor, environment: environment).switchTint)
                 }
             } header: {
                 Text("Browsing").font(style: .footnote)
             }
             Section {
                 NavigationLink(destination: AdvancedSettingsView()) {
-                    SimpleIconLabel(
-                        iconBackgroundColor: .accentColor,
-                        iconColor: settings.accentUIColor == .white ? .black : .white,
+                    SettingsIconLabel(
+                        background: settings.accentColor,
                         systemImage: "gearshape.2.fill",
                         text: "Advanced"
                     )
@@ -153,9 +154,8 @@ struct SettingsView: View {
                         Button {
                             isShowingLobstersLogin = true
                         } label: {
-                            SimpleIconLabel(
-                                iconBackgroundColor: .accentColor,
-                                iconColor: .white,
+                            SettingsIconLabel(
+                                background: settings.accentColor,
                                 systemImage: "person.crop.circle.badge.checkmark",
                                 text: "Sign In to Lobsters"
                             )
@@ -174,9 +174,8 @@ struct SettingsView: View {
                 } else {
                     NavigationLink(destination: Pro()) {
                         HStack {
-                            SimpleIconLabel(
-                                iconBackgroundColor: .accentColor,
-                                iconColor: .white,
+                            SettingsIconLabel(
+                                background: settings.accentColor,
                                 systemImage: "person.crop.circle.badge.checkmark",
                                 text: "Lobsters Login"
                             )
@@ -195,10 +194,10 @@ struct SettingsView: View {
             }
             Section {
                 if storeModel.owned {
-                    SimpleIconLabel(systemImage: "heart.fill", text: "Thank you for the support!")
+                    SettingsIconLabel(background: settings.accentColor, systemImage: "heart.fill", text: "Thank you for the support!")
                 } else {
                     NavigationLink(destination: Pro(), label: {
-                        SimpleIconLabel(systemImage: "heart.text.square", text: "Additional Support")
+                        SettingsIconLabel(background: settings.accentColor, systemImage: "heart.text.square", text: "Additional Support")
                     })
                 }
             }

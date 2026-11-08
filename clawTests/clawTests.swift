@@ -9,9 +9,54 @@ import XCTest
 import WebKit
 import SwiftSoup
 import Security
+import SwiftUI
 @testable import claw
 
 class clawTests: XCTestCase {
+
+    func testSettingsIconsFollowPrimaryAccentAppearance() {
+        var environment = EnvironmentValues()
+        environment.colorScheme = .light
+        XCTAssertEqual(SettingsColorContrast(background: Color(uiColor: .label), environment: environment).foreground, .white)
+        environment.colorScheme = .dark
+        XCTAssertEqual(SettingsColorContrast(background: Color(uiColor: .label), environment: environment).foreground, .black)
+        environment.colorScheme = .light
+        XCTAssertEqual(SettingsColorContrast(background: Color(uiColor: .label), environment: environment).foreground, .white)
+    }
+
+    func testSettingsIconsContrastWithCustomAndTranslucentColors() {
+        var environment = EnvironmentValues()
+        for scheme in [ColorScheme.light, .dark] {
+            environment.colorScheme = scheme
+            for background in [Color.white, .yellow, Color(red: 0.95, green: 0.9, blue: 0.8)] {
+                XCTAssertEqual(SettingsColorContrast(background: background, environment: environment).foreground, .black)
+            }
+            for background in [Color.black, Color(uiColor: .lobsterRed), Color(red: 0.1, green: 0.2, blue: 0.3)] {
+                XCTAssertEqual(SettingsColorContrast(background: background, environment: environment).foreground, .white)
+            }
+            XCTAssertEqual(
+                SettingsColorContrast(background: .clear, environment: environment).foreground,
+                scheme == .dark ? .white : .black
+            )
+        }
+    }
+
+    func testReaderSwitchMaintainsContrastAgainstWhiteThumb() {
+        var environment = EnvironmentValues()
+        for scheme in [ColorScheme.light, .dark] {
+            environment.colorScheme = scheme
+            for accent in [Color(uiColor: .label), .white, .yellow, Color(uiColor: .lobsterRed), .white.opacity(0.5)] {
+                let tint = SettingsColorContrast(background: accent, environment: environment).switchTint.resolve(in: environment)
+                let luminance = 0.2126 * tint.linearRed + 0.7152 * tint.linearGreen + 0.0722 * tint.linearBlue
+                XCTAssertGreaterThanOrEqual(1.05 / (luminance + 0.05), 3 - 0.001)
+            }
+            let red = Color(uiColor: .lobsterRed)
+            let tint = SettingsColorContrast(background: red, environment: environment).switchTint.resolve(in: environment)
+            XCTAssertEqual(tint.red, red.resolve(in: environment).red, accuracy: 0.001)
+            XCTAssertEqual(tint.green, red.resolve(in: environment).green, accuracy: 0.001)
+            XCTAssertEqual(tint.blue, red.resolve(in: environment).blue, accuracy: 0.001)
+        }
+    }
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
