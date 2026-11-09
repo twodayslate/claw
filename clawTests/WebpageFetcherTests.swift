@@ -880,3 +880,112 @@ extension WebpageFetcherTests {
         }
     }
 }
+
+private final class StoryRequestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+
+    var count: Int { lock.withLock { value } }
+    func increment() { lock.withLock { value += 1 } }
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    private func withQueuedStoryFetcher(
+        _ operation: (StoryFetcher, StoryRequestCounter) async throws -> Void
+    ) async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: configuration)
+        let throttle = LobstersRequestThrottle(minimumInterval: 0.5)
+        let url = APIConfiguration.shared.storyURL(shortId: "cancel")
+        var warmup = URLRequest(url: url)
+        await warmup.setUserAgent()
+        let fetcher = StoryFetcher("cancel", webpageFetcher: WebpageFetcher(
+            session: network, storedCredentialPolicy: .never, throttle: throttle))
+        let requests = StoryRequestCounter()
+        WebpageURLProtocol.requestHandler = { request in
+            XCTAssertTrue(["localhost", "127.0.0.1"].contains(request.url?.host ?? ""))
+            requests.increment()
+            let html = "<ol class='stories'><li class='story' data-shortid='cancel'><h2 class='link'><a class='u-url' href='/s/cancel'>Cancel</a></h2></li></ol><ol class='comments'></ol>"
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        StoryFetcher.cachedStories.removeAll()
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        try await throttle.acquire(url)
+        try await operation(fetcher, requests)
+    }
+
+    private func assertCancelled(_ task: Task<Void, Error>) async {
+        do {
+            try await task.value
+            XCTFail("The cancelled reader must receive cancellation")
+        } catch is CancellationError {
+            // Expected even if another reader still owns the shared request.
+        } catch {
+            XCTFail("Expected CancellationError, got \(error)")
+        }
+    }
+
+    @MainActor
+    func testCancellingOnlyStoryReaderStopsQueuedRequestAndAllowsRetry() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let appearance = Task { try await fetcher.load() }
+            defer { appearance.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertEqual(requests.count, 0)
+            appearance.cancel()
+            await assertCancelled(appearance)
+            // Wait past the throttle slot to catch requests left running after
+            // the cancelled reader's continuation has already returned.
+            try await Task.sleep(for: .milliseconds(600))
+            XCTAssertEqual(requests.count, 0)
+            XCTAssertNil(fetcher.story)
+            XCTAssertFalse(fetcher.loadFailed)
+            XCTAssertNil(fetcher.loadFailure)
+
+            try await fetcher.load()
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+        }
+    }
+
+    @MainActor
+    func testCancellingOneStoryReaderKeepsRequestForAnotherReader() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let first = Task { try await fetcher.load() }
+            let second = Task { try await fetcher.load() }
+            defer { first.cancel(); second.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            first.cancel()
+            await assertCancelled(first)
+            XCTAssertEqual(requests.count, 0, "Cancellation must return without waiting for the shared read")
+            try await second.value
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+        }
+    }
+
+    @MainActor
+    func testSupersedingSharedStoryLoadCancelsWaitersWithoutCancellingReplacement() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let first = Task { try await fetcher.load() }
+            let second = Task { try await fetcher.load() }
+            defer { first.cancel(); second.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            StoryFetcher.invalidateLiveContent()
+            let replacement = Task { try await fetcher.load() }
+            defer { replacement.cancel() }
+            await assertCancelled(first)
+            await assertCancelled(second)
+            try await replacement.value
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+            XCTAssertFalse(fetcher.loadFailed)
+        }
+    }
+}

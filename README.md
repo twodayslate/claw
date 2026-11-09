@@ -24,8 +24,10 @@ HTTP 429 preserves login and pauses subsequent requests. CI installs it automati
 
 Native feeds and story details load HTML from view tasks; pagination runs when
 its last row appears. Successfully loaded content (including empty feeds) is
-reused for that view's lifetime. Pull to refresh remains explicit. Pagination
-stops after an empty page and cannot start during a first-page refresh.
+reused for that view's lifetime. Overlapping story reads share one request,
+which is cancelled when its last caller disappears. Pull to refresh remains
+explicit. Pagination stops after an empty page and cannot start during a
+first-page refresh.
 
 Tag metadata uses its persisted cache until manually refreshed.
 Native navigation does not preload hidden WebKit feeds or story pages; voting

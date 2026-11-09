@@ -270,7 +270,13 @@ class StoryFetcher: ObservableObject {
     public var pageURL: URL? = nil
     private let webpageFetcher: WebpageFetcher
     private var contentGeneration: UInt = 0
-    private var pendingLoad: (generation: UInt, task: Task<Void, Error>)?
+    private struct PendingLoad {
+        let id: UUID
+        let task: Task<Void, Never>
+        var waiters: [UUID: CheckedContinuation<Void, Error>]
+    }
+
+    private var pendingLoad: PendingLoad?
     private var hasRequestedContent = false
 
     init(
@@ -304,8 +310,10 @@ class StoryFetcher: ObservableObject {
 
     private func supersedePendingLoads() {
         contentGeneration &+= 1
-        pendingLoad?.task.cancel()
-        pendingLoad = nil
+        if let pendingLoad {
+            pendingLoad.task.cancel()
+            finishLoad(pendingLoad.id, result: .failure(CancellationError()))
+        }
         isReloading = false
     }
 
@@ -346,21 +354,58 @@ class StoryFetcher: ObservableObject {
 
     func load() async throws {
         try Task.checkCancellation()
-        if let pendingLoad {
-            try await pendingLoad.task.value
+        guard short_id != nil else { return }
+        let waiterID = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                guard !Task.isCancelled else {
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+                addLoadWaiter(waiterID, continuation: continuation)
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.cancelLoadWaiter(waiterID)
+            }
+        }
+        try Task.checkCancellation()
+    }
+
+    private func addLoadWaiter(_ waiterID: UUID, continuation: CheckedContinuation<Void, Error>) {
+        if pendingLoad != nil {
+            pendingLoad?.waiters[waiterID] = continuation
             return
         }
-        guard short_id != nil else { return }
+        let loadID = UUID()
         let generation = contentGeneration
         hasRequestedContent = true
-        // Share the result as well as the request. A brief disappearance should
-        // not cancel a read that another appearance is already waiting for.
-        let task = Task { try await performLoad(generation: generation) }
-        pendingLoad = (generation, task)
-        defer {
-            if pendingLoad?.generation == generation { pendingLoad = nil }
+        let task = Task {
+            do {
+                try await performLoad(generation: generation)
+                finishLoad(loadID, result: .success(()))
+            } catch {
+                finishLoad(loadID, result: .failure(error))
+            }
         }
-        try await task.value
+        pendingLoad = PendingLoad(id: loadID, task: task, waiters: [waiterID: continuation])
+    }
+
+    private func cancelLoadWaiter(_ waiterID: UUID) {
+        guard let continuation = pendingLoad?.waiters.removeValue(forKey: waiterID) else { return }
+        continuation.resume(throwing: CancellationError())
+        // Keep the shared request alive only while another reader still needs it.
+        if pendingLoad?.waiters.isEmpty == true {
+            supersedePendingLoads()
+        }
+    }
+
+    private func finishLoad(_ loadID: UUID, result: Result<Void, Error>) {
+        guard let pendingLoad, pendingLoad.id == loadID else { return }
+        self.pendingLoad = nil
+        for continuation in pendingLoad.waiters.values {
+            continuation.resume(with: result)
+        }
     }
 
     private func performLoad(generation: UInt) async throws {
