@@ -955,6 +955,34 @@ extension WebpageFetcherTests {
     }
 
     @MainActor
+    func testCancelledCachedStoryAppearanceRetriesUntilLoaded() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let url = APIConfiguration.shared.storyURL(shortId: "cancel")
+            let html = "<ol class='stories'><li class='story' data-shortid='cancel'><h2 class='link'><a class='u-url' href='/s/cancel'>Cached title</a></h2></li></ol><ol class='comments'></ol>"
+            StoryFetcher.cachedStories = [try await StoryHTMLParser.parseOffMain(html, pageURL: url)]
+
+            let appearance = Task { try await fetcher.loadIfEmpty() }
+            defer { appearance.cancel() }
+            try await assertEventually("Cached title", isLoadedBy: fetcher)
+            appearance.cancel()
+            await assertCancelled(appearance)
+            try await Task.sleep(for: .milliseconds(600))
+            XCTAssertEqual(requests.count, 0, "Leaving must cancel the queued request")
+            XCTAssertEqual(fetcher.story?.title, "Cached title", "Keep provisional content readable")
+
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 1, "Returning must retry the unfinished initial load")
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 1, "A completed load must still be reused")
+
+            StoryFetcher.invalidateLiveContent()
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 2, "Invalidation must clear the completed-load state")
+        }
+    }
+
+    @MainActor
     func testCancellingOneStoryReaderKeepsRequestForAnotherReader() async throws {
         try await withQueuedStoryFetcher { fetcher, requests in
             let first = Task { try await fetcher.load() }

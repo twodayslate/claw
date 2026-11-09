@@ -278,6 +278,8 @@ class StoryFetcher: ObservableObject {
 
     private var pendingLoad: PendingLoad?
     private var hasRequestedContent = false
+    // Provisional cached content does not complete this fetcher's initial load.
+    private var hasLoadedContent = false
 
     init(
         _ short_id: String? = nil,
@@ -319,6 +321,7 @@ class StoryFetcher: ObservableObject {
 
     private func invalidateContent() {
         supersedePendingLoads()
+        hasLoadedContent = false
         story = nil
         loadFailed = false
         loadFailure = nil
@@ -346,7 +349,7 @@ class StoryFetcher: ObservableObject {
     }
     
     func loadIfEmpty() async throws {
-        if let _ = self.story {
+        if hasLoadedContent, story != nil {
             return
         }
         try await self.load()
@@ -462,6 +465,7 @@ class StoryFetcher: ObservableObject {
         guard isCurrentContentGeneration(generation) else {
             return
         }
+        hasLoadedContent = true
         self.story = parsedStory
         self.short_id = parsedStory.short_id
         loadFailure = parsedStory.comments_unavailable == true
