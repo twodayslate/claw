@@ -180,14 +180,22 @@ final class LobstersSession: ObservableObject {
 
         isStarting = true
         hasStarted = true
-        let previousState = state
+        var previousState = state
         if !isAuthenticated { state = .checking }
         defer { isStarting = false }
         let generation = sessionGeneration
 
         do {
             let browserCookie = await sessionCookie()
-            let savedCookie = try credentialStore.loadCookie(for: baseURL)?.makeCookie()
+            guard isEntitled, isCurrentSession(generation) else { return }
+            let savedCredential = try credentialStore.loadCookie(for: baseURL)
+            let savedCookie = savedCredential?.makeCookie()
+            if !isAuthenticated, let username = savedCredential?.username {
+                // Restore the last verified identity before attempting network
+                // validation. A connection failure does not revoke this login.
+                previousState = .signedIn(username: username)
+                state = previousState
+            }
             guard browserCookie != nil || savedCookie != nil else {
                 if isCurrentSession(generation) { state = .signedOut }
                 return
@@ -956,7 +964,7 @@ final class LobstersSession: ObservableObject {
         )
         let rotatedCookie = responseCookies.first { StoredLobstersCookie($0, for: baseURL) != nil }
         if let cookie = rotatedCookie ?? confirmed.cookie.makeCookie() {
-            try credentialStore.saveCookie(cookie, for: baseURL)
+            try credentialStore.saveCookie(cookie, for: baseURL, username: username)
             await webClient.setCookie(cookie)
             await storyWebClient.setCookie(cookie)
             guard isEntitled, isCurrentSession(generation) else {
@@ -973,6 +981,7 @@ final class LobstersSession: ObservableObject {
             storyWebClient.reloadIfNeeded()
         }
         state = .signedIn(username: username)
+        errorMessage = nil
         lastValidatedAt = Date()
         if let cookie = await sessionCookie() {
             await coordinator.didAuthenticate(
@@ -1051,7 +1060,7 @@ final class LobstersSession: ObservableObject {
                 try await validateSession(generation: generation)
                 return
             }
-            try credentialStore.saveCookie(sessionCookie, for: baseURL)
+            try credentialStore.saveCookie(sessionCookie, for: baseURL, username: username)
             let previousUsername = self.username
             coordinatedAuthenticationUsername = nil
             if previousUsername != username {

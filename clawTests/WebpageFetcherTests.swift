@@ -5,9 +5,128 @@
 
 import XCTest
 import WebKit
+import StoreKitTest
+import StoreKit
 @testable import claw
 
 final class WebpageFetcherTests: XCTestCase {
+    @MainActor
+    func testVerifiedPurchaseSurvivesUnavailableProductCatalog() async throws {
+        let configuration = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "pro", withExtension: "storekit", subdirectory: "Fixtures"
+        ))
+        let storeKit = try SKTestSession(contentsOf: configuration)
+        storeKit.disableDialogs = true
+        storeKit.clearTransactions()
+        defer { storeKit.clearTransactions() }
+        let productID = "claw.cosmetics.yearly.renew"
+        try await storeKit.buyProduct(identifier: productID)
+        try await AppStore.sync()
+
+        // StoreKit publishes the transaction asynchronously after buyProduct.
+        var purchaseIsAvailable = false
+        for _ in 0..<100 where !purchaseIsAvailable {
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result, transaction.productID == productID {
+                    purchaseIsAvailable = true
+                }
+            }
+            if !purchaseIsAvailable { try await Task.sleep(for: .milliseconds(20)) }
+        }
+        XCTAssertTrue(purchaseIsAvailable)
+        var catalogRequested = false
+        let model = StoreKitModel(defaultId: productID, ids: []) { _ in
+            catalogRequested = true
+            throw URLError(.notConnectedToInternet)
+        }
+        try await model.initialize()
+        for _ in 0..<100 where !catalogRequested {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(catalogRequested)
+        XCTAssertTrue(model.hasInitialized)
+        XCTAssertTrue(model.owned)
+        XCTAssertTrue(LobstersEntitlementStore.allowsAuthenticatedRequests)
+        XCTAssertNil(model.products)
+
+        do {
+            try await model.update()
+            XCTFail("The offline catalog request should fail")
+        } catch {
+            XCTAssertTrue(model.owned, "A catalog failure must not revoke a verified purchase")
+        }
+        try storeKit.expireSubscription(productIdentifier: productID)
+        try await AppStore.sync()
+        for _ in 0..<100 where model.owned {
+            try? await model.update()
+            if model.owned { try await Task.sleep(for: .milliseconds(20)) }
+        }
+        XCTAssertFalse(model.owned, "An expired subscription must still lose access")
+        XCTAssertFalse(LobstersEntitlementStore.allowsAuthenticatedRequests)
+    }
+
+    @MainActor
+    func testColdLaunchRetainsVerifiedAccountOfflineAndRevalidatesOnReconnect() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        XCTAssertTrue(["localhost", "127.0.0.1"].contains(baseURL.host ?? ""))
+        let store = LobstersCredentialStore(service: "claw.tests.offline.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "offline-local-fixture",
+            .domain: baseURL.host!, .path: "/", .expires: Date().addingTimeInterval(3600)
+        ]))
+        try store.saveCookie(cookie, for: baseURL, username: "test")
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        defer { WebpageURLProtocol.requestHandler = nil; network.invalidateAndCancel() }
+        var networkError: URLError? = URLError(.notConnectedToInternet)
+        var rejected = false
+        WebpageURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, baseURL.host)
+            if let networkError { throw networkError }
+            let url = rejected ? APIConfiguration.shared.loginURL() : request.url!
+            let html = rejected
+                ? "<form action='/login' method='post'><input name='email'><input name='password' type='password'></form>"
+                : "<html><body data-username='test'></body></html>"
+            return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        let loader = LobstersPageLoader(session: network, credentialStore: store,
+            storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
+        func reopenedSession() -> LobstersSession {
+            let dataStore = WKWebsiteDataStore.nonPersistent()
+            let session = LobstersSession(credentialStore: store, pageLoader: loader,
+                webClient: LobstersWebViewClient(dataStore: dataStore),
+                storyWebClient: LobstersWebViewClient(dataStore: dataStore),
+                avatarLoader: LobstersAvatarLoader(pageLoader: loader),
+                contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
+                coordinator: LobstersSessionCoordinator())
+            session.setEntitlementAvailable(true)
+            return session
+        }
+        for code: URLError.Code in [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost] {
+            networkError = URLError(code)
+            let session = reopenedSession()
+            await session.start()
+            XCTAssertEqual(session.state, .signedIn(username: "test"), "Cold launch with \(code)")
+            XCTAssertEqual(try store.loadCookie(for: baseURL)?.username, "test")
+            XCTAssertNotNil(session.errorMessage)
+        }
+        let session = reopenedSession()
+        await session.start()
+        networkError = nil
+        await session.start(force: true)
+        XCTAssertTrue(session.isAuthenticated)
+        XCTAssertNil(session.errorMessage)
+        rejected = true
+        await session.start(force: true)
+        XCTAssertEqual(session.state, .signedOut, "Confirmed server rejection must still clear the login")
+        XCTAssertNil(try store.loadCookie(for: baseURL))
+        let signedOut = reopenedSession()
+        await signedOut.start()
+        XCTAssertEqual(signedOut.state, .signedOut)
+    }
+
     @MainActor
     func testExpiredCookiesRequireLoginOnForeground() async throws {
         let baseURL = APIConfiguration.shared.baseURL
