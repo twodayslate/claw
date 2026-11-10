@@ -96,6 +96,9 @@ final class LobstersSession: ObservableObject {
     private var lastValidatedAt: Date?
     private var connectivitySubscription: AnyCancellable?
     private var needsConnectivityValidation = false
+    // A restored identity may match the server while native content is still
+    // anonymous or failed. Consume this only after authentication succeeds.
+    private var needsAuthenticatedContentRefresh = false
 
     init(
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
@@ -146,6 +149,7 @@ final class LobstersSession: ObservableObject {
             guard let self, self.isEntitled, self.hasStarted,
                   self.state != .signingIn, self.activeAction != .signOut else { return }
             self.needsConnectivityValidation = true
+            self.needsAuthenticatedContentRefresh = true
             self.retryConnectivityValidationIfNeeded()
         }
     }
@@ -207,6 +211,7 @@ final class LobstersSession: ObservableObject {
                 // Restore the last verified identity before attempting network
                 // validation. A connection failure does not revoke this login.
                 previousState = .signedIn(username: username)
+                needsAuthenticatedContentRefresh = true
                 state = previousState
             }
             guard browserCookie != nil || savedCookie != nil else {
@@ -253,6 +258,7 @@ final class LobstersSession: ObservableObject {
         isEntitled = available
         if !available {
             needsConnectivityValidation = false
+            needsAuthenticatedContentRefresh = false
             sessionGeneration &+= 1
             hasStarted = false
             state = .signedOut
@@ -1004,7 +1010,8 @@ final class LobstersSession: ObservableObject {
 
         let previousUsername = self.username
         coordinatedAuthenticationUsername = nil
-        if previousUsername != username {
+        if previousUsername != username || needsAuthenticatedContentRefresh {
+            needsAuthenticatedContentRefresh = false
             contentRefresher.invalidate()
             // Install authenticated controls before exposing signed-in actions.
             // This retains the story WebView and refreshes its existing document.
@@ -1093,7 +1100,8 @@ final class LobstersSession: ObservableObject {
             try credentialStore.saveCookie(sessionCookie, for: baseURL, username: username)
             let previousUsername = self.username
             coordinatedAuthenticationUsername = nil
-            if previousUsername != username {
+            if previousUsername != username || needsAuthenticatedContentRefresh {
+                needsAuthenticatedContentRefresh = false
                 contentRefresher.invalidate()
                 // The shared data store now has the authenticated cookie, but a
                 // retained story document may still contain anonymous controls.
@@ -1245,6 +1253,7 @@ final class LobstersSession: ObservableObject {
     }
 
     fileprivate func applyCoordinatedSignOut(completeWaiters: Bool) async {
+        needsAuthenticatedContentRefresh = false
         sessionGeneration &+= 1
         restoreSelectedPageWhenPrimaryNavigationFinishes = false
         for client in [webClient, storyWebClient] {

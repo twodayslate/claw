@@ -51,6 +51,9 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
                         dismiss()
                     }
                 }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    OfflineStatusBanner()
+                }
         }.tabItem {
             self.tabItem
         }

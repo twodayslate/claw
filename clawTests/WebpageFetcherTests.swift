@@ -11,6 +11,74 @@ import StoreKit
 
 final class WebpageFetcherTests: XCTestCase {
     @MainActor
+    func testRestoredIdentityRefreshesFailedFeedAfterValidation() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        XCTAssertTrue(["localhost", "127.0.0.1"].contains(baseURL.host ?? ""))
+        for recoverByReconnect in [false, true] {
+            for storedUsername: String? in [nil, "test"] {
+                let store = LobstersCredentialStore(service: "claw.tests.refresh.\(UUID())", accessGroup: nil)
+                defer { try? store.deleteCookie(for: baseURL) }
+                let cookie = try XCTUnwrap(HTTPCookie(properties: [
+                    .name: LobstersCredentialStore.cookieName, .value: "review-local-cookie",
+                    .domain: baseURL.host!, .path: "/", .expires: Date().addingTimeInterval(3600)
+                ]))
+                try store.saveCookie(cookie, for: baseURL, username: storedUsername)
+                let config = URLSessionConfiguration.ephemeral
+                config.protocolClasses = [WebpageURLProtocol.self]
+                let network = URLSession(configuration: config)
+                defer { WebpageURLProtocol.requestHandler = nil; network.invalidateAndCancel() }
+                var online = false
+                WebpageURLProtocol.requestHandler = { request in
+                    XCTAssertEqual(request.url?.host, baseURL.host)
+                    if !online { throw URLError(.notConnectedToInternet) }
+                    let html = "<html><body data-username='test'><ol class='stories'></ol></body></html>"
+                    return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+                }
+                let loader = LobstersPageLoader(session: network, credentialStore: store,
+                    storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
+                let feed = HottestFetcher(pageLoader: loader)
+                do { try await feed.load(); XCTFail("Expected offline failure") } catch {}
+                XCTAssertTrue(feed.loadFailed)
+                let dataStore = WKWebsiteDataStore.nonPersistent()
+                let avatarLoader = LobstersAvatarLoader(pageLoader: loader)
+                let connectivity = ConnectivityRecovery(monitor: nil)
+                var refreshCount = 0
+                let session = LobstersSession(credentialStore: store, pageLoader: loader,
+                    webClient: LobstersWebViewClient(dataStore: dataStore),
+                    storyWebClient: LobstersWebViewClient(dataStore: dataStore),
+                    avatarLoader: avatarLoader,
+                    contentRefresher: LobstersContentRefresher(refreshLiveContent: {
+                        refreshCount += 1
+                        try? await feed.load()
+                    }),
+                    coordinator: LobstersSessionCoordinator(), connectivity: connectivity)
+                session.setEntitlementAvailable(true)
+                await session.start()
+                online = true
+                if recoverByReconnect {
+                    connectivity.update(isConnected: false)
+                    XCTAssertTrue(connectivity.isOffline)
+                    connectivity.update(isConnected: true)
+                    XCTAssertFalse(connectivity.isOffline)
+                } else {
+                    session.applicationDidBecomeActive()
+                }
+                for _ in 0..<100 where !session.isAuthenticated || session.errorMessage != nil || feed.loadFailed {
+                    try await Task.sleep(for: .milliseconds(20))
+                }
+                XCTAssertTrue(session.isAuthenticated)
+                XCTAssertNil(session.errorMessage)
+                XCTAssertFalse(feed.loadFailed, "Feed must recover after validation; stored username = \(String(describing: storedUsername))")
+                XCTAssertEqual(refreshCount, 1)
+                await session.start(force: true)
+                await Task.yield()
+                XCTAssertEqual(refreshCount, 1, "An ordinary validation must not refresh content again")
+                _ = try? await avatarLoader.avatar(for: "test")
+            }
+        }
+    }
+
+    @MainActor
     func testVerifiedPurchaseSurvivesUnavailableProductCatalog() async throws {
         let configuration = try XCTUnwrap(Bundle(for: Self.self).url(
             forResource: "pro", withExtension: "storekit", subdirectory: "Fixtures"
