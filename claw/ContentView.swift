@@ -202,7 +202,6 @@ struct ContentView: View {
                     lobstersSession.preparePage(for: _selection)
                 }
             } catch {
-                lobstersSession.setEntitlementAvailable(false)
                 lobstersSession.markEntitlementUnavailable(error)
             }
         }

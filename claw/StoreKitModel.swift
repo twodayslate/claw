@@ -1,3 +1,4 @@
+import Combine
 import StoreKit
 import SwiftUI
 
@@ -24,11 +25,14 @@ class StoreKitModel: NSObject, ObservableObject {
     var updateListenerTask: Task<Void, Error>?
     private var initializationTask: Task<Void, Error>?
     private var productTask: Task<Void, Never>?
+    private var recoveryTask: Task<Void, Never>?
+    private var recoverySubscriptions = Set<AnyCancellable>()
     private let loadProducts: (Set<String>) async throws -> [Product]
 
     init(
         defaultId: String,
         ids: [String],
+        connectivity: ConnectivityRecovery = .shared,
         loadProducts: @escaping (Set<String>) async throws -> [Product] = {
             try await Product.products(for: $0)
         }
@@ -57,12 +61,21 @@ class StoreKitModel: NSObject, ObservableObject {
             try? await self?.initialize()
         }
 
+        connectivity.reconnections
+            .sink { [weak self] in self?.scheduleRecovery() }
+            .store(in: &recoverySubscriptions)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.scheduleRecovery() }
+            .store(in: &recoverySubscriptions)
+
         SKPaymentQueue.default().add(self)
     }
 
     deinit {
         updateListenerTask?.cancel()
         productTask?.cancel()
+        recoveryTask?.cancel()
         SKPaymentQueue.default().remove(self)
     }
 
@@ -130,6 +143,33 @@ class StoreKitModel: NSObject, ObservableObject {
         try await retrieve()
     }
 
+    private func scheduleRecovery() {
+        guard recoveryTask == nil else { return }
+        recoveryTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.recoveryTask = nil }
+            // Reading current entitlements uses StoreKit's verified transactions.
+            // AppStore.sync is reserved for the user's explicit Restore action.
+            if !self.hasInitialized {
+                try? await self.initialize()
+            } else {
+                #if DEBUG
+                if !ProcessInfo.processInfo.arguments.contains("--claw-ui-testing") {
+                    await self.refreshEntitlements()
+                }
+                #else
+                await self.refreshEntitlements()
+                #endif
+            }
+            // Retry prices separately so a slow App Store request cannot block
+            // login recovery or replace the verified purchase state.
+            self.productTask?.cancel()
+            self.productTask = Task { [weak self] in
+                try? await self?.retrieve()
+            }
+        }
+    }
+
     private func refreshEntitlements() async {
         var identifiers = Set<String>()
         var expirations = [String: Date]()
@@ -182,6 +222,7 @@ class StoreKitModel: NSObject, ObservableObject {
 
     private func retrieve() async throws {
         let products = try await loadProducts(productSet)
+        try Task.checkCancellation()
         self.products = products
         defaultProduct = products.first { $0.id == defaultPurchaseIdentifier }
     }

@@ -3,6 +3,7 @@
 //  claw
 //
 
+import Combine
 import Foundation
 import OSLog
 import UIKit
@@ -93,6 +94,8 @@ final class LobstersSession: ObservableObject {
     private var signOutWaiters = [CheckedContinuation<Void, Never>]()
     private var validationTask: (generation: UInt, task: Task<Void, Error>)?
     private var lastValidatedAt: Date?
+    private var connectivitySubscription: AnyCancellable?
+    private var needsConnectivityValidation = false
 
     init(
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
@@ -103,7 +106,8 @@ final class LobstersSession: ObservableObject {
         ),
         avatarLoader: LobstersAvatarLoader = LobstersAvatarLoader(),
         contentRefresher: LobstersContentRefresher = LobstersContentRefresher(),
-        coordinator: LobstersSessionCoordinator = .shared
+        coordinator: LobstersSessionCoordinator = .shared,
+        connectivity: ConnectivityRecovery = .shared
     ) {
         self.credentialStore = credentialStore
         self.pageLoader = pageLoader
@@ -138,6 +142,12 @@ final class LobstersSession: ObservableObject {
             self?.errorMessage = error.localizedDescription
         }
         coordinator.register(self)
+        connectivitySubscription = connectivity.reconnections.sink { [weak self] in
+            guard let self, self.isEntitled, self.hasStarted,
+                  self.state != .signingIn, self.activeAction != .signOut else { return }
+            self.needsConnectivityValidation = true
+            self.retryConnectivityValidationIfNeeded()
+        }
     }
 
     var webView: WKWebView {
@@ -182,7 +192,10 @@ final class LobstersSession: ObservableObject {
         hasStarted = true
         var previousState = state
         if !isAuthenticated { state = .checking }
-        defer { isStarting = false }
+        defer {
+            isStarting = false
+            retryConnectivityValidationIfNeeded()
+        }
         let generation = sessionGeneration
 
         do {
@@ -239,6 +252,7 @@ final class LobstersSession: ObservableObject {
         }
         isEntitled = available
         if !available {
+            needsConnectivityValidation = false
             sessionGeneration &+= 1
             hasStarted = false
             state = .signedOut
@@ -248,6 +262,7 @@ final class LobstersSession: ObservableObject {
     }
 
     func beginLogin() {
+        needsConnectivityValidation = false
         guard isEntitled else {
             state = .signedOut
             return
@@ -583,6 +598,7 @@ final class LobstersSession: ObservableObject {
     }
 
     func signOut() async {
+        needsConnectivityValidation = false
         if activeAction == .signOut {
             await waitForSignOut()
             return
@@ -891,6 +907,19 @@ final class LobstersSession: ObservableObject {
         isCurrentSession(generation) && state == .signedOut
     }
 
+    private func retryConnectivityValidationIfNeeded() {
+        guard needsConnectivityValidation, !isStarting, validationTask == nil else { return }
+        needsConnectivityValidation = false
+        guard isEntitled, state != .signingIn, activeAction != .signOut else { return }
+        let generation = sessionGeneration
+        Task { [weak self] in
+            guard let self, self.isCurrentSession(generation) else { return }
+            // A reconnect bypasses the foreground freshness window. If an old
+            // request is still finishing, its defer drains this pending retry.
+            await self.start(force: true)
+        }
+    }
+
     private func validateSession(generation: UInt) async throws {
         if let validationTask, validationTask.generation == generation {
             return try await validationTask.task.value
@@ -899,6 +928,7 @@ final class LobstersSession: ObservableObject {
         validationTask = (generation, task)
         defer {
             if validationTask?.generation == generation { validationTask = nil }
+            retryConnectivityValidationIfNeeded()
         }
         try await task.value
     }
@@ -1155,6 +1185,7 @@ final class LobstersSession: ObservableObject {
     }
 
     private func clearSession(reloadWidgets: Bool) async throws {
+        needsConnectivityValidation = false
         var credentialError: Error?
         do {
             try credentialStore.deleteCookie(for: baseURL)

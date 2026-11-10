@@ -34,10 +34,13 @@ final class WebpageFetcherTests: XCTestCase {
             if !purchaseIsAvailable { try await Task.sleep(for: .milliseconds(20)) }
         }
         XCTAssertTrue(purchaseIsAvailable)
+        let connectivity = ConnectivityRecovery(monitor: nil)
         var catalogRequested = false
-        let model = StoreKitModel(defaultId: productID, ids: []) { _ in
+        var catalogUnavailable = true
+        let model = StoreKitModel(defaultId: productID, ids: [], connectivity: connectivity) { ids in
             catalogRequested = true
-            throw URLError(.notConnectedToInternet)
+            if catalogUnavailable { throw URLError(.notConnectedToInternet) }
+            return try await Product.products(for: ids)
         }
         try await model.initialize()
         for _ in 0..<100 where !catalogRequested {
@@ -55,10 +58,20 @@ final class WebpageFetcherTests: XCTestCase {
         } catch {
             XCTAssertTrue(model.owned, "A catalog failure must not revoke a verified purchase")
         }
+        connectivity.update(isConnected: false)
+        catalogUnavailable = false
+        connectivity.update(isConnected: true)
+        for _ in 0..<100 where model.products == nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(model.defaultProduct?.id, productID, "Reconnect must retry the catalog automatically")
+        XCTAssertTrue(model.owned)
+
         try storeKit.expireSubscription(productIdentifier: productID)
         try await AppStore.sync()
+        connectivity.update(isConnected: false)
+        connectivity.update(isConnected: true)
         for _ in 0..<100 where model.owned {
-            try? await model.update()
             if model.owned { try await Task.sleep(for: .milliseconds(20)) }
         }
         XCTAssertFalse(model.owned, "An expired subscription must still lose access")
@@ -93,6 +106,7 @@ final class WebpageFetcherTests: XCTestCase {
         }
         let loader = LobstersPageLoader(session: network, credentialStore: store,
             storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
+        let connectivity = ConnectivityRecovery(monitor: nil)
         func reopenedSession() -> LobstersSession {
             let dataStore = WKWebsiteDataStore.nonPersistent()
             let session = LobstersSession(credentialStore: store, pageLoader: loader,
@@ -100,7 +114,7 @@ final class WebpageFetcherTests: XCTestCase {
                 storyWebClient: LobstersWebViewClient(dataStore: dataStore),
                 avatarLoader: LobstersAvatarLoader(pageLoader: loader),
                 contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
-                coordinator: LobstersSessionCoordinator())
+                coordinator: LobstersSessionCoordinator(), connectivity: connectivity)
             session.setEntitlementAvailable(true)
             return session
         }
@@ -114,17 +128,95 @@ final class WebpageFetcherTests: XCTestCase {
         }
         let session = reopenedSession()
         await session.start()
+        connectivity.update(isConnected: false)
         networkError = nil
-        await session.start(force: true)
+        connectivity.update(isConnected: true)
+        for _ in 0..<100 where session.errorMessage != nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
         XCTAssertTrue(session.isAuthenticated)
         XCTAssertNil(session.errorMessage)
         rejected = true
-        await session.start(force: true)
+        connectivity.update(isConnected: false)
+        connectivity.update(isConnected: true)
+        for _ in 0..<100 where session.isAuthenticated {
+            try await Task.sleep(for: .milliseconds(20))
+        }
         XCTAssertEqual(session.state, .signedOut, "Confirmed server rejection must still clear the login")
         XCTAssertNil(try store.loadCookie(for: baseURL))
         let signedOut = reopenedSession()
         await signedOut.start()
         XCTAssertEqual(signedOut.state, .signedOut)
+    }
+
+    @MainActor
+    func testReconnectRetriesAfterAnInflightValidationTimesOut() async throws {
+        let baseURL = APIConfiguration.shared.baseURL
+        let store = LobstersCredentialStore(service: "claw.tests.reconnect.\(UUID())", accessGroup: nil)
+        defer { try? store.deleteCookie(for: baseURL) }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .name: LobstersCredentialStore.cookieName, .value: "local-reconnect-fixture",
+            .domain: baseURL.host!, .path: "/", .expires: Date().addingTimeInterval(3600)
+        ]))
+        try store.saveCookie(cookie, for: baseURL, username: "test")
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let gate = DispatchSemaphore(value: 0)
+        defer {
+            gate.signal()
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+        }
+        let requestStarted = expectation(description: "Validation started before reconnect")
+        let retried = expectation(description: "Validation retried after timeout")
+        var settingsRequests = 0
+        WebpageURLProtocol.requestHandler = { request in
+            if request.url?.path == "/settings" {
+                settingsRequests += 1
+                // Exhaust the loader's three read-only attempts before the
+                // pending reconnect starts a new session validation.
+                if settingsRequests <= 3 {
+                    if settingsRequests == 1 {
+                        requestStarted.fulfill()
+                        _ = gate.wait(timeout: .now() + 5)
+                    }
+                    throw URLError(.timedOut)
+                }
+                retried.fulfill()
+            }
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                    Data("<html><body data-username='test'></body></html>".utf8))
+        }
+        let loader = LobstersPageLoader(session: network, credentialStore: store,
+            storedCredentialPolicy: .always, throttle: LobstersRequestThrottle(minimumInterval: 0))
+        let connectivity = ConnectivityRecovery(monitor: nil)
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let avatarLoader = LobstersAvatarLoader(pageLoader: loader)
+        let session = LobstersSession(credentialStore: store, pageLoader: loader,
+            webClient: LobstersWebViewClient(dataStore: dataStore),
+            storyWebClient: LobstersWebViewClient(dataStore: dataStore),
+            avatarLoader: avatarLoader,
+            contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
+            coordinator: LobstersSessionCoordinator(), connectivity: connectivity)
+        session.setEntitlementAvailable(true)
+        let startup = Task { await session.start() }
+        await fulfillment(of: [requestStarted], timeout: 5)
+        connectivity.update(isConnected: false)
+        connectivity.update(isConnected: true)
+        connectivity.update(isConnected: true)
+        gate.signal()
+        await startup.value
+        await fulfillment(of: [retried], timeout: 5)
+        for _ in 0..<100 where session.errorMessage != nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(session.state, .signedIn(username: "test"))
+        XCTAssertNil(session.errorMessage)
+        // Drain the deferred avatar request before invalidating the URLSession.
+        _ = try await avatarLoader.avatar(for: "test")
+        XCTAssertEqual(settingsRequests, 4, "Repeated reachable updates must not cause a request storm")
+        XCTAssertEqual(try store.loadCookie(for: baseURL)?.username, "test")
     }
 
     @MainActor
@@ -250,7 +342,7 @@ final class WebpageFetcherTests: XCTestCase {
         XCTAssertTrue(recovered.contains { $0.name == cookie.name && $0.value == cookie.value })
 
         html = "<html><body>Unexpected maintenance page</body></html>"
-        for code in [200, 403, 500] {
+        for code in [200, 401, 403, 500, 502, 503, 504] {
             status = code
             await session.start(force: true)
             XCTAssertTrue(session.isAuthenticated, "HTTP \(code) must not clear a confirmed login")
