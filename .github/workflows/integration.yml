@@ -214,7 +214,11 @@ jobs:
 
       - name: Initialize Lobsters test data
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
-        run: docker compose run --rm app bin/setup
+        run: |
+          # Upstream can commit migrations ahead of db/schema.rb. db:prepare
+          # applies them before seeding; db:setup seeds the stale schema and fails.
+          ruby -e 'path = "bin/setup"; File.write(path, File.read(path).gsub("rails db:setup", "rails db:prepare"))'
+          docker compose run --rm app bin/setup
 
       - name: Create Lobsters UI test fixtures
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
