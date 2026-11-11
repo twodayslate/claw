@@ -363,6 +363,27 @@ jobs:
           wait_for_boot: true
           shutdown_after_job: false
 
+      - name: Verify simulator StoreKit service
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          simulator_id='${{ steps.simulator.outputs.udid }}'
+          # StoreKitTest waits for this service even when purchases are local.
+          # Start it explicitly on the self-hosted runner and fail before the
+          # suite if the runtime cannot provide it. Do not restart a live daemon.
+          xcrun simctl spawn "$simulator_id" launchctl kickstart user/foreground/com.apple.storekitd
+          for attempt in {1..15}; do
+            status="$(xcrun simctl spawn "$simulator_id" launchctl print user/foreground/com.apple.storekitd)"
+            if grep -q 'state = running' <<< "$status"; then
+              echo "Simulator StoreKit service is running."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "$status"
+          echo "::error::Simulator StoreKit service did not start."
+          exit 1
+
       - name: Run unit, integration, and UI tests
         shell: bash
         run: |
@@ -378,6 +399,9 @@ jobs:
             -destination-timeout 60 \
             -destination "platform=iOS Simulator,id=$simulator_id" \
             -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 300 \
+            -maximum-test-execution-time-allowance 300 \
             -retry-tests-on-failure \
             -test-iterations 3 \
             -test-repetition-relaunch-enabled YES \
