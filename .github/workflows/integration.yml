@@ -371,9 +371,16 @@ jobs:
           # StoreKitTest waits for this service even when purchases are local.
           # Start it explicitly on the self-hosted runner and fail before the
           # suite if the runtime cannot provide it. Do not restart a live daemon.
-          xcrun simctl spawn "$simulator_id" launchctl kickstart user/foreground/com.apple.storekitd
+          service=user/foreground/com.apple.storekitd
+          xcrun simctl spawn "$simulator_id" launchctl enable "$service"
+          if ! xcrun simctl spawn "$simulator_id" launchctl print "$service" >/dev/null 2>&1; then
+            runtime_root="$(xcrun simctl getenv "$simulator_id" SIMULATOR_ROOT)"
+            xcrun simctl spawn "$simulator_id" launchctl bootstrap user/foreground \
+              "$runtime_root/System/Library/LaunchDaemons/com.apple.storekitd.plist"
+          fi
+          xcrun simctl spawn "$simulator_id" launchctl kickstart "$service"
           for attempt in {1..15}; do
-            status="$(xcrun simctl spawn "$simulator_id" launchctl print user/foreground/com.apple.storekitd)"
+            status="$(xcrun simctl spawn "$simulator_id" launchctl print "$service")"
             if grep -q 'state = running' <<< "$status"; then
               echo "Simulator StoreKit service is running."
               exit 0

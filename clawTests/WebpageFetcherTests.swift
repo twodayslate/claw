@@ -199,7 +199,9 @@ final class WebpageFetcherTests: XCTestCase {
         connectivity.update(isConnected: false)
         networkError = nil
         connectivity.update(isConnected: true)
-        for _ in 0..<100 where session.errorMessage != nil {
+        // Fresh simulators can take several seconds to finish WebKit cookie
+        // operations. Keep the wait bounded without racing that startup work.
+        for _ in 0..<500 where session.errorMessage != nil {
             try await Task.sleep(for: .milliseconds(20))
         }
         XCTAssertTrue(session.isAuthenticated)
@@ -207,7 +209,7 @@ final class WebpageFetcherTests: XCTestCase {
         rejected = true
         connectivity.update(isConnected: false)
         connectivity.update(isConnected: true)
-        for _ in 0..<100 where session.isAuthenticated {
+        for _ in 0..<500 where session.isAuthenticated {
             try await Task.sleep(for: .milliseconds(20))
         }
         XCTAssertEqual(session.state, .signedOut, "Confirmed server rejection must still clear the login")
