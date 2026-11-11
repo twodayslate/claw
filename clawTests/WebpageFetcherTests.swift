@@ -333,6 +333,7 @@ final class WebpageFetcherTests: XCTestCase {
         }
 
         let fetcher = StoryFetcher("test01", webpageFetcher: webpageFetcher)
+        let unvisited = StoryFetcher("unvisited", webpageFetcher: webpageFetcher)
         try await fetcher.load()
         try await assertEventually(
             "Anonymous story",
@@ -342,6 +343,7 @@ final class WebpageFetcherTests: XCTestCase {
         title = "Authenticated story"
         StoryFetcher.cachedStories.removeAll()
         await StoryFetcher.reloadLiveFetchers()
+        XCTAssertNil(unvisited.story, "Constructing a navigation destination must not request it")
 
         try await assertEventually(
             "Authenticated story",
@@ -697,5 +699,321 @@ extension WebpageFetcherTests {
         XCTAssertTrue(failure.report.contains("1970-01-01T00:00:00Z"))
         XCTAssertTrue(failure.report.contains("App:"))
         XCTAssertTrue(failure.report.contains("OS:"))
+    }
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testFeedAppearanceAndTerminalPaginationDoNotRepeatRequests() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: network, storedCredentialPolicy: .never,
+            throttle: LobstersRequestThrottle(minimumInterval: 0))
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+            TagStoryFetcher.cachedStories.removeAll()
+        }
+        let fetchers: [GenericArrayFetcher<NewestStory>] = [
+            HottestFetcher(pageLoader: loader), NewestFetcher(pageLoader: loader),
+            TagStoryFetcher(tags: ["request-count"], pageLoader: loader),
+            UserStoryFetcher(username: "test", pageLoader: loader)
+        ]
+        for fetcher in fetchers {
+            var count = 0
+            var empty = true
+            WebpageURLProtocol.requestHandler = { request in
+                let url = try XCTUnwrap(request.url)
+                XCTAssertTrue(["localhost", "127.0.0.1"].contains(url.host ?? ""))
+                count += 1
+                let html = empty ? "<ol class='stories'></ol>" : "<ol class='stories'><li class='story' data-shortid='one'><h2 class='link'><a class='u-url' href='/s/one'>One</a></h2></li></ol>"
+                let data: Data
+                if fetcher is UserStoryFetcher {
+                    let stories: [NewestStory] = empty ? [] : (0..<25).map { index in
+                        var story = NewestStory.placeholder
+                        story.short_id = "story\(index)"
+                        return story
+                    }
+                    data = try JSONEncoder().encode(stories)
+                } else {
+                    data = Data(html.utf8)
+                }
+                return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, data)
+            }
+            try await fetcher.loadIfEmpty()
+            try await fetcher.loadIfEmpty()
+            try await fetcher.more()
+            XCTAssertEqual(count, 1, "An empty successful feed is already loaded")
+            empty = false
+            try await fetcher.reload()
+            XCTAssertEqual(count, 2, "Pull to refresh must still issue a request")
+            let last = try XCTUnwrap(fetcher.items.last)
+            fetcher.isLoading = true
+            try await fetcher.more(last)
+            XCTAssertEqual(count, 2, "Rows must not paginate during a first-page load")
+            fetcher.isLoading = false
+            empty = true
+            try await fetcher.more(last)
+            try await fetcher.more(last)
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(count, 3, "The terminal page must be fetched only once")
+            fetcher.invalidateContent()
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(count, 4, "Origin invalidation must permit a fresh load")
+        }
+    }
+
+    @MainActor
+    func testStoryLoadsDoNotOverlapOrRepeatOnAppearance() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let fetcher = StoryFetcher("dedupe", webpageFetcher: WebpageFetcher(session: network,
+            storedCredentialPolicy: .never, throttle: LobstersRequestThrottle(minimumInterval: 0)))
+        var count = 0
+        WebpageURLProtocol.requestHandler = { request in
+            count += 1
+            let html = "<ol class='stories'><li class='story' data-shortid='dedupe'><h2 class='link'><a class='u-url' href='/s/dedupe'>One</a></h2></li></ol><ol class='comments'></ol>"
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        func loadTitle() async throws -> String? {
+            try await fetcher.load()
+            return fetcher.story?.title
+        }
+        async let first = loadTitle()
+        async let second = loadTitle()
+        let titles = try await (first, second)
+        XCTAssertEqual(titles.0, "One")
+        XCTAssertEqual(titles.1, "One")
+        try await fetcher.loadIfEmpty()
+        XCTAssertEqual(count, 1)
+        try await fetcher.reload()
+        XCTAssertEqual(count, 2)
+    }
+
+    @MainActor
+    func testSelectingNativeTabsDoesNotNavigateHiddenWebView() async throws {
+        let client = LobstersWebViewClient(dataStore: .nonPersistent())
+        let store = LobstersCredentialStore(service: "claw.tests.lazy.\(UUID())", accessGroup: nil)
+        let session = LobstersSession(credentialStore: store, webClient: client,
+            storyWebClient: LobstersWebViewClient(dataStore: .nonPersistent()),
+            contentRefresher: LobstersContentRefresher(refreshLiveContent: {}),
+            coordinator: LobstersSessionCoordinator())
+        session.setEntitlementAvailable(true)
+        await session.start()
+        for tab: TabSelection in [.Hottest, .Newest, .Tags, .Settings] {
+            session.preparePage(for: tab)
+        }
+        XCTAssertNil(client.currentURL)
+        XCTAssertFalse(client.isLoading)
+        XCTAssertEqual(client.completedNavigationCount, 0)
+    }
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    func testTagMetadataStaysCachedUntilExplicitRefresh() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: network, storedCredentialPolicy: .never,
+            throttle: LobstersRequestThrottle(minimumInterval: 0))
+        let oldTags = TagFetcher.cachedTags
+        let tag = Tag(tag: "test", description: "Local test", privileged: false,
+            is_media: false, active: true, hotness_mod: 0)
+        TagFetcher.cachedTags = [tag]
+        var count = 0
+        WebpageURLProtocol.requestHandler = { request in
+            count += 1
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                try JSONEncoder().encode([tag]))
+        }
+        defer {
+            TagFetcher.cachedTags = oldTags
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+        }
+        let fetcher = TagFetcher(pageLoader: loader)
+        try await fetcher.loadIfEmpty()
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(count, 0, "View construction must not refresh cached metadata")
+        try await fetcher.load()
+        XCTAssertEqual(count, 1)
+    }
+
+    @MainActor
+    func testRefreshSupersedesPaginationAndKeepsCorrectCursor() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: config)
+        let loader = LobstersPageLoader(session: network, storedCredentialPolicy: .never,
+            throttle: LobstersRequestThrottle(minimumInterval: 0.03))
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+            TagStoryFetcher.cachedStories.removeAll()
+        }
+        WebpageURLProtocol.requestHandler = { request in
+            let url = try XCTUnwrap(request.url)
+            let id = url.path.hasSuffix("/page/2") ? "stale" : "fresh"
+            let html = "<ol class='stories'><li class='story' data-shortid='\(id)'><h2 class='link'><a class='u-url' href='/s/\(id)'>\(id)</a></h2></li></ol>"
+            return (HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        let fetchers: [GenericArrayFetcher<NewestStory>] = [HottestFetcher(pageLoader: loader),
+            NewestFetcher(pageLoader: loader), TagStoryFetcher(tags: ["race"], pageLoader: loader)]
+        for fetcher in fetchers {
+            try await fetcher.load()
+            let last = fetcher.items.last
+            let pagination = Task { try await fetcher.more(last) }
+            while !fetcher.isLoadingMore { await Task.yield() }
+            try await fetcher.reload()
+            try await pagination.value
+            XCTAssertEqual(fetcher.items.map(\.id), ["fresh"])
+            XCTAssertEqual(fetcher.page, 2)
+            XCTAssertFalse(fetcher.isLoadingMore)
+        }
+    }
+}
+
+private final class StoryRequestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+
+    var count: Int { lock.withLock { value } }
+    func increment() { lock.withLock { value += 1 } }
+}
+
+extension WebpageFetcherTests {
+    @MainActor
+    private func withQueuedStoryFetcher(
+        _ operation: (StoryFetcher, StoryRequestCounter) async throws -> Void
+    ) async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WebpageURLProtocol.self]
+        let network = URLSession(configuration: configuration)
+        let throttle = LobstersRequestThrottle(minimumInterval: 0.5)
+        let url = APIConfiguration.shared.storyURL(shortId: "cancel")
+        var warmup = URLRequest(url: url)
+        await warmup.setUserAgent()
+        let fetcher = StoryFetcher("cancel", webpageFetcher: WebpageFetcher(
+            session: network, storedCredentialPolicy: .never, throttle: throttle))
+        let requests = StoryRequestCounter()
+        WebpageURLProtocol.requestHandler = { request in
+            XCTAssertTrue(["localhost", "127.0.0.1"].contains(request.url?.host ?? ""))
+            requests.increment()
+            let html = "<ol class='stories'><li class='story' data-shortid='cancel'><h2 class='link'><a class='u-url' href='/s/cancel'>Cancel</a></h2></li></ol><ol class='comments'></ol>"
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data(html.utf8))
+        }
+        StoryFetcher.cachedStories.removeAll()
+        defer {
+            WebpageURLProtocol.requestHandler = nil
+            network.invalidateAndCancel()
+            StoryFetcher.cachedStories.removeAll()
+        }
+        try await throttle.acquire(url)
+        try await operation(fetcher, requests)
+    }
+
+    private func assertCancelled(_ task: Task<Void, Error>) async {
+        do {
+            try await task.value
+            XCTFail("The cancelled reader must receive cancellation")
+        } catch is CancellationError {
+            // Expected even if another reader still owns the shared request.
+        } catch {
+            XCTFail("Expected CancellationError, got \(error)")
+        }
+    }
+
+    @MainActor
+    func testCancellingOnlyStoryReaderStopsQueuedRequestAndAllowsRetry() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let appearance = Task { try await fetcher.load() }
+            defer { appearance.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertEqual(requests.count, 0)
+            appearance.cancel()
+            await assertCancelled(appearance)
+            // Wait past the throttle slot to catch requests left running after
+            // the cancelled reader's continuation has already returned.
+            try await Task.sleep(for: .milliseconds(600))
+            XCTAssertEqual(requests.count, 0)
+            XCTAssertNil(fetcher.story)
+            XCTAssertFalse(fetcher.loadFailed)
+            XCTAssertNil(fetcher.loadFailure)
+
+            try await fetcher.load()
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+        }
+    }
+
+    @MainActor
+    func testCancelledCachedStoryAppearanceRetriesUntilLoaded() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let url = APIConfiguration.shared.storyURL(shortId: "cancel")
+            let html = "<ol class='stories'><li class='story' data-shortid='cancel'><h2 class='link'><a class='u-url' href='/s/cancel'>Cached title</a></h2></li></ol><ol class='comments'></ol>"
+            StoryFetcher.cachedStories = [try await StoryHTMLParser.parseOffMain(html, pageURL: url)]
+
+            let appearance = Task { try await fetcher.loadIfEmpty() }
+            defer { appearance.cancel() }
+            try await assertEventually("Cached title", isLoadedBy: fetcher)
+            appearance.cancel()
+            await assertCancelled(appearance)
+            try await Task.sleep(for: .milliseconds(600))
+            XCTAssertEqual(requests.count, 0, "Leaving must cancel the queued request")
+            XCTAssertEqual(fetcher.story?.title, "Cached title", "Keep provisional content readable")
+
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 1, "Returning must retry the unfinished initial load")
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 1, "A completed load must still be reused")
+
+            StoryFetcher.invalidateLiveContent()
+            try await fetcher.loadIfEmpty()
+            XCTAssertEqual(requests.count, 2, "Invalidation must clear the completed-load state")
+        }
+    }
+
+    @MainActor
+    func testCancellingOneStoryReaderKeepsRequestForAnotherReader() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let first = Task { try await fetcher.load() }
+            let second = Task { try await fetcher.load() }
+            defer { first.cancel(); second.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            first.cancel()
+            await assertCancelled(first)
+            XCTAssertEqual(requests.count, 0, "Cancellation must return without waiting for the shared read")
+            try await second.value
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+        }
+    }
+
+    @MainActor
+    func testSupersedingSharedStoryLoadCancelsWaitersWithoutCancellingReplacement() async throws {
+        try await withQueuedStoryFetcher { fetcher, requests in
+            let first = Task { try await fetcher.load() }
+            let second = Task { try await fetcher.load() }
+            defer { first.cancel(); second.cancel() }
+            try await Task.sleep(for: .milliseconds(100))
+            StoryFetcher.invalidateLiveContent()
+            let replacement = Task { try await fetcher.load() }
+            defer { replacement.cancel() }
+            await assertCancelled(first)
+            await assertCancelled(second)
+            try await replacement.value
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(fetcher.story?.title, "Cancel")
+            XCTAssertFalse(fetcher.loadFailed)
+        }
     }
 }

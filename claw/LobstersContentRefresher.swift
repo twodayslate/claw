@@ -60,10 +60,12 @@ final class LobstersContentRefresher {
     }
 
     private static func refreshHottest() async {
+        guard HottestFetcher.shared.hasRequestedContent else { return }
         try? await HottestFetcher.shared.loadSupersedingPendingLoads()
     }
 
     private static func refreshNewest() async {
+        guard NewestFetcher.shared.hasRequestedContent else { return }
         try? await NewestFetcher.shared.loadSupersedingPendingLoads()
     }
 }

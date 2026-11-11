@@ -270,6 +270,16 @@ class StoryFetcher: ObservableObject {
     public var pageURL: URL? = nil
     private let webpageFetcher: WebpageFetcher
     private var contentGeneration: UInt = 0
+    private struct PendingLoad {
+        let id: UUID
+        let task: Task<Void, Never>
+        var waiters: [UUID: CheckedContinuation<Void, Error>]
+    }
+
+    private var pendingLoad: PendingLoad?
+    private var hasRequestedContent = false
+    // Provisional cached content does not complete this fetcher's initial load.
+    private var hasLoadedContent = false
 
     init(
         _ short_id: String? = nil,
@@ -287,7 +297,7 @@ class StoryFetcher: ObservableObject {
     static func reloadLiveFetchers() async {
         liveFetchers.removeAll { $0.value == nil }
         let fetchers = liveFetchers.compactMap(\.value)
-        for fetcher in fetchers {
+        for fetcher in fetchers where fetcher.hasRequestedContent {
             try? await fetcher.loadSupersedingPendingLoads()
         }
     }
@@ -302,11 +312,16 @@ class StoryFetcher: ObservableObject {
 
     private func supersedePendingLoads() {
         contentGeneration &+= 1
+        if let pendingLoad {
+            pendingLoad.task.cancel()
+            finishLoad(pendingLoad.id, result: .failure(CancellationError()))
+        }
         isReloading = false
     }
 
     private func invalidateContent() {
         supersedePendingLoads()
+        hasLoadedContent = false
         story = nil
         loadFailed = false
         loadFailure = nil
@@ -334,17 +349,71 @@ class StoryFetcher: ObservableObject {
     }
     
     func loadIfEmpty() async throws {
-        if let _ = self.story {
+        if hasLoadedContent, story != nil {
             return
         }
         try await self.load()
     }
 
     func load() async throws {
-        guard let short_id = self.short_id else {
+        try Task.checkCancellation()
+        guard short_id != nil else { return }
+        let waiterID = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                guard !Task.isCancelled else {
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+                addLoadWaiter(waiterID, continuation: continuation)
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.cancelLoadWaiter(waiterID)
+            }
+        }
+        try Task.checkCancellation()
+    }
+
+    private func addLoadWaiter(_ waiterID: UUID, continuation: CheckedContinuation<Void, Error>) {
+        if pendingLoad != nil {
+            pendingLoad?.waiters[waiterID] = continuation
             return
         }
+        let loadID = UUID()
         let generation = contentGeneration
+        hasRequestedContent = true
+        let task = Task {
+            do {
+                try await performLoad(generation: generation)
+                finishLoad(loadID, result: .success(()))
+            } catch {
+                finishLoad(loadID, result: .failure(error))
+            }
+        }
+        pendingLoad = PendingLoad(id: loadID, task: task, waiters: [waiterID: continuation])
+    }
+
+    private func cancelLoadWaiter(_ waiterID: UUID) {
+        guard let continuation = pendingLoad?.waiters.removeValue(forKey: waiterID) else { return }
+        continuation.resume(throwing: CancellationError())
+        // Keep the shared request alive only while another reader still needs it.
+        if pendingLoad?.waiters.isEmpty == true {
+            supersedePendingLoads()
+        }
+    }
+
+    private func finishLoad(_ loadID: UUID, result: Result<Void, Error>) {
+        guard let pendingLoad, pendingLoad.id == loadID else { return }
+        self.pendingLoad = nil
+        for continuation in pendingLoad.waiters.values {
+            continuation.resume(with: result)
+        }
+    }
+
+    private func performLoad(generation: UInt) async throws {
+        try Task.checkCancellation()
+        guard isCurrentContentGeneration(generation), let short_id else { return }
         let isCommentLink = pageURL?.pathComponents.dropFirst().first == "c"
         if !isCommentLink, let cachedStory = StoryFetcher.cachedStories.first(where: {$0.short_id == short_id}) {
             self.story = cachedStory
@@ -396,6 +465,7 @@ class StoryFetcher: ObservableObject {
         guard isCurrentContentGeneration(generation) else {
             return
         }
+        hasLoadedContent = true
         self.story = parsedStory
         self.short_id = parsedStory.short_id
         loadFailure = parsedStory.comments_unavailable == true
