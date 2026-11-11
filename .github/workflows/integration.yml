@@ -148,8 +148,10 @@ jobs:
         shell: bash
         run: |
           xcodebuild -downloadComponent MetalToolchain
-          if ! xcodebuild -showsdks | grep -q iphonesimulator; then
-            xcodebuild -downloadPlatform iOS
+          runtime_id="com.apple.CoreSimulator.SimRuntime.iOS-${SIMULATOR_OS//./-}"
+          if ! xcrun simctl list runtimes --json | jq -e --arg id "$runtime_id" \
+            'any(.runtimes[]; .isAvailable and .identifier == $id)' >/dev/null; then
+            xcodebuild -downloadPlatform iOS -buildVersion "$SIMULATOR_OS"
           fi
           xcodebuild -version
           xcodebuild -showsdks
@@ -158,8 +160,11 @@ jobs:
         id: create-simulator
         shell: bash
         run: |
-          runtime_id="$(xcrun simctl list runtimes --json | jq -er --arg version "$SIMULATOR_OS" \
-            '[.runtimes[] | select(.isAvailable and .version == $version and (.identifier | contains(".iOS-"))) | .identifier] | unique | if length == 1 then .[0] else error("Expected one available iOS runtime") end')"
+          # Device-specific runtimes can share the same version. Select the
+          # standard image, and collapse duplicate CoreSimulator registrations.
+          expected_runtime="com.apple.CoreSimulator.SimRuntime.iOS-${SIMULATOR_OS//./-}"
+          runtime_id="$(xcrun simctl list runtimes --json | jq -er --arg id "$expected_runtime" \
+            '[.runtimes[] | select(.isAvailable and .identifier == $id) | .identifier] | unique | if length == 1 then .[0] else error("Expected the configured iOS runtime") end')"
           device_type="$(xcrun simctl list devicetypes --json | jq -er --arg model "$SIMULATOR_MODEL" \
             '[.devicetypes[] | select(.name == $model) | .identifier] | unique | if length == 1 then .[0] else error("Expected one device type") end')"
           simulator_id="$(xcrun simctl create "Claw CI $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-${{ matrix.name }}" "$device_type" "$runtime_id")"
