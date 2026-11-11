@@ -1260,7 +1260,7 @@ class clawTests: XCTestCase {
         restored.setEntitlementAvailable(true)
         await restored.start()
         XCTAssertEqual(restored.username, "test", "The browser session must be sufficient to restore login")
-        XCTAssertNotNil(try store.loadCookie(for: baseURL))
+        XCTAssertEqual(try store.loadCookie(for: baseURL)?.username, "test")
         let cookies = await reopenedFeed.allCookies()
         XCTAssertTrue(cookies.contains { $0.name == preference.name && $0.value == preference.value })
 

@@ -3,6 +3,7 @@
 //  claw
 //
 
+import Combine
 import Foundation
 import OSLog
 import UIKit
@@ -93,6 +94,11 @@ final class LobstersSession: ObservableObject {
     private var signOutWaiters = [CheckedContinuation<Void, Never>]()
     private var validationTask: (generation: UInt, task: Task<Void, Error>)?
     private var lastValidatedAt: Date?
+    private var connectivitySubscription: AnyCancellable?
+    private var needsConnectivityValidation = false
+    // A restored identity may match the server while native content is still
+    // anonymous or failed. Consume this only after authentication succeeds.
+    private var needsAuthenticatedContentRefresh = false
 
     init(
         credentialStore: LobstersCredentialStore = LobstersCredentialStore(),
@@ -103,7 +109,8 @@ final class LobstersSession: ObservableObject {
         ),
         avatarLoader: LobstersAvatarLoader = LobstersAvatarLoader(),
         contentRefresher: LobstersContentRefresher = LobstersContentRefresher(),
-        coordinator: LobstersSessionCoordinator = .shared
+        coordinator: LobstersSessionCoordinator = .shared,
+        connectivity: ConnectivityRecovery = .shared
     ) {
         self.credentialStore = credentialStore
         self.pageLoader = pageLoader
@@ -138,6 +145,13 @@ final class LobstersSession: ObservableObject {
             self?.errorMessage = error.localizedDescription
         }
         coordinator.register(self)
+        connectivitySubscription = connectivity.reconnections.sink { [weak self] in
+            guard let self, self.isEntitled, self.hasStarted,
+                  self.state != .signingIn, self.activeAction != .signOut else { return }
+            self.needsConnectivityValidation = true
+            self.needsAuthenticatedContentRefresh = true
+            self.retryConnectivityValidationIfNeeded()
+        }
     }
 
     var webView: WKWebView {
@@ -180,14 +194,26 @@ final class LobstersSession: ObservableObject {
 
         isStarting = true
         hasStarted = true
-        let previousState = state
+        var previousState = state
         if !isAuthenticated { state = .checking }
-        defer { isStarting = false }
+        defer {
+            isStarting = false
+            retryConnectivityValidationIfNeeded()
+        }
         let generation = sessionGeneration
 
         do {
             let browserCookie = await sessionCookie()
-            let savedCookie = try credentialStore.loadCookie(for: baseURL)?.makeCookie()
+            guard isEntitled, isCurrentSession(generation) else { return }
+            let savedCredential = try credentialStore.loadCookie(for: baseURL)
+            let savedCookie = savedCredential?.makeCookie()
+            if !isAuthenticated, let username = savedCredential?.username {
+                // Restore the last verified identity before attempting network
+                // validation. A connection failure does not revoke this login.
+                previousState = .signedIn(username: username)
+                needsAuthenticatedContentRefresh = true
+                state = previousState
+            }
             guard browserCookie != nil || savedCookie != nil else {
                 if isCurrentSession(generation) { state = .signedOut }
                 return
@@ -231,6 +257,8 @@ final class LobstersSession: ObservableObject {
         }
         isEntitled = available
         if !available {
+            needsConnectivityValidation = false
+            needsAuthenticatedContentRefresh = false
             sessionGeneration &+= 1
             hasStarted = false
             state = .signedOut
@@ -240,6 +268,7 @@ final class LobstersSession: ObservableObject {
     }
 
     func beginLogin() {
+        needsConnectivityValidation = false
         guard isEntitled else {
             state = .signedOut
             return
@@ -575,6 +604,7 @@ final class LobstersSession: ObservableObject {
     }
 
     func signOut() async {
+        needsConnectivityValidation = false
         if activeAction == .signOut {
             await waitForSignOut()
             return
@@ -883,6 +913,19 @@ final class LobstersSession: ObservableObject {
         isCurrentSession(generation) && state == .signedOut
     }
 
+    private func retryConnectivityValidationIfNeeded() {
+        guard needsConnectivityValidation, !isStarting, validationTask == nil else { return }
+        needsConnectivityValidation = false
+        guard isEntitled, state != .signingIn, activeAction != .signOut else { return }
+        let generation = sessionGeneration
+        Task { [weak self] in
+            guard let self, self.isCurrentSession(generation) else { return }
+            // A reconnect bypasses the foreground freshness window. If an old
+            // request is still finishing, its defer drains this pending retry.
+            await self.start(force: true)
+        }
+    }
+
     private func validateSession(generation: UInt) async throws {
         if let validationTask, validationTask.generation == generation {
             return try await validationTask.task.value
@@ -891,6 +934,7 @@ final class LobstersSession: ObservableObject {
         validationTask = (generation, task)
         defer {
             if validationTask?.generation == generation { validationTask = nil }
+            retryConnectivityValidationIfNeeded()
         }
         try await task.value
     }
@@ -956,7 +1000,7 @@ final class LobstersSession: ObservableObject {
         )
         let rotatedCookie = responseCookies.first { StoredLobstersCookie($0, for: baseURL) != nil }
         if let cookie = rotatedCookie ?? confirmed.cookie.makeCookie() {
-            try credentialStore.saveCookie(cookie, for: baseURL)
+            try credentialStore.saveCookie(cookie, for: baseURL, username: username)
             await webClient.setCookie(cookie)
             await storyWebClient.setCookie(cookie)
             guard isEntitled, isCurrentSession(generation) else {
@@ -966,13 +1010,15 @@ final class LobstersSession: ObservableObject {
 
         let previousUsername = self.username
         coordinatedAuthenticationUsername = nil
-        if previousUsername != username {
+        if previousUsername != username || needsAuthenticatedContentRefresh {
+            needsAuthenticatedContentRefresh = false
             contentRefresher.invalidate()
             // Install authenticated controls before exposing signed-in actions.
             // This retains the story WebView and refreshes its existing document.
             storyWebClient.reloadIfNeeded()
         }
         state = .signedIn(username: username)
+        errorMessage = nil
         lastValidatedAt = Date()
         if let cookie = await sessionCookie() {
             await coordinator.didAuthenticate(
@@ -1051,10 +1097,11 @@ final class LobstersSession: ObservableObject {
                 try await validateSession(generation: generation)
                 return
             }
-            try credentialStore.saveCookie(sessionCookie, for: baseURL)
+            try credentialStore.saveCookie(sessionCookie, for: baseURL, username: username)
             let previousUsername = self.username
             coordinatedAuthenticationUsername = nil
-            if previousUsername != username {
+            if previousUsername != username || needsAuthenticatedContentRefresh {
+                needsAuthenticatedContentRefresh = false
                 contentRefresher.invalidate()
                 // The shared data store now has the authenticated cookie, but a
                 // retained story document may still contain anonymous controls.
@@ -1146,6 +1193,7 @@ final class LobstersSession: ObservableObject {
     }
 
     private func clearSession(reloadWidgets: Bool) async throws {
+        needsConnectivityValidation = false
         var credentialError: Error?
         do {
             try credentialStore.deleteCookie(for: baseURL)
@@ -1205,6 +1253,7 @@ final class LobstersSession: ObservableObject {
     }
 
     fileprivate func applyCoordinatedSignOut(completeWaiters: Bool) async {
+        needsAuthenticatedContentRefresh = false
         sessionGeneration &+= 1
         restoreSelectedPageWhenPrimaryNavigationFinishes = false
         for client in [webClient, storyWebClient] {

@@ -1,3 +1,4 @@
+import Combine
 import StoreKit
 import SwiftUI
 
@@ -15,7 +16,7 @@ class StoreKitModel: NSObject, ObservableObject {
 
     @Published public private(set) var products: [Product]?
     @Published public private(set) var defaultProduct: Product?
-    /// A Boolean value indicating that the products have been fetched and initial transactions have been checked
+    /// Initial verified entitlements have been checked, independently of product availability.
     @Published public private(set) var hasInitialized = false
 
     @Published private(set) var purchasedIdentifiers = Set<String>()
@@ -23,10 +24,22 @@ class StoreKitModel: NSObject, ObservableObject {
     private var nonExpiringEntitlements = Set<String>()
     var updateListenerTask: Task<Void, Error>?
     private var initializationTask: Task<Void, Error>?
+    private var productTask: Task<Void, Never>?
+    private var recoveryTask: Task<Void, Never>?
+    private var recoverySubscriptions = Set<AnyCancellable>()
+    private let loadProducts: (Set<String>) async throws -> [Product]
 
-    init(defaultId: String, ids: [String]) {
+    init(
+        defaultId: String,
+        ids: [String],
+        connectivity: ConnectivityRecovery = .shared,
+        loadProducts: @escaping (Set<String>) async throws -> [Product] = {
+            try await Product.products(for: $0)
+        }
+    ) {
         defaultPurchaseIdentifier = defaultId
         purchaseIdentifiers = ids
+        self.loadProducts = loadProducts
 
         super.init()
 
@@ -48,11 +61,21 @@ class StoreKitModel: NSObject, ObservableObject {
             try? await self?.initialize()
         }
 
+        connectivity.reconnections
+            .sink { [weak self] in self?.scheduleRecovery() }
+            .store(in: &recoverySubscriptions)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.scheduleRecovery() }
+            .store(in: &recoverySubscriptions)
+
         SKPaymentQueue.default().add(self)
     }
 
     deinit {
         updateListenerTask?.cancel()
+        productTask?.cancel()
+        recoveryTask?.cancel()
         SKPaymentQueue.default().remove(self)
     }
 
@@ -86,8 +109,7 @@ class StoreKitModel: NSObject, ObservableObject {
         block?()
     }
 
-    /// Loads the initial StoreKit state once, allowing every caller to await
-    /// the same request instead of racing independent product requests.
+    /// Loads verified entitlements once, sharing initialization between callers.
     func initialize() async throws {
         guard !hasInitialized else {
             return
@@ -97,11 +119,17 @@ class StoreKitModel: NSObject, ObservableObject {
             return
         }
 
-        let task = Task { @MainActor [weak self] in
+        let task = Task<Void, Error> { @MainActor [weak self] in
             guard let self else {
                 return
             }
-            try await self.retrieve()
+            await self.refreshEntitlements()
+            self.hasInitialized = true
+            // Catalog loading can fail or stall on a plane. It must never
+            // prevent access to purchases StoreKit has already verified.
+            self.productTask = Task { [weak self] in
+                try? await self?.retrieve()
+            }
         }
         initializationTask = task
         defer { initializationTask = nil }
@@ -110,21 +138,61 @@ class StoreKitModel: NSObject, ObservableObject {
 
     /// Update the products and update purchase identifiers
     func update() async throws {
-        let products = try await Product.products(for: productSet)
-        self.products = products
-        for product in products {
-            if let transaction = await product.latestTransaction {
-                try await updatePurchasedIdentifiers(transaction.payloadValue)
+        await refreshEntitlements()
+        hasInitialized = true
+        try await retrieve()
+    }
+
+    private func scheduleRecovery() {
+        guard recoveryTask == nil else { return }
+        recoveryTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.recoveryTask = nil }
+            // Reading current entitlements uses StoreKit's verified transactions.
+            // AppStore.sync is reserved for the user's explicit Restore action.
+            if !self.hasInitialized {
+                try? await self.initialize()
             } else {
-                objectWillChange.send()
-                // can't get the latest transaction so assume it isn't purchased
-                purchasedIdentifiers.remove(product.id)
-                entitlementExpirations.removeValue(forKey: product.id)
-                nonExpiringEntitlements.remove(product.id)
+                #if DEBUG
+                if !ProcessInfo.processInfo.arguments.contains("--claw-ui-testing") {
+                    await self.refreshEntitlements()
+                }
+                #else
+                await self.refreshEntitlements()
+                #endif
+            }
+            // Retry prices separately so a slow App Store request cannot block
+            // login recovery or replace the verified purchase state.
+            self.productTask?.cancel()
+            self.productTask = Task { [weak self] in
+                try? await self?.retrieve()
             }
         }
+    }
+
+    private func refreshEntitlements() async {
+        var identifiers = Set<String>()
+        var expirations = [String: Date]()
+        var nonExpiring = Set<String>()
+        for await result in Transaction.currentEntitlements {
+            guard let transaction = try? checkVerified(result),
+                  productSet.contains(transaction.productID),
+                  transaction.revocationDate == nil,
+                  !transaction.isUpgraded,
+                  transaction.expirationDate.map({ $0 > Date() }) ?? true else {
+                continue
+            }
+            identifiers.insert(transaction.productID)
+            if let expiration = transaction.expirationDate {
+                expirations[transaction.productID] = expiration
+            } else {
+                nonExpiring.insert(transaction.productID)
+            }
+        }
+        entitlementExpirations = expirations
+        nonExpiringEntitlements = nonExpiring
+        purchasedIdentifiers = identifiers
         persistLobstersEntitlement()
-        hasInitialized = true
     }
 
     @discardableResult
@@ -152,21 +220,11 @@ class StoreKitModel: NSObject, ObservableObject {
         }
     }
 
-    private func retrieve(completion block: (([Product]) -> Void)? = nil) async throws {
-        let products = try await Product.products(for: productSet)
+    private func retrieve() async throws {
+        let products = try await loadProducts(productSet)
+        try Task.checkCancellation()
         self.products = products
-        for product in products {
-            if product.id == defaultPurchaseIdentifier {
-                defaultProduct = product
-            }
-
-            if let transaction = await product.latestTransaction {
-                try await updatePurchasedIdentifiers(transaction.payloadValue)
-            }
-        }
-        persistLobstersEntitlement()
-        hasInitialized = true
-        block?(products)
+        defaultProduct = products.first { $0.id == defaultPurchaseIdentifier }
     }
 
     func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
@@ -182,8 +240,9 @@ class StoreKitModel: NSObject, ObservableObject {
     }
 
     func updatePurchasedIdentifiers(_ transaction: StoreKit.Transaction) async {
+        guard productSet.contains(transaction.productID) else { return }
         objectWillChange.send()
-        if transaction.revocationDate == nil {
+        if transaction.revocationDate == nil, !transaction.isUpgraded {
             // check if the purchse is expired
             if let expirationDate = transaction.expirationDate {
                 if expirationDate >= Date() {

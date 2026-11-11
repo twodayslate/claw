@@ -39,6 +39,31 @@ class clawUITests: XCTestCase {
         return app
     }
 
+    func testOfflineBannerAcrossTabs() throws {
+        let app = configuredApplication()
+        app.launchArguments.append("--claw-ui-testing-offline")
+        app.launch()
+        for tab in ["Hottest", "Newest", "Tags", "Settings"] {
+            selectTab(tab, in: app)
+            let alert = app.alerts.firstMatch
+            if alert.waitForExistence(timeout: 12) {
+                alert.buttons.firstMatch.tap()
+            }
+            let banner = app.descendants(matching: .any)["offline-status-banner"].firstMatch
+            XCTAssertTrue(banner.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.frame.intersects(banner.frame))
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "Offline - \(tab)"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+        app.terminate()
+
+        let onlineApp = configuredApplication()
+        onlineApp.launch()
+        XCTAssertFalse(onlineApp.descendants(matching: .any)["offline-status-banner"].firstMatch.exists)
+    }
+
     func testStoryPullToRefreshDisplaysUpdatedContent() throws {
         try setRefreshFixture(updated: false)
         let app = configuredApplication()
@@ -577,10 +602,12 @@ class clawUITests: XCTestCase {
         let copy = app.cells["Copy"]
         XCTAssertTrue(copy.waitForExistence(timeout: 10))
         copy.tap()
+        XCTAssertTrue(copy.waitForNonExistence(timeout: 10))
         XCTAssertTrue(link.waitForExistence(timeout: 5))
         XCTAssertTrue(body.exists)
         XCTAssertTrue(reply.exists)
         body.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 10))
         app.buttons["Share"].tap()
         XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 10))
     }

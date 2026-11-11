@@ -56,8 +56,10 @@ struct StoredLobstersCookie: Codable, Equatable {
     let expiresDate: Date?
     let isSecure: Bool
     let isHTTPOnly: Bool
+    // Saved only after the server confirms which account owns this cookie.
+    let username: String?
 
-    init?(_ cookie: HTTPCookie, for url: URL) {
+    init?(_ cookie: HTTPCookie, for url: URL, username: String? = nil) {
         guard cookie.name == LobstersCredentialStore.cookieName,
               let host = url.host?.lowercased() else {
             return nil
@@ -70,6 +72,7 @@ struct StoredLobstersCookie: Codable, Equatable {
             return nil
         }
 
+        self.username = username
         name = cookie.name
         value = cookie.value
         domain = cookieDomain
@@ -154,8 +157,8 @@ struct LobstersCredentialStore: Sendable {
         return cookie
     }
 
-    func saveCookie(_ cookie: HTTPCookie, for url: URL) throws {
-        guard let storedCookie = StoredLobstersCookie(cookie, for: url) else {
+    func saveCookie(_ cookie: HTTPCookie, for url: URL, username: String? = nil) throws {
+        guard let storedCookie = StoredLobstersCookie(cookie, for: url, username: username) else {
             throw KeychainError.invalidCookie
         }
 

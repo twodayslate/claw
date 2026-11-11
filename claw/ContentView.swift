@@ -51,6 +51,9 @@ struct NavigableTabViewItem<Content: View, TabItem: View>: View {
                         dismiss()
                     }
                 }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    OfflineStatusBanner()
+                }
         }.tabItem {
             self.tabItem
         }
@@ -202,7 +205,6 @@ struct ContentView: View {
                     lobstersSession.preparePage(for: _selection)
                 }
             } catch {
-                lobstersSession.setEntitlementAvailable(false)
                 lobstersSession.markEntitlementUnavailable(error)
             }
         }
