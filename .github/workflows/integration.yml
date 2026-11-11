@@ -139,6 +139,69 @@ jobs:
             git log -1 --format='Subject: %s'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Use configured Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Prepare Xcode
+        shell: bash
+        run: |
+          xcodebuild -downloadComponent MetalToolchain
+          if ! xcodebuild -showsdks | grep -q iphonesimulator; then
+            xcodebuild -downloadPlatform iOS
+          fi
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Create isolated simulator
+        id: create-simulator
+        shell: bash
+        run: |
+          runtime_id="$(xcrun simctl list runtimes --json | jq -er --arg version "$SIMULATOR_OS" \
+            '[.runtimes[] | select(.isAvailable and .version == $version and (.identifier | contains(".iOS-"))) | .identifier] | unique | if length == 1 then .[0] else error("Expected one available iOS runtime") end')"
+          device_type="$(xcrun simctl list devicetypes --json | jq -er --arg model "$SIMULATOR_MODEL" \
+            '[.devicetypes[] | select(.name == $model) | .identifier] | unique | if length == 1 then .[0] else error("Expected one device type") end')"
+          simulator_id="$(xcrun simctl create "Claw CI $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-${{ matrix.name }}" "$device_type" "$runtime_id")"
+          echo "udid=$simulator_id" >> "$GITHUB_OUTPUT"
+
+      - name: Setup simulator
+        id: simulator
+        uses: futureware-tech/simulator-action@v5
+        with:
+          udid: ${{ steps.create-simulator.outputs.udid }}
+          erase_before_boot: false
+          wait_for_boot: true
+          shutdown_after_job: false
+
+      - name: Verify simulator StoreKit service
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          simulator_id='${{ steps.simulator.outputs.udid }}'
+          # StoreKitTest waits for this service even when purchases are local.
+          # Start it explicitly on the self-hosted runner and fail before the
+          # suite if the runtime cannot provide it. Do not restart a live daemon.
+          service=user/foreground/com.apple.storekitd
+          xcrun simctl spawn "$simulator_id" launchctl enable "$service"
+          if ! xcrun simctl spawn "$simulator_id" launchctl print "$service" >/dev/null 2>&1; then
+            runtime_root="$(xcrun simctl getenv "$simulator_id" SIMULATOR_ROOT)"
+            xcrun simctl spawn "$simulator_id" launchctl bootstrap user/foreground \
+              "$runtime_root/System/Library/LaunchDaemons/com.apple.storekitd.plist"
+          fi
+          xcrun simctl spawn "$simulator_id" launchctl kickstart "$service"
+          for attempt in {1..15}; do
+            status="$(xcrun simctl spawn "$simulator_id" launchctl print "$service")"
+            if grep -q 'state = running' <<< "$status"; then
+              echo "Simulator StoreKit service is running."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "$status"
+          echo "::error::Simulator StoreKit service did not start."
+          exit 1
+
       - name: Isolate Lobsters network port
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         shell: bash
@@ -336,69 +399,6 @@ jobs:
       - name: Seed native link fixtures
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
         run: docker compose run --rm -T -e LOBSTERS_BASE_URL app bin/rails runner - < ../harness/.ci/seed-native-link-fixture.rb
-
-      - name: Use configured Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: ${{ env.XCODE_VERSION }}
-
-      - name: Prepare Xcode
-        shell: bash
-        run: |
-          xcodebuild -downloadComponent MetalToolchain
-          if ! xcodebuild -showsdks | grep -q iphonesimulator; then
-            xcodebuild -downloadPlatform iOS
-          fi
-          xcodebuild -version
-          xcodebuild -showsdks
-
-      - name: Create isolated simulator
-        id: create-simulator
-        shell: bash
-        run: |
-          runtime_id="$(xcrun simctl list runtimes --json | jq -er --arg version "$SIMULATOR_OS" \
-            '.runtimes[] | select(.isAvailable and .version == $version and (.identifier | contains(".iOS-"))) | .identifier')"
-          device_type="$(xcrun simctl list devicetypes --json | jq -er --arg model "$SIMULATOR_MODEL" \
-            '.devicetypes[] | select(.name == $model) | .identifier')"
-          simulator_id="$(xcrun simctl create "Claw CI $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-${{ matrix.name }}" "$device_type" "$runtime_id")"
-          echo "udid=$simulator_id" >> "$GITHUB_OUTPUT"
-
-      - name: Setup simulator
-        id: simulator
-        uses: futureware-tech/simulator-action@v5
-        with:
-          udid: ${{ steps.create-simulator.outputs.udid }}
-          erase_before_boot: false
-          wait_for_boot: true
-          shutdown_after_job: false
-
-      - name: Verify simulator StoreKit service
-        timeout-minutes: 2
-        shell: bash
-        run: |
-          simulator_id='${{ steps.simulator.outputs.udid }}'
-          # StoreKitTest waits for this service even when purchases are local.
-          # Start it explicitly on the self-hosted runner and fail before the
-          # suite if the runtime cannot provide it. Do not restart a live daemon.
-          service=user/foreground/com.apple.storekitd
-          xcrun simctl spawn "$simulator_id" launchctl enable "$service"
-          if ! xcrun simctl spawn "$simulator_id" launchctl print "$service" >/dev/null 2>&1; then
-            runtime_root="$(xcrun simctl getenv "$simulator_id" SIMULATOR_ROOT)"
-            xcrun simctl spawn "$simulator_id" launchctl bootstrap user/foreground \
-              "$runtime_root/System/Library/LaunchDaemons/com.apple.storekitd.plist"
-          fi
-          xcrun simctl spawn "$simulator_id" launchctl kickstart "$service"
-          for attempt in {1..15}; do
-            status="$(xcrun simctl spawn "$simulator_id" launchctl print "$service")"
-            if grep -q 'state = running' <<< "$status"; then
-              echo "Simulator StoreKit service is running."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "$status"
-          echo "::error::Simulator StoreKit service did not start."
-          exit 1
 
       - name: Run unit, integration, and UI tests
         shell: bash
