@@ -158,6 +158,28 @@ jobs:
             File.write(path, YAML.dump(compose))
           ' docker-compose.yaml
 
+      - name: Ensure Docker is running
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          if docker info >/dev/null 2>&1; then
+            exit 0
+          fi
+          # The self-hosted Mac can accept jobs before Docker Desktop starts.
+          # Leave an already-running daemon and its containers untouched.
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            open -g -a Docker
+          fi
+          for _ in {1..30}; do
+            if docker info >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Docker did not become ready. Check Docker Desktop on the self-hosted runner."
+          docker info
+          exit 1
+
       - name: Configure Docker for unattended public image pulls
         timeout-minutes: 2
         shell: bash
