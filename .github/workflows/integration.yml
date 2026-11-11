@@ -158,6 +158,28 @@ jobs:
             File.write(path, YAML.dump(compose))
           ' docker-compose.yaml
 
+      - name: Ensure Docker is running
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          if docker info >/dev/null 2>&1; then
+            exit 0
+          fi
+          # The self-hosted Mac can accept jobs before Docker Desktop starts.
+          # Leave an already-running daemon and its containers untouched.
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            open -g -a Docker
+          fi
+          for _ in {1..30}; do
+            if docker info >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Docker did not become ready. Check Docker Desktop on the self-hosted runner."
+          docker info
+          exit 1
+
       - name: Configure Docker for unattended public image pulls
         timeout-minutes: 2
         shell: bash
@@ -192,7 +214,11 @@ jobs:
 
       - name: Initialize Lobsters test data
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
-        run: docker compose run --rm app bin/setup
+        run: |
+          # Upstream can commit migrations ahead of db/schema.rb. db:prepare
+          # applies them before seeding; db:setup seeds the stale schema and fails.
+          ruby -e 'path = "bin/setup"; File.write(path, File.read(path).gsub("rails db:setup", "rails db:prepare"))'
+          docker compose run --rm app bin/setup
 
       - name: Create Lobsters UI test fixtures
         working-directory: ${{ env.LOBSTERS_DIRECTORY }}
