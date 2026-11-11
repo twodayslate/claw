@@ -25,7 +25,7 @@ concurrency:
 env:
   XCODE_VERSION: "27.2"
   SIMULATOR_MODEL: "iPhone 17 Pro"
-  SIMULATOR_OS: "26.2"
+  SIMULATOR_OS: "27.2"
   LOBSTERS_DIRECTORY: .ci/lobsters
 
 jobs:
@@ -222,6 +222,7 @@ jobs:
           ' docker-compose.yaml
 
       - name: Ensure Docker is running
+        id: docker-ready
         timeout-minutes: 3
         shell: bash
         run: |
@@ -428,7 +429,7 @@ jobs:
             test
 
       - name: Capture Lobsters diagnostics
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.docker-ready.conclusion == 'success' }}
         shell: bash
         run: |
           mkdir -p results
@@ -450,7 +451,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Stop Lobsters
-        if: ${{ always() }}
+        if: ${{ always() && steps.docker-ready.conclusion == 'success' }}
         shell: bash
         run: |
           if [[ -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" ]]; then
