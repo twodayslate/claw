@@ -602,10 +602,12 @@ class clawUITests: XCTestCase {
         let copy = app.cells["Copy"]
         XCTAssertTrue(copy.waitForExistence(timeout: 10))
         copy.tap()
+        XCTAssertTrue(copy.waitForNonExistence(timeout: 10))
         XCTAssertTrue(link.waitForExistence(timeout: 5))
         XCTAssertTrue(body.exists)
         XCTAssertTrue(reply.exists)
         body.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 10))
         app.buttons["Share"].tap()
         XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 10))
     }

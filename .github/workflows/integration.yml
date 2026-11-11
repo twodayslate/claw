@@ -411,27 +411,49 @@ jobs:
         run: |
           mkdir -p results
           simulator_id='${{ steps.simulator.outputs.udid }}'
-          # A freshly erased iOS 26 Simulator can fail the first WebKit test
+          # The runner can unregister StoreKit between boot and test launch.
+          # Keep this job's simulator service registered throughout testing.
+          (
+            service=user/foreground/com.apple.storekitd
+            while true; do
+              if ! xcrun simctl spawn "$simulator_id" launchctl print "$service" >/dev/null 2>&1; then
+                echo "Restoring StoreKit service in test simulator $simulator_id"
+                runtime_root="$(xcrun simctl getenv "$simulator_id" SIMULATOR_ROOT)" || break
+                xcrun simctl spawn "$simulator_id" launchctl enable "$service" || break
+                xcrun simctl spawn "$simulator_id" launchctl bootstrap user/foreground \
+                  "$runtime_root/System/Library/LaunchDaemons/com.apple.storekitd.plist" || break
+                xcrun simctl spawn "$simulator_id" launchctl kickstart "$service" || break
+              fi
+              sleep 5
+            done
+          ) &
+          storekit_monitor_pid=$!
+          trap 'kill "$storekit_monitor_pid" 2>/dev/null || true; wait "$storekit_monitor_pid" 2>/dev/null || true' EXIT
+          # A fresh simulator can fail the first WebKit test
           # host during process startup. Retry failures in a new host process;
           # deterministic failures still exhaust all three attempts.
-          xcodebuild \
-            -project claw.xcodeproj \
-            -scheme claw \
-            -configuration Debug \
-            -destination-timeout 60 \
-            -destination "platform=iOS Simulator,id=$simulator_id" \
-            -parallel-testing-enabled NO \
-            -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 300 \
-            -maximum-test-execution-time-allowance 300 \
-            -retry-tests-on-failure \
-            -test-iterations 3 \
-            -test-repetition-relaunch-enabled YES \
-            -resultBundlePath results/ClawTests.xcresult \
-            CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
-            CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
-            CLAW_UI_TEST_PROFILE_STORY_ID="$CLAW_UI_TEST_PROFILE_STORY_ID" \
-            test
+          # Finish the unit/integration target before starting the UI target.
+          for test_target in clawTests clawUITests; do
+            xcodebuild \
+              -project claw.xcodeproj \
+              -scheme claw \
+              -configuration Debug \
+              -destination-timeout 60 \
+              -destination "platform=iOS Simulator,id=$simulator_id" \
+              -parallel-testing-enabled NO \
+              -test-timeouts-enabled YES \
+              -default-test-execution-time-allowance 300 \
+              -maximum-test-execution-time-allowance 300 \
+              -retry-tests-on-failure \
+              -test-iterations 3 \
+              -test-repetition-relaunch-enabled YES \
+              -resultBundlePath "results/$test_target.xcresult" \
+              -only-testing:"$test_target" \
+              CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
+              CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
+              CLAW_UI_TEST_PROFILE_STORY_ID="$CLAW_UI_TEST_PROFILE_STORY_ID" \
+              test
+          done
 
       - name: Capture Lobsters diagnostics
         if: ${{ failure() && steps.docker-ready.conclusion == 'success' }}
