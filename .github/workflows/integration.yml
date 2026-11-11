@@ -352,14 +352,23 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks
 
+      - name: Create isolated simulator
+        id: create-simulator
+        shell: bash
+        run: |
+          runtime_id="$(xcrun simctl list runtimes --json | jq -er --arg version "$SIMULATOR_OS" \
+            '.runtimes[] | select(.isAvailable and .version == $version and (.identifier | contains(".iOS-"))) | .identifier')"
+          device_type="$(xcrun simctl list devicetypes --json | jq -er --arg model "$SIMULATOR_MODEL" \
+            '.devicetypes[] | select(.name == $model) | .identifier')"
+          simulator_id="$(xcrun simctl create "Claw CI $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-${{ matrix.name }}" "$device_type" "$runtime_id")"
+          echo "udid=$simulator_id" >> "$GITHUB_OUTPUT"
+
       - name: Setup simulator
         id: simulator
         uses: futureware-tech/simulator-action@v5
         with:
-          model: ${{ env.SIMULATOR_MODEL }}
-          os: iOS
-          os_version: ${{ env.SIMULATOR_OS }}
-          erase_before_boot: true
+          udid: ${{ steps.create-simulator.outputs.udid }}
+          erase_before_boot: false
           wait_for_boot: true
           shutdown_after_job: false
 
@@ -449,6 +458,14 @@ jobs:
               -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
               down --volumes --rmi local --remove-orphans
           fi
+
+      - name: Delete isolated simulator
+        if: ${{ always() && steps.create-simulator.outputs.udid != '' }}
+        shell: bash
+        run: |
+          simulator_id='${{ steps.create-simulator.outputs.udid }}'
+          xcrun simctl shutdown "$simulator_id" || true
+          xcrun simctl delete "$simulator_id"
 
   record-success:
     name: Record successful compatibility check
