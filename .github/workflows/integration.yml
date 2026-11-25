@@ -103,6 +103,11 @@ jobs:
       COMPOSE_PROJECT_NAME: claw-lobsters-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.name }}
 
     steps:
+      - name: Prepare test results directory
+        run: |
+          results_dir="$(mktemp -d "$RUNNER_TEMP/claw-results.XXXXXX")"
+          echo "RESULTS_DIRECTORY=$results_dir" >> "$GITHUB_ENV"
+
       - name: Checkout Claw
         uses: actions/checkout@v6
         with:
@@ -340,7 +345,6 @@ jobs:
       - name: Run unit, integration, and UI tests
         shell: bash
         run: |
-          mkdir -p results
           simulator_id='${{ steps.simulator.outputs.udid }}'
           # A freshly erased iOS 26 Simulator can fail the first WebKit test
           # host during process startup. Retry failures in a new host process;
@@ -355,7 +359,7 @@ jobs:
             -retry-tests-on-failure \
             -test-iterations 3 \
             -test-repetition-relaunch-enabled YES \
-            -resultBundlePath results/ClawTests.xcresult \
+            -resultBundlePath "$RESULTS_DIRECTORY/ClawTests.xcresult" \
             CLAW_UI_TEST_BASE_URL="$CLAW_UI_TEST_BASE_URL" \
             CLAW_UI_TEST_STORY_ID="$CLAW_UI_TEST_STORY_ID" \
             CLAW_UI_TEST_PROFILE_STORY_ID="$CLAW_UI_TEST_PROFILE_STORY_ID" \
@@ -365,14 +369,13 @@ jobs:
         if: ${{ failure() }}
         shell: bash
         run: |
-          mkdir -p results
           if [[ -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" ]]; then
             docker compose \
               -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
-              logs --no-color > results/lobsters.log 2>&1
+              logs --no-color > "$RESULTS_DIRECTORY/lobsters.log" 2>&1
             docker compose \
               -f "$LOBSTERS_DIRECTORY/docker-compose.yaml" \
-              ps > results/lobsters-containers.txt 2>&1
+              ps > "$RESULTS_DIRECTORY/lobsters-containers.txt" 2>&1
           fi
 
       - name: Upload test diagnostics
@@ -380,7 +383,7 @@ jobs:
         if: ${{ failure() }}
         with:
           name: integration-test-results-${{ matrix.name }}
-          path: results
+          path: ${{ env.RESULTS_DIRECTORY }}
           if-no-files-found: ignore
 
       - name: Stop Lobsters
