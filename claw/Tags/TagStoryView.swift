@@ -43,7 +43,7 @@ struct TagStoryView: View {
                         StoryFeedEmptyView(loadFailed: stories.loadFailed)
                     } else {
                         ForEach(stories.items) { story in
-                            StoryListCellView(story: story).id(story).task {
+                            StoryListCellView(story: story).id(story.id).task {
                                 do {
                                     try await self.stories.more(story)
                                 } catch {

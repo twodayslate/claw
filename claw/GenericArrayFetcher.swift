@@ -9,12 +9,18 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     @Published var isLoadingMore = false
     @Published var isReloading = false
     @Published var isLoading = false
-    @Published var hasAttemptedLoad = false
+    @Published var hasAttemptedLoad = false {
+        didSet { if hasAttemptedLoad { hasRequestedContent = true } }
+    }
+    // Survives origin invalidation so an already-open screen can be refreshed.
+    private(set) var hasRequestedContent = false
     @Published var skippedStoryCount = 0
     @Published var loadFailed = false
 
     public internal(set) var page: Int = 1
     private var contentGeneration: UInt = 0
+    var hasLoadedContent = false
+    var hasMorePages = true
 
     /// Captures the generation associated with a network load. Subclasses must
     /// verify it before publishing results from an asynchronous request.
@@ -43,6 +49,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
         loadFailed = false
         page = 1
         hasAttemptedLoad = false
+        hasLoadedContent = false
+        hasMorePages = true
     }
 
     func loadSupersedingPendingLoads() async throws {
@@ -51,7 +59,7 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
     }
     
     func loadIfEmpty() async throws {
-        if self.items.isEmpty {
+        if !hasLoadedContent && self.items.isEmpty {
             try await self.load()
         }
     }
@@ -92,6 +100,8 @@ class GenericArrayFetcher<T: Hashable & Codable>: ObservableObject {
 // Callers validate their request generation before applying a page.
 extension GenericArrayFetcher where T == NewestStory {
     func replaceStoryPage(_ result: ParsedStoryList) {
+        hasLoadedContent = true
+        hasMorePages = !result.stories.isEmpty
         items = result.stories
         skippedStoryCount = result.skippedStoryCount
         loadFailed = false
@@ -99,7 +109,11 @@ extension GenericArrayFetcher where T == NewestStory {
     }
 
     func appendStoryPage(_ result: ParsedStoryList) {
-        for story in result.stories where !items.contains(story) {
+        // An empty terminal page must not be requested again when the last
+        // visible row reappears. Deduplicate by identity, not mutable scores.
+        hasMorePages = !result.stories.isEmpty
+        let existingIDs = Set(items.map(\.id))
+        for story in result.stories where !existingIDs.contains(story.id) {
             items.append(story)
         }
         skippedStoryCount += result.skippedStoryCount

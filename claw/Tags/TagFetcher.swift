@@ -24,17 +24,12 @@ class TagFetcher: ObservableObject {
         
     static var shared = TagFetcher()
     
-    init() {
-        Task {
-            // refresh our tag list once per app instance. Since we really only use this as .shared this is once per app load
-            do {
-                try await self.load()
-            } catch {
-                print("Unable to fetch tags", error)
-            }
-        }
+    private let pageLoader: LobstersPageLoader
+
+    init(pageLoader: LobstersPageLoader = .shared) {
+        self.pageLoader = pageLoader
     }
-    
+
     @Published var isLoading = false
     
     func loadIfEmpty() async throws {
@@ -54,7 +49,7 @@ class TagFetcher: ObservableObject {
         }
         let url = APIConfiguration.shared.tagsURL()
         
-        let data = try await LobstersPageLoader.shared.data(from: url)
+        let data = try await pageLoader.data(from: url)
         
         let decodedLists = try JSONDecoder().decode([Tag].self, from: data)
         

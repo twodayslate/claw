@@ -19,6 +19,8 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
         if isLoading {
             return
         }
+        // A refresh replaces the pagination cursor and supersedes its result.
+        if isLoadingMore { supersedePendingLoads() }
         let generation = captureContentGeneration()
         hasAttemptedLoad = true
         isLoading = true
@@ -50,7 +52,7 @@ class HottestFetcher: GenericArrayFetcher<NewestStory> {
     }
 
     override func more(_ story: NewestStory? = nil) async throws {
-        guard self.items.last == story && !isLoadingMore else {
+        guard let story, self.items.last?.id == story.id, hasMorePages, !isLoading, !isLoadingMore else {
             return
         }
         let generation = captureContentGeneration()
